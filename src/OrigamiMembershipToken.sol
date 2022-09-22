@@ -47,6 +47,8 @@ contract OrigamiMembershipToken is
     event TransferEnabled(address indexed caller, bool value);
     /// @notice monitoring: this is fired when a token is revoked.
     event TokenRevoked(address indexed caller, address indexed tokenOwner, uint256 indexed tokenId);
+    /// @notice monitoring: this is fired when the paused state is changed.
+    event Paused(address indexed caller, bool value);
 
     /// @notice the constructor is not used since the contract is upgradeable except to disable initializers in the implementations that are deployed.
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -101,12 +103,14 @@ contract OrigamiMembershipToken is
     /// @notice this function pauses the contract, restricting mints, transfers and burns regardless of the independent state of other configurations.
     function pause() public onlyRole(PAUSER_ROLE) {
         _pause();
+        emit Paused(_msgSender(), true);
     }
 
     /// @dev this is only callable by an address that has the PAUSER_ROLE
     /// @notice this function unpauses the contract
     function unpause() public onlyRole(PAUSER_ROLE) {
         _unpause();
+        emit Paused(_msgSender(), false);
     }
 
     /// @dev this is only callable by an address that has the MINTER_ROLE. The Origami platform airdrops membership tokens to members' wallets.

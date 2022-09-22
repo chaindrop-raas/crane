@@ -189,3 +189,50 @@ contract MetadataMembershipTokenTest is OMTHelper, Test {
   }
 
 }
+
+contract PausingMembershipTokenTest is OMTHelper, Test {
+  event Paused(address indexed caller, bool value);
+
+  function setUp()  public {
+    vm.startPrank(address(owner));
+  }
+
+  function testRevertsWhenNonAdminPauses() public {
+    vm.stopPrank();
+    vm.expectRevert(bytes("AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"));
+    token.pause();
+  }
+
+  function testRevertsWhenNonAdminUnpauses() public {
+    token.pause();
+    vm.stopPrank();
+    vm.expectRevert(bytes("AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"));
+    token.unpause();
+  }
+
+  function testRevertsMintWhenPaused() public {
+    token.pause();
+    vm.expectRevert(bytes("Pausable: paused"));
+    token.safeMint(mintee);
+  }
+
+  function testEmitsPausedEvent() public {
+    vm.expectEmit(true, true, true, true, address(token));
+    emit Paused(address(owner), true);
+    token.pause();
+  }
+
+  function testEmitsUnpausedEvent() public {
+    token.pause();
+    vm.expectEmit(true, true, true, true, address(token));
+    emit Paused(address(owner), false);
+    token.unpause();
+  }
+
+  function testCanUnpause() public {
+    token.pause();
+    token.unpause();
+    token.safeMint(mintee);
+    assertEq(token.balanceOf(mintee), 1);
+  }
+}
