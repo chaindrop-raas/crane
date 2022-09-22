@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@oz-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@oz-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@oz-upgradeable/security/PausableUpgradeable.sol";
+import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
+import "@oz-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
+import "@oz-upgradeable/proxy/utils/Initializable.sol";
+import "@oz-upgradeable/utils/CountersUpgradeable.sol";
 
 /// @title Origami Membership Token
 /// @author Stephen Caudill
