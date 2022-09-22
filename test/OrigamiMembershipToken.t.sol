@@ -13,6 +13,7 @@ abstract contract AddressHelper {
     address mintee = address(0x3);
     address recipient = address(0x4);
     address revoker = address(0x5);
+    address pauser = address(0x6);
 }
 
 abstract contract OMTHelper is AddressHelper {
@@ -245,6 +246,14 @@ contract PausingMembershipTokenTest is OMTHelper, Test {
         token.safeMint(mintee);
         assertEq(token.balanceOf(mintee), 1);
     }
+
+    function testPauserCanPause() public {
+        token.grantRole(token.PAUSER_ROLE(), pauser);
+        token.pause();
+        token.unpause();
+        token.safeMint(mintee);
+        assertEq(token.balanceOf(mintee), 1);
+    }
 }
 
 contract TransferrabilityMembershipTokenTest is OMTHelper, Test {
@@ -343,6 +352,15 @@ contract TransferrabilityMembershipTokenTest is OMTHelper, Test {
     function testCannotDisableTransferWhenAlreadyDisabled() public {
         vm.expectRevert(bytes("Transferrable: transfers are disabled"));
         token.disableTransfer();
+    }
+
+    function testMinterCanTransferWhenNontransferrable() public {
+        token.grantRole(token.MINTER_ROLE(), minter);
+        vm.stopPrank();
+        vm.prank(minter);
+        // mint is a transfer
+        token.safeMint(mintee);
+        assertEq(token.balanceOf(mintee), 1);
     }
 }
 
