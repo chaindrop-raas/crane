@@ -11,7 +11,7 @@ abstract contract AddressHelper {
     address owner = address(0x1);
     address minter = address(0x2);
     address mintee = address(0x3);
-    address mintee2 = address(0x4);
+    address recipient = address(0x4);
     address revoker = address(0x5);
 }
 
@@ -31,7 +31,7 @@ abstract contract  OMTHelper is AddressHelper {
         );
         token = OrigamiMembershipToken(address(proxy));
         token.initialize(
-            address(owner),
+            owner,
             "Deciduous Tree DAO Membership",
             "DTDM",
             "https://example.com/metadata/"
@@ -91,7 +91,7 @@ contract UpgradeMembershipTokenTest is Test, AddressHelper {
         );
 
         tokenV1.initialize(
-            address(owner),
+            owner,
             "Deciduous Tree DAO Membership",
             "DTDM",
             "https://example.com/metadata"
@@ -107,7 +107,7 @@ contract UpgradeMembershipTokenTest is Test, AddressHelper {
             bytes("Initializable: contract is already initialized")
         );
         tokenV1.initialize(
-            address(owner),
+            owner,
             "EVEN MOAR Deciduous Tree DAO Membership",
             "EMDTDM",
             "https://example.com/metadata/"
@@ -118,12 +118,12 @@ contract UpgradeMembershipTokenTest is Test, AddressHelper {
         implV2 = new OrigamiMembershipToken();
         admin.upgrade(proxy, address(implV2));
         tokenV2 = OrigamiMembershipToken(address(proxy));
-        vm.prank(address(owner));
+        vm.prank(owner);
 
         vm.expectEmit(true, true, true, true, address(tokenV2));
 
         // TransferEnabled does not exist in tokenV1, so it being emited here is proof that the upgrade worked
-        emit TransferEnabled(address(owner), true);
+        emit TransferEnabled(owner, true);
 
         tokenV2.enableTransfer();
     }
@@ -133,7 +133,7 @@ contract MintMembershipTokenTest is OMTHelper, Test {
   event Mint(address indexed _to, uint256 indexed _tokenId);
 
   function setUp()  public {
-    vm.startPrank(address(owner));
+    vm.startPrank(owner);
   }
 
   function testMint() public {
@@ -160,7 +160,7 @@ contract MetadataMembershipTokenTest is OMTHelper, Test {
   event BaseURIChanged(address indexed caller, string value);
 
   function setUp()  public {
-    vm.startPrank(address(owner));
+    vm.startPrank(owner);
   }
 
   function testRevertsOnInvalidTokenId() public {
@@ -178,7 +178,7 @@ contract MetadataMembershipTokenTest is OMTHelper, Test {
 
   function testSetBaseURIEmitsEvent() public {
     vm.expectEmit(true, true, true, true, address(token));
-    emit BaseURIChanged(address(owner), "https://deciduous.tree/metadata/");
+    emit BaseURIChanged(owner, "https://deciduous.tree/metadata/");
     token.setBaseURI("https://deciduous.tree/metadata/");
   }
 
@@ -194,7 +194,7 @@ contract PausingMembershipTokenTest is OMTHelper, Test {
   event Paused(address indexed caller, bool value);
 
   function setUp()  public {
-    vm.startPrank(address(owner));
+    vm.startPrank(owner);
   }
 
   function testRevertsWhenNonAdminPauses() public {
@@ -218,14 +218,14 @@ contract PausingMembershipTokenTest is OMTHelper, Test {
 
   function testEmitsPausedEvent() public {
     vm.expectEmit(true, true, true, true, address(token));
-    emit Paused(address(owner), true);
+    emit Paused(owner, true);
     token.pause();
   }
 
   function testEmitsUnpausedEvent() public {
     token.pause();
     vm.expectEmit(true, true, true, true, address(token));
-    emit Paused(address(owner), false);
+    emit Paused(owner, false);
     token.unpause();
   }
 
@@ -234,5 +234,94 @@ contract PausingMembershipTokenTest is OMTHelper, Test {
     token.unpause();
     token.safeMint(mintee);
     assertEq(token.balanceOf(mintee), 1);
+  }
+}
+
+contract TransferrabilityMembershipTokenTest is OMTHelper, Test {
+  event TransferEnabled(address indexed caller, bool value);
+
+  function setUp()  public {
+    vm.startPrank(owner);
+  }
+
+  function testRevertsWhenNonAdminEnablesTransfer() public {
+    vm.stopPrank();
+    vm.expectRevert(bytes("AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"));
+    token.enableTransfer();
+  }
+
+  function testRevertsWhenNonAdminDisablesTransfer() public {
+    token.enableTransfer();
+    vm.stopPrank();
+    vm.expectRevert(bytes("AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"));
+    token.disableTransfer();
+  }
+
+  function testRevertsTransferWhenDisabled() public {
+    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+    token.safeTransferFrom(mintee, recipient, 1);
+  }
+
+  function testEmitsTransferEnabledEvent() public {
+    vm.expectEmit(true, true, true, true, address(token));
+    emit TransferEnabled(owner, true);
+    token.enableTransfer();
+  }
+
+  function testEmitsTransferDisabledEvent() public {
+    token.enableTransfer();
+    vm.expectEmit(true, true, true, true, address(token));
+    emit TransferEnabled(owner, false);
+    token.disableTransfer();
+  }
+
+  function testCanDisableTransfer() public {
+    token.enableTransfer();
+    token.disableTransfer();
+
+    // unsafe base signature
+    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+    token.transferFrom(mintee, recipient, 1);
+
+    // base signature
+    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+    token.safeTransferFrom(mintee, recipient, 1);
+
+    // bulk transfer signature
+    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+    token.safeTransferFrom(mintee, recipient, 1);
+
+    // bulk transfer and call signature
+    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+    token.safeTransferFrom(mintee, recipient, 1, bytes("0x"));
+  }
+
+  function testCanTransferWhenEnabled() public {
+    token.safeMint(mintee);
+    token.enableTransfer();
+    vm.stopPrank();
+    vm.prank(mintee);
+    token.safeTransferFrom(mintee, recipient, 1);
+    assertEq(token.balanceOf(recipient), 1);
+  }
+
+  function testOnlyOwnerCanTransferWhenEnabled() public {
+    token.safeMint(mintee);
+    token.enableTransfer();
+    vm.stopPrank();
+    vm.prank(recipient);
+    vm.expectRevert(bytes("ERC721: caller is not token owner nor approved"));
+    token.transferFrom(mintee, recipient, 1);
+  }
+
+  function testCannotEnableTransferWhenAlreadyEnabled() public {
+    token.enableTransfer();
+    vm.expectRevert(bytes("Transferrable: transfers are enabled"));
+    token.enableTransfer();
+  }
+
+  function testCannotDisableTransferWhenAlreadyDisabled() public {
+    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+    token.disableTransfer();
   }
 }
