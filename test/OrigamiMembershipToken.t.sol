@@ -155,3 +155,37 @@ contract MintMembershipTokenTest is OMTHelper, Test {
     token.safeMint(mintee);
   }
 }
+
+contract MetadataMembershipTokenTest is OMTHelper, Test {
+  event BaseURIChanged(address indexed caller, string value);
+
+  function setUp()  public {
+    vm.startPrank(address(owner));
+  }
+
+  function testRevertsOnInvalidTokenId() public {
+    vm.expectRevert(bytes("Invalid token ID"));
+    token.tokenURI(0);
+    vm.expectRevert(bytes("Invalid token ID"));
+    token.tokenURI(2);
+  }
+
+  function testRevertsWhenNonAdminChangesBaseURI() public {
+    vm.stopPrank();
+    vm.expectRevert(bytes("AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"));
+    token.setBaseURI("https://example.com/metadata/");
+  }
+
+  function testSetBaseURIEmitsEvent() public {
+    vm.expectEmit(true, true, true, true, address(token));
+    emit BaseURIChanged(address(owner), "https://deciduous.tree/metadata/");
+    token.setBaseURI("https://deciduous.tree/metadata/");
+  }
+
+  function testSetBaseURIAffectsTokenUri() public {
+    token.setBaseURI("https://deciduous.tree/metadata/");
+    token.safeMint(mintee);
+    assertEq(token.tokenURI(1), "https://deciduous.tree/metadata/1");
+  }
+
+}
