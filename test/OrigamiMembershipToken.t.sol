@@ -15,7 +15,7 @@ abstract contract AddressHelper {
     address revoker = address(0x5);
 }
 
-abstract contract  OMTHelper is AddressHelper {
+abstract contract OMTHelper is AddressHelper {
     OrigamiMembershipToken impl;
     TransparentUpgradeableProxy proxy;
     OrigamiMembershipToken token;
@@ -40,7 +40,6 @@ abstract contract  OMTHelper is AddressHelper {
 }
 
 contract DeployMembershipTokenTest is Test {
-
     OrigamiMembershipToken impl;
     TransparentUpgradeableProxy proxy;
     OrigamiMembershipToken token;
@@ -130,198 +129,219 @@ contract UpgradeMembershipTokenTest is Test, AddressHelper {
 }
 
 contract MintMembershipTokenTest is OMTHelper, Test {
-  event Mint(address indexed _to, uint256 indexed _tokenId);
+    event Mint(address indexed _to, uint256 indexed _tokenId);
 
-  function setUp()  public {
-    vm.startPrank(owner);
-  }
+    function setUp() public {
+        vm.startPrank(owner);
+    }
 
-  function testMint() public {
-    token.safeMint(mintee);
-    assertEq(token.balanceOf(mintee), 1);
-    assertEq(token.ownerOf(1), mintee);
-    assertEq(token.tokenURI(1), "https://example.com/metadata/1");
-  }
+    function testMint() public {
+        token.safeMint(mintee);
+        assertEq(token.balanceOf(mintee), 1);
+        assertEq(token.ownerOf(1), mintee);
+        assertEq(token.tokenURI(1), "https://example.com/metadata/1");
+    }
 
-  function testCanOnlyMintOnce() public {
-    token.safeMint(mintee);
-    vm.expectRevert(bytes("Holders may only have one token"));
-    token.safeMint(mintee);
-  }
+    function testCanOnlyMintOnce() public {
+        token.safeMint(mintee);
+        vm.expectRevert(bytes("Holders may only have one token"));
+        token.safeMint(mintee);
+    }
 
-  function testEmitsMintEvent() public {
-    vm.expectEmit(true, true, true, true, address(token));
-    emit Mint(mintee, 1);
-    token.safeMint(mintee);
-  }
+    function testEmitsMintEvent() public {
+        vm.expectEmit(true, true, true, true, address(token));
+        emit Mint(mintee, 1);
+        token.safeMint(mintee);
+    }
 }
 
 contract MetadataMembershipTokenTest is OMTHelper, Test {
-  event BaseURIChanged(address indexed caller, string value);
+    event BaseURIChanged(address indexed caller, string value);
 
-  function setUp()  public {
-    vm.startPrank(owner);
-  }
+    function setUp() public {
+        vm.startPrank(owner);
+    }
 
-  function testRevertsOnInvalidTokenId() public {
-    vm.expectRevert(bytes("Invalid token ID"));
-    token.tokenURI(0);
-    vm.expectRevert(bytes("Invalid token ID"));
-    token.tokenURI(2);
-  }
+    function testRevertsOnInvalidTokenId() public {
+        vm.expectRevert(bytes("Invalid token ID"));
+        token.tokenURI(0);
+        vm.expectRevert(bytes("Invalid token ID"));
+        token.tokenURI(2);
+    }
 
-  function testRevertsWhenNonAdminChangesBaseURI() public {
-    vm.stopPrank();
-    vm.expectRevert(bytes("AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"));
-    token.setBaseURI("https://example.com/metadata/");
-  }
+    function testRevertsWhenNonAdminChangesBaseURI() public {
+        vm.stopPrank();
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            )
+        );
+        token.setBaseURI("https://example.com/metadata/");
+    }
 
-  function testSetBaseURIEmitsEvent() public {
-    vm.expectEmit(true, true, true, true, address(token));
-    emit BaseURIChanged(owner, "https://deciduous.tree/metadata/");
-    token.setBaseURI("https://deciduous.tree/metadata/");
-  }
+    function testSetBaseURIEmitsEvent() public {
+        vm.expectEmit(true, true, true, true, address(token));
+        emit BaseURIChanged(owner, "https://deciduous.tree/metadata/");
+        token.setBaseURI("https://deciduous.tree/metadata/");
+    }
 
-  function testSetBaseURIAffectsTokenUri() public {
-    token.setBaseURI("https://deciduous.tree/metadata/");
-    token.safeMint(mintee);
-    assertEq(token.tokenURI(1), "https://deciduous.tree/metadata/1");
-  }
-
+    function testSetBaseURIAffectsTokenUri() public {
+        token.setBaseURI("https://deciduous.tree/metadata/");
+        token.safeMint(mintee);
+        assertEq(token.tokenURI(1), "https://deciduous.tree/metadata/1");
+    }
 }
 
 contract PausingMembershipTokenTest is OMTHelper, Test {
-  event Paused(address indexed caller, bool value);
+    event Paused(address indexed caller, bool value);
 
-  function setUp()  public {
-    vm.startPrank(owner);
-  }
+    function setUp() public {
+        vm.startPrank(owner);
+    }
 
-  function testRevertsWhenNonAdminPauses() public {
-    vm.stopPrank();
-    vm.expectRevert(bytes("AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"));
-    token.pause();
-  }
+    function testRevertsWhenNonAdminPauses() public {
+        vm.stopPrank();
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
+            )
+        );
+        token.pause();
+    }
 
-  function testRevertsWhenNonAdminUnpauses() public {
-    token.pause();
-    vm.stopPrank();
-    vm.expectRevert(bytes("AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"));
-    token.unpause();
-  }
+    function testRevertsWhenNonAdminUnpauses() public {
+        token.pause();
+        vm.stopPrank();
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
+            )
+        );
+        token.unpause();
+    }
 
-  function testRevertsMintWhenPaused() public {
-    token.pause();
-    vm.expectRevert(bytes("Pausable: paused"));
-    token.safeMint(mintee);
-  }
+    function testRevertsMintWhenPaused() public {
+        token.pause();
+        vm.expectRevert(bytes("Pausable: paused"));
+        token.safeMint(mintee);
+    }
 
-  function testEmitsPausedEvent() public {
-    vm.expectEmit(true, true, true, true, address(token));
-    emit Paused(owner, true);
-    token.pause();
-  }
+    function testEmitsPausedEvent() public {
+        vm.expectEmit(true, true, true, true, address(token));
+        emit Paused(owner, true);
+        token.pause();
+    }
 
-  function testEmitsUnpausedEvent() public {
-    token.pause();
-    vm.expectEmit(true, true, true, true, address(token));
-    emit Paused(owner, false);
-    token.unpause();
-  }
+    function testEmitsUnpausedEvent() public {
+        token.pause();
+        vm.expectEmit(true, true, true, true, address(token));
+        emit Paused(owner, false);
+        token.unpause();
+    }
 
-  function testCanUnpause() public {
-    token.pause();
-    token.unpause();
-    token.safeMint(mintee);
-    assertEq(token.balanceOf(mintee), 1);
-  }
+    function testCanUnpause() public {
+        token.pause();
+        token.unpause();
+        token.safeMint(mintee);
+        assertEq(token.balanceOf(mintee), 1);
+    }
 }
 
 contract TransferrabilityMembershipTokenTest is OMTHelper, Test {
-  event TransferEnabled(address indexed caller, bool value);
+    event TransferEnabled(address indexed caller, bool value);
 
-  function setUp()  public {
-    vm.startPrank(owner);
-  }
+    function setUp() public {
+        vm.startPrank(owner);
+    }
 
-  function testRevertsWhenNonAdminEnablesTransfer() public {
-    vm.stopPrank();
-    vm.expectRevert(bytes("AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"));
-    token.enableTransfer();
-  }
+    function testRevertsWhenNonAdminEnablesTransfer() public {
+        vm.stopPrank();
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            )
+        );
+        token.enableTransfer();
+    }
 
-  function testRevertsWhenNonAdminDisablesTransfer() public {
-    token.enableTransfer();
-    vm.stopPrank();
-    vm.expectRevert(bytes("AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"));
-    token.disableTransfer();
-  }
+    function testRevertsWhenNonAdminDisablesTransfer() public {
+        token.enableTransfer();
+        vm.stopPrank();
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            )
+        );
+        token.disableTransfer();
+    }
 
-  function testRevertsTransferWhenDisabled() public {
-    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
-    token.safeTransferFrom(mintee, recipient, 1);
-  }
+    function testRevertsTransferWhenDisabled() public {
+        vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+        token.safeTransferFrom(mintee, recipient, 1);
+    }
 
-  function testEmitsTransferEnabledEvent() public {
-    vm.expectEmit(true, true, true, true, address(token));
-    emit TransferEnabled(owner, true);
-    token.enableTransfer();
-  }
+    function testEmitsTransferEnabledEvent() public {
+        vm.expectEmit(true, true, true, true, address(token));
+        emit TransferEnabled(owner, true);
+        token.enableTransfer();
+    }
 
-  function testEmitsTransferDisabledEvent() public {
-    token.enableTransfer();
-    vm.expectEmit(true, true, true, true, address(token));
-    emit TransferEnabled(owner, false);
-    token.disableTransfer();
-  }
+    function testEmitsTransferDisabledEvent() public {
+        token.enableTransfer();
+        vm.expectEmit(true, true, true, true, address(token));
+        emit TransferEnabled(owner, false);
+        token.disableTransfer();
+    }
 
-  function testCanDisableTransfer() public {
-    token.enableTransfer();
-    token.disableTransfer();
+    function testCanDisableTransfer() public {
+        token.enableTransfer();
+        token.disableTransfer();
 
-    // unsafe base signature
-    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
-    token.transferFrom(mintee, recipient, 1);
+        // unsafe base signature
+        vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+        token.transferFrom(mintee, recipient, 1);
 
-    // base signature
-    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
-    token.safeTransferFrom(mintee, recipient, 1);
+        // base signature
+        vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+        token.safeTransferFrom(mintee, recipient, 1);
 
-    // bulk transfer signature
-    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
-    token.safeTransferFrom(mintee, recipient, 1);
+        // bulk transfer signature
+        vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+        token.safeTransferFrom(mintee, recipient, 1);
 
-    // bulk transfer and call signature
-    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
-    token.safeTransferFrom(mintee, recipient, 1, bytes("0x"));
-  }
+        // bulk transfer and call signature
+        vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+        token.safeTransferFrom(mintee, recipient, 1, bytes("0x"));
+    }
 
-  function testCanTransferWhenEnabled() public {
-    token.safeMint(mintee);
-    token.enableTransfer();
-    vm.stopPrank();
-    vm.prank(mintee);
-    token.safeTransferFrom(mintee, recipient, 1);
-    assertEq(token.balanceOf(recipient), 1);
-  }
+    function testCanTransferWhenEnabled() public {
+        token.safeMint(mintee);
+        token.enableTransfer();
+        vm.stopPrank();
+        vm.prank(mintee);
+        token.safeTransferFrom(mintee, recipient, 1);
+        assertEq(token.balanceOf(recipient), 1);
+    }
 
-  function testOnlyOwnerCanTransferWhenEnabled() public {
-    token.safeMint(mintee);
-    token.enableTransfer();
-    vm.stopPrank();
-    vm.prank(recipient);
-    vm.expectRevert(bytes("ERC721: caller is not token owner nor approved"));
-    token.transferFrom(mintee, recipient, 1);
-  }
+    function testOnlyOwnerCanTransferWhenEnabled() public {
+        token.safeMint(mintee);
+        token.enableTransfer();
+        vm.stopPrank();
+        vm.prank(recipient);
+        vm.expectRevert(
+            bytes("ERC721: caller is not token owner nor approved")
+        );
+        token.transferFrom(mintee, recipient, 1);
+    }
 
-  function testCannotEnableTransferWhenAlreadyEnabled() public {
-    token.enableTransfer();
-    vm.expectRevert(bytes("Transferrable: transfers are enabled"));
-    token.enableTransfer();
-  }
+    function testCannotEnableTransferWhenAlreadyEnabled() public {
+        token.enableTransfer();
+        vm.expectRevert(bytes("Transferrable: transfers are enabled"));
+        token.enableTransfer();
+    }
 
-  function testCannotDisableTransferWhenAlreadyDisabled() public {
-    vm.expectRevert(bytes("Transferrable: transfers are disabled"));
-    token.disableTransfer();
-  }
+    function testCannotDisableTransferWhenAlreadyDisabled() public {
+        vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+        token.disableTransfer();
+    }
 }
