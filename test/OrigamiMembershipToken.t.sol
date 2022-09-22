@@ -345,3 +345,46 @@ contract TransferrabilityMembershipTokenTest is OMTHelper, Test {
         token.disableTransfer();
     }
 }
+
+contract RevokeMembershipTokenTest is OMTHelper, Test {
+    function setUp() public {
+        vm.startPrank(owner);
+    }
+
+    function testRevertsWhenNonAdminRevokes() public {
+        vm.stopPrank();
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30"
+            )
+        );
+        token.revoke(mintee);
+    }
+
+    function testRevertsWhenRevokingNonexistentToken() public {
+        vm.expectRevert(bytes("Revoke: cannot revoke"));
+        token.revoke(mintee);
+    }
+
+    function testRevertsWhenRevokingAlreadyRevokedToken() public {
+        token.safeMint(mintee);
+        token.revoke(mintee);
+        vm.expectRevert(bytes("Revoke: cannot revoke"));
+        token.revoke(mintee);
+    }
+
+    function testAdminCanRevoke() public {
+        token.safeMint(mintee);
+        token.revoke(mintee);
+        assertEq(token.balanceOf(mintee), 0);
+    }
+
+    function testRevokerCanRevoke() public {
+        token.safeMint(mintee);
+        token.grantRole(token.REVOKER_ROLE(), revoker);
+        vm.stopPrank();
+        vm.prank(revoker);
+        token.revoke(mintee);
+        assertEq(token.balanceOf(mintee), 0);
+    }
+}
