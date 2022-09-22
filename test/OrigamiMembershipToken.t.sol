@@ -7,7 +7,7 @@ import "src/versions/OrigamiMembershipTokenBeforeInitialAuditFeedback.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
-abstract contract OMTHelper {
+abstract contract AddressHelper {
     address owner = address(0x1);
     address minter = address(0x2);
     address mintee = address(0x3);
@@ -15,7 +15,32 @@ abstract contract OMTHelper {
     address revoker = address(0x5);
 }
 
+abstract contract  OMTHelper is AddressHelper {
+    OrigamiMembershipToken impl;
+    TransparentUpgradeableProxy proxy;
+    OrigamiMembershipToken token;
+    ProxyAdmin admin;
+
+    constructor() {
+        admin = new ProxyAdmin();
+        impl = new OrigamiMembershipToken();
+        proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            address(admin),
+            ""
+        );
+        token = OrigamiMembershipToken(address(proxy));
+        token.initialize(
+            address(owner),
+            "Deciduous Tree DAO Membership",
+            "DTDM",
+            "https://example.com/metadata/"
+        );
+    }
+}
+
 contract DeployMembershipTokenTest is Test {
+
     OrigamiMembershipToken impl;
     TransparentUpgradeableProxy proxy;
     OrigamiMembershipToken token;
@@ -43,7 +68,7 @@ contract DeployMembershipTokenTest is Test {
     }
 }
 
-contract UpgradeMembershipTokenTest is Test, OMTHelper {
+contract UpgradeMembershipTokenTest is Test, AddressHelper {
     OrigamiMembershipTokenBeforeInitialAuditFeedback implV1;
     OrigamiMembershipToken implV2;
     TransparentUpgradeableProxy proxy;
@@ -85,7 +110,7 @@ contract UpgradeMembershipTokenTest is Test, OMTHelper {
             address(owner),
             "EVEN MOAR Deciduous Tree DAO Membership",
             "EMDTDM",
-            "https://example.com/metadata"
+            "https://example.com/metadata/"
         );
     }
 
@@ -102,4 +127,31 @@ contract UpgradeMembershipTokenTest is Test, OMTHelper {
 
         tokenV2.enableTransfer();
     }
+}
+
+contract MintMembershipTokenTest is OMTHelper, Test {
+  event Mint(address indexed _to, uint256 indexed _tokenId);
+
+  function setUp()  public {
+    vm.startPrank(address(owner));
+  }
+
+  function testMint() public {
+    token.safeMint(mintee);
+    assertEq(token.balanceOf(mintee), 1);
+    assertEq(token.ownerOf(1), mintee);
+    assertEq(token.tokenURI(1), "https://example.com/metadata/1");
+  }
+
+  function testCanOnlyMintOnce() public {
+    token.safeMint(mintee);
+    vm.expectRevert(bytes("Holders may only have one token"));
+    token.safeMint(mintee);
+  }
+
+  function testEmitsMintEvent() public {
+    vm.expectEmit(true, true, true, true, address(token));
+    emit Mint(mintee, 1);
+    token.safeMint(mintee);
+  }
 }
