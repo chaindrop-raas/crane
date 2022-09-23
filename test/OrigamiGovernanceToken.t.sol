@@ -11,12 +11,11 @@ abstract contract AddressHelper {
     address owner = address(0x1);
     address minter = address(0x2);
     address mintee = address(0x3);
-    address recipient = address(0x4);
-    address revoker = address(0x5);
-    address pauser = address(0x6);
+    address pauser = address(0x4);
+    address transferrer = address(0x5);
 }
 
-abstract contract OMTHelper is AddressHelper {
+abstract contract OGTHelper is AddressHelper {
     OrigamiGovernanceToken impl;
     TransparentUpgradeableProxy proxy;
     OrigamiGovernanceToken token;
@@ -140,5 +139,62 @@ contract UpgradeGovernanceTokenTest is Test, AddressHelper {
         emit TransferEnabled(owner, true);
 
         tokenV2.enableTransfer();
+    }
+}
+
+contract MintingGovernanceTokenTest is OGTHelper, Test {
+    event GovernanceTokensMinted(address indexed caller, address indexed to, uint256 amount);
+    function setUp() public {
+        vm.startPrank(owner);
+        token.grantRole(token.MINTER_ROLE(), minter);
+        vm.stopPrank();
+        vm.startPrank(minter);
+    }
+
+    function testMinting() public {
+        token.mint(mintee, 100);
+        assertEq(token.balanceOf(mintee), 100);
+        assertEq(token.totalSupply(), 100);
+    }
+
+    function testMintingRevertsWhenNotMinter() public {
+        vm.stopPrank();
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6"
+            )
+        );
+        token.mint(mintee, 100);
+    }
+
+    function testMintingRevertsWhenPaused() public {
+        vm.stopPrank();
+        vm.prank(owner);
+        token.pause();
+        vm.expectRevert(bytes("Pausable: paused"));
+        vm.prank(minter);
+        token.mint(mintee, 100);
+    }
+
+    function testMintingRevertsWhenMintingMoreThanCap() public {
+        vm.expectRevert(bytes("ERC20Capped: cap exceeded"));
+        token.mint(mintee, 10000000000000000000000000001);
+    }
+
+    function testMintingRevertsWhenMintingMoreThanCapAfterMinting() public {
+        token.mint(mintee, 10000000000000000000000000000);
+        vm.expectRevert(bytes("ERC20Capped: cap exceeded"));
+        token.mint(mintee, 1);
+    }
+
+    function testMintingRevertsWhenMintingToZeroAddress() public {
+        vm.expectRevert(bytes("ERC20: mint to the zero address"));
+        token.mint(address(0), 100);
+    }
+
+    function testEmitsAnEventWhenMinting() public {
+        vm.expectEmit(true, true, true, true, address(token));
+        emit GovernanceTokensMinted(minter, mintee, 100);
+        token.mint(mintee, 100);
     }
 }
