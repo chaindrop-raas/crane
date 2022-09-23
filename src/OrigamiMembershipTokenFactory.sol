@@ -12,14 +12,20 @@ import "./OrigamiMembershipToken.sol";
 /// @author Stephen Caudill
 /// @notice This contract is used to create clones (lower cost deployments) of the OrigamiMembershipToken contract and deploy upgradeable proxies to them, while still allowing full configuration of the instances.
 /// @custom:security-contact contract-security@joinorigami.com
-contract OrigamiMembershipTokenFactory is Initializable, AccessControlUpgradeable {
+contract OrigamiMembershipTokenFactory is
+    Initializable,
+    AccessControlUpgradeable
+{
     /// @notice The list of proxies created by this contract.
     address[] public proxiedContracts;
     /// @dev The address of the OrigamiMembershipToken implementation contract used for the clones.
     address private tokenImplementation;
 
     /// @notice The event emitted when a new OrigamiMembershipToken is created.
-    event OrigamiMembershipTokenCreated(address indexed caller, address indexed proxy);
+    event OrigamiMembershipTokenCreated(
+        address indexed caller,
+        address indexed proxy
+    );
 
     /// @notice the constructor is not used since the contract is upgradeable except to disable initializers in the implementations that are deployed.
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -56,7 +62,11 @@ contract OrigamiMembershipTokenFactory is Initializable, AccessControlUpgradeabl
             _symbol,
             baseURI_
         );
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(clone, _msgSender(), data);
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            clone,
+            _msgSender(),
+            data
+        );
         proxiedContracts.push(address(proxy));
         emit OrigamiMembershipTokenCreated(_msgSender(), address(proxy));
         return address(proxy);
@@ -66,8 +76,24 @@ contract OrigamiMembershipTokenFactory is Initializable, AccessControlUpgradeabl
     /// @notice Retrieve a proxy contract address by index.
     /// @param index The zero-based index of the proxy contract to retrieve.
     /// @return the address of the proxy contract at the given index.
-    function getProxyContractAddress(uint256 index) public view returns (address payable) {
-        require(index < proxiedContracts.length, "Proxy address index out of bounds");
+    function getProxyContractAddress(uint256 index)
+        public
+        view
+        returns (address payable)
+    {
+        require(
+            index < proxiedContracts.length,
+            "Proxy address index out of bounds"
+        );
         return payable(proxiedContracts[index]);
+    }
+
+    /// @notice Set the address for a new implementation contract. This function is only invokable by the contract admin.
+    /// @param _tokenImplementation the address of the new implementation contract.
+    function setTokenImplementation(address _tokenImplementation)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        tokenImplementation = _tokenImplementation;
     }
 }

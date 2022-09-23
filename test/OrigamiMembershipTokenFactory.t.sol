@@ -4,6 +4,7 @@ pragma solidity 0.8.9;
 import "forge-std/Test.sol";
 import "src/OrigamiMembershipToken.sol";
 import "src/OrigamiMembershipTokenFactory.sol";
+import "src/versions/OrigamiMembershipTokenFactoryTestVersion.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
@@ -120,14 +121,84 @@ contract AccessControlForMembershipTokenFactoryTest is OMTFHelper {
 
 contract MembershipTokenFactoryProxyAddressTest is OMTFHelper {
     function testProxyAddressIsCorrect() public {
-        assertEq(
-            address(token),
-            address(factory.getProxyContractAddress(0))
-        );
+        assertEq(address(token), address(factory.getProxyContractAddress(0)));
     }
 
     function testCannotGetProxyAddressOutOfIndex() public {
         vm.expectRevert(bytes("Proxy address index out of bounds"));
         factory.getProxyContractAddress(1);
+    }
+}
+
+contract UpgradingMembershipTokenFactoryTest is OMTFHelper {
+    OrigamiMembershipTokenFactoryTestVersion newFactoryImpl;
+    OrigamiMembershipTokenFactoryTestVersion newFactory;
+    OrigamiMembershipTokenTestVersion newTokenImpl;
+    OrigamiMembershipTokenTestVersion newToken;
+
+    function testCanUpgradeFactory() public {
+        vm.stopPrank();
+        vm.startPrank(admin);
+        newFactoryImpl = new OrigamiMembershipTokenFactoryTestVersion();
+        factoryAdmin.upgrade(factoryProxy, address(newFactoryImpl));
+        newFactory = OrigamiMembershipTokenFactoryTestVersion(
+            address(factoryProxy)
+        );
+
+        // call a function that only exists in the new version
+        assertEq(newFactory.isFromUpgrade(), true);
+
+        // separately set the new token implementation
+        newTokenImpl = new OrigamiMembershipTokenTestVersion();
+        newFactory.setTokenImplementation(address(newTokenImpl));
+
+        // create a new token and verify that it is also upgraded
+        address tokenProxyAddress = newFactory.createOrigamiMembershipToken(
+            owner,
+            "Upgraded Factory Membership Token",
+            "UFMT",
+            "ipfs://deadfee7/"
+        );
+        newToken = OrigamiMembershipTokenTestVersion(tokenProxyAddress);
+        vm.stopPrank();
+        vm.startPrank(owner);
+        assertEq(newToken.name(), "Upgraded Factory Membership Token");
+        assertEq(newToken.isFromUpgrade(), true);
+        // NB: previously deployed tokens are not upgraded, forge doesn't
+        // provide a way to assert a selector/member is invalid, it registers as
+        // a compiler error, so you can uncomment this to see that it fails:
+        // token.isFromUpgrade();
+    }
+}
+
+contract UpgradingOnlyTheMembershipTokenImplementationTest is OMTFHelper {
+    OrigamiMembershipTokenTestVersion newTokenImpl;
+    OrigamiMembershipTokenTestVersion newToken;
+
+    function testUpgradingTokenImplementationProducesUpdatedToken() public {
+        vm.stopPrank();
+        vm.startPrank(admin);
+        newTokenImpl = new OrigamiMembershipTokenTestVersion();
+        factory.setTokenImplementation(address(newTokenImpl));
+        address tokenProxyAddress = factory.createOrigamiMembershipToken(
+            owner,
+            "Upgraded Factory Membership Token",
+            "UFMT",
+            "ipfs://deadfee7/"
+        );
+        newToken = OrigamiMembershipTokenTestVersion(tokenProxyAddress);
+        vm.stopPrank();
+        vm.startPrank(owner);
+        assertEq(newToken.isFromUpgrade(), true);
+    }
+
+    function testCannotCallSetTokenImplementationAsNonAdmin() public {
+        newTokenImpl = new OrigamiMembershipTokenTestVersion();
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            )
+        );
+        factory.setTokenImplementation(address(newTokenImpl));
     }
 }
