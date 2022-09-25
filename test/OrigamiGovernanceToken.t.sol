@@ -143,7 +143,12 @@ contract UpgradeGovernanceTokenTest is Test, AddressHelper {
 }
 
 contract MintingGovernanceTokenTest is OGTHelper, Test {
-    event GovernanceTokensMinted(address indexed caller, address indexed to, uint256 amount);
+    event GovernanceTokensMinted(
+        address indexed caller,
+        address indexed to,
+        uint256 amount
+    );
+
     function setUp() public {
         vm.startPrank(owner);
         token.grantRole(token.MINTER_ROLE(), minter);
@@ -200,21 +205,130 @@ contract MintingGovernanceTokenTest is OGTHelper, Test {
 }
 
 contract CappedGovernanceTokenTest is OGTHelper, Test {
+    function setUp() public {
+        vm.startPrank(owner);
+        token.grantRole(token.MINTER_ROLE(), minter);
+        vm.stopPrank();
+        vm.startPrank(minter);
+    }
 
-  function setUp() public {
-      vm.startPrank(owner);
-      token.grantRole(token.MINTER_ROLE(), minter);
-      vm.stopPrank();
-      vm.startPrank(minter);
-  }
+    function testCanMintUpToCappedSupply() public {
+        token.mint(mintee, 10000000000000000000000000000);
+        assertEq(token.balanceOf(mintee), 10000000000000000000000000000);
+    }
 
-  function testCanMintUpToCappedSupply() public {
-    token.mint(mintee, 10000000000000000000000000000);
-    assertEq(token.balanceOf(mintee), 10000000000000000000000000000);
-  }
+    function testCannotMintMoreThanCappedSupply() public {
+        vm.expectRevert(bytes("ERC20Capped: cap exceeded"));
+        token.mint(mintee, 10000000000000000000000000001);
+    }
+}
 
-  function testCannotMintMoreThanCappedSupply() public {
-    vm.expectRevert(bytes("ERC20Capped: cap exceeded"));
-    token.mint(mintee, 10000000000000000000000000001);
-  }
+contract BurnGovernanceTokenTest is OGTHelper, Test {
+    event BurnEnabled(address indexed caller, bool value);
+
+    function setUp() public {
+        vm.startPrank(owner);
+        token.grantRole(token.MINTER_ROLE(), minter);
+    }
+
+    function testCanEnableBurnAsAdmin() public {
+        token.enableBurn();
+        assertTrue(token.burnable());
+    }
+
+    function testCanDisableBurnAsAdmin() public {
+        token.enableBurn();
+        token.disableBurn();
+        assertFalse(token.burnable());
+    }
+
+    function testRevertsWhenNonAdminAttemptsToEnableBurn() public {
+        vm.stopPrank();
+        vm.startPrank(minter);
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            )
+        );
+        token.enableBurn();
+    }
+
+    function testRevertsWhenNonAdminAttemptsToDisableBurn() public {
+        vm.stopPrank();
+        vm.startPrank(minter);
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            )
+        );
+        token.disableBurn();
+    }
+
+    function testRevertsWhenCallingEnableBurnAndBurnIsAlreadyEnabled() public {
+        token.enableBurn();
+        vm.expectRevert(bytes("Burnable: burning is enabled"));
+        token.enableBurn();
+    }
+
+    function testRevertsWhenCallingDisableBurnAndBurnIsAlreadyDisabled()
+        public
+    {
+        vm.expectRevert(bytes("Burnable: burning is disabled"));
+        token.disableBurn();
+    }
+
+    function testEmitsBurnEnabledWhenEnabled() public {
+        vm.expectEmit(true, true, true, true, address(token));
+        emit BurnEnabled(owner, true);
+        token.enableBurn();
+    }
+
+    function testEmitsBurnEnabledWhenDisabled() public {
+        token.enableBurn();
+        vm.expectEmit(true, true, true, true, address(token));
+        emit BurnEnabled(owner, false);
+        token.disableBurn();
+    }
+
+    function testCannotBurnAsNonHolder() public {
+        vm.stopPrank();
+        vm.startPrank(minter);
+        token.mint(mintee, 100);
+        vm.expectRevert(bytes("ERC20: insufficient allowance"));
+        token.burnFrom(mintee, 10);
+    }
+
+    function testCanBurnAsHolderWhenBurnIsEnabled() public {
+        token.enableBurn();
+        vm.stopPrank();
+        vm.prank(minter);
+        token.mint(mintee, 100);
+        vm.prank(mintee);
+        token.burn(10);
+        assertEq(token.balanceOf(mintee), 90);
+    }
+
+    function testCanBurnFromWalletWithAllowanceWhenEnabled() public {
+        token.enableBurn();
+        vm.stopPrank();
+        vm.prank(minter);
+        token.mint(mintee, 100);
+        vm.prank(mintee);
+        token.approve(minter, 10);
+        vm.prank(minter);
+        token.burnFrom(mintee, 10);
+        assertEq(token.balanceOf(mintee), 90);
+    }
+
+    function testCannotBurnMoreThanAllowanceWhenEnabled() public {
+        token.enableBurn();
+        vm.stopPrank();
+        vm.prank(minter);
+        token.mint(mintee, 100);
+        vm.prank(mintee);
+        token.approve(minter, 10);
+        vm.expectRevert(bytes("ERC20: insufficient allowance"));
+        vm.prank(minter);
+        token.burnFrom(mintee, 11);
+    }
 }
