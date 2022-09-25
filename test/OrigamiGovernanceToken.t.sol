@@ -332,3 +332,87 @@ contract BurnGovernanceTokenTest is OGTHelper, Test {
         token.burnFrom(mintee, 11);
     }
 }
+
+contract PauseGovernanceTokenTest is OGTHelper, Test {
+    function setUp() public {
+        vm.startPrank(owner);
+        token.grantRole(token.PAUSER_ROLE(), pauser);
+    }
+
+    function testCannotPauseAsNonPauser() public {
+      vm.stopPrank();
+      vm.prank(minter);
+      vm.expectRevert(bytes("AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"));
+      token.pause();
+    }
+
+    function testCannotUnpauseAsNonPauser() public {
+      token.pause();
+      vm.stopPrank();
+      vm.prank(minter);
+      vm.expectRevert(bytes("AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"));
+      token.unpause();
+    }
+
+    function testCanMintWhenUnpaused() public {
+      assertFalse(token.paused());
+      token.mint(mintee, 100);
+      assertEq(token.balanceOf(mintee), 100);
+    }
+
+    function testCannotMintWhenPaused() public {
+      token.pause();
+      vm.expectRevert(bytes("Pausable: paused"));
+      token.mint(mintee, 100);
+    }
+
+    function testCanBurnWhenUnpausedAndBurnable() public {
+      assertFalse(token.paused());
+      token.mint(mintee, 100);
+      token.enableBurn();
+      vm.stopPrank();
+      vm.prank(mintee);
+      token.burn(10);
+      assertEq(token.balanceOf(mintee), 90);
+    }
+
+    function testCannotBurnWhenPaused() public {
+      token.mint(mintee, 100);
+      token.pause();
+      vm.stopPrank();
+      vm.expectRevert(bytes("Pausable: paused"));
+      vm.prank(mintee);
+      token.burn(100);
+    }
+
+    function testCanTransferWhenUnpausedAndTransferrable() public {
+      assertFalse(token.paused());
+      token.mint(mintee, 100);
+      token.enableTransfer();
+      vm.stopPrank();
+      vm.prank(mintee);
+      token.transfer(minter, 10);
+      assertEq(token.balanceOf(minter), 10);
+    }
+
+    function testCannotTransferWhenPausedAndTransferEnabled() public {
+      token.mint(mintee, 100);
+      token.enableTransfer();
+      token.pause();
+      vm.stopPrank();
+      vm.expectRevert(bytes("Pausable: paused"));
+      vm.prank(mintee);
+      token.transfer(minter, 100);
+    }
+
+    function testTransferrerRoleCannotTransferWhenPaused() public {
+      token.grantRole(token.TRANSFERRER_ROLE(), mintee);
+      token.mint(mintee, 100);
+      token.pause();
+      vm.stopPrank();
+      vm.expectRevert(bytes("Pausable: paused"));
+      vm.prank(mintee);
+      token.transfer(minter, 100);
+    }
+
+}
