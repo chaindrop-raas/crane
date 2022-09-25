@@ -340,79 +340,196 @@ contract PauseGovernanceTokenTest is OGTHelper, Test {
     }
 
     function testCannotPauseAsNonPauser() public {
-      vm.stopPrank();
-      vm.prank(minter);
-      vm.expectRevert(bytes("AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"));
-      token.pause();
+        vm.stopPrank();
+        vm.prank(minter);
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
+            )
+        );
+        token.pause();
     }
 
     function testCannotUnpauseAsNonPauser() public {
-      token.pause();
-      vm.stopPrank();
-      vm.prank(minter);
-      vm.expectRevert(bytes("AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"));
-      token.unpause();
+        token.pause();
+        vm.stopPrank();
+        vm.prank(minter);
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
+            )
+        );
+        token.unpause();
     }
 
     function testCanMintWhenUnpaused() public {
-      assertFalse(token.paused());
+        assertFalse(token.paused());
+        token.mint(mintee, 100);
+        assertEq(token.balanceOf(mintee), 100);
+    }
+
+    function testCannotMintWhenPaused() public {
+        token.pause();
+        vm.expectRevert(bytes("Pausable: paused"));
+        token.mint(mintee, 100);
+    }
+
+    function testCanBurnWhenUnpausedAndBurnable() public {
+        assertFalse(token.paused());
+        token.mint(mintee, 100);
+        token.enableBurn();
+        vm.stopPrank();
+        vm.prank(mintee);
+        token.burn(10);
+        assertEq(token.balanceOf(mintee), 90);
+    }
+
+    function testCannotBurnWhenPaused() public {
+        token.mint(mintee, 100);
+        token.pause();
+        vm.stopPrank();
+        vm.expectRevert(bytes("Pausable: paused"));
+        vm.prank(mintee);
+        token.burn(100);
+    }
+
+    function testCanTransferWhenUnpausedAndTransferrable() public {
+        assertFalse(token.paused());
+        token.mint(mintee, 100);
+        token.enableTransfer();
+        vm.stopPrank();
+        vm.prank(mintee);
+        token.transfer(minter, 10);
+        assertEq(token.balanceOf(minter), 10);
+    }
+
+    function testCannotTransferWhenPausedAndTransferEnabled() public {
+        token.mint(mintee, 100);
+        token.enableTransfer();
+        token.pause();
+        vm.stopPrank();
+        vm.expectRevert(bytes("Pausable: paused"));
+        vm.prank(mintee);
+        token.transfer(minter, 100);
+    }
+
+    function testTransferrerRoleCannotTransferWhenPaused() public {
+        token.grantRole(token.TRANSFERRER_ROLE(), mintee);
+        token.mint(mintee, 100);
+        token.pause();
+        vm.stopPrank();
+        vm.expectRevert(bytes("Pausable: paused"));
+        vm.prank(mintee);
+        token.transfer(minter, 100);
+    }
+}
+
+contract TransferGovernanceTokenTest is OGTHelper, Test {
+    event TransferEnabled(address indexed caller, bool value);
+
+    function setUp() public {
+        vm.startPrank(owner);
+        token.grantRole(token.TRANSFERRER_ROLE(), transferrer);
+    }
+
+    function testEmitsTransferEnabledEventWhenEnabled() public {
+        vm.expectEmit(true, true, true, true, address(token));
+        emit TransferEnabled(owner, true);
+        token.enableTransfer();
+    }
+
+    function testEmitsTransferEnabledEventWhenDisabled() public {
+        token.enableTransfer();
+        vm.expectEmit(true, true, true, true, address(token));
+        emit TransferEnabled(owner, false);
+        token.disableTransfer();
+    }
+
+    function testCanOnlyEnableTransferAsAdmin() public {
+        vm.stopPrank();
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            )
+        );
+        token.enableTransfer();
+        vm.prank(owner);
+        token.enableTransfer();
+        assertTrue(token.transferrable());
+    }
+
+    function testCanOnlyDisableTransferAsAdmin() public {
+        token.enableTransfer();
+        vm.stopPrank();
+        vm.expectRevert(
+            bytes(
+                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            )
+        );
+        token.disableTransfer();
+        vm.prank(owner);
+        token.disableTransfer();
+        assertFalse(token.transferrable());
+    }
+
+    function testCannotEnableTransferWhenAlreadyEnabled() public {
+      token.enableTransfer();
+      vm.expectRevert(bytes("Transferrable: transfers are enabled"));
+      token.enableTransfer();
+    }
+
+    function testCannotDisableTransferWhenAlreadyDisabled() public {
+      vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+      token.disableTransfer();
+    }
+
+    function testCanMintWhenTransferIsDisabled() public {
+      assertFalse(token.transferrable());
       token.mint(mintee, 100);
       assertEq(token.balanceOf(mintee), 100);
     }
 
-    function testCannotMintWhenPaused() public {
-      token.pause();
-      vm.expectRevert(bytes("Pausable: paused"));
-      token.mint(mintee, 100);
-    }
-
-    function testCanBurnWhenUnpausedAndBurnable() public {
-      assertFalse(token.paused());
-      token.mint(mintee, 100);
+    function testCannotTransferWhenTransferDisabled() public {
       token.enableBurn();
-      vm.stopPrank();
-      vm.prank(mintee);
-      token.burn(10);
-      assertEq(token.balanceOf(mintee), 90);
-    }
-
-    function testCannotBurnWhenPaused() public {
+      assertFalse(token.transferrable());
       token.mint(mintee, 100);
-      token.pause();
       vm.stopPrank();
-      vm.expectRevert(bytes("Pausable: paused"));
-      vm.prank(mintee);
-      token.burn(100);
-    }
-
-    function testCanTransferWhenUnpausedAndTransferrable() public {
-      assertFalse(token.paused());
-      token.mint(mintee, 100);
-      token.enableTransfer();
-      vm.stopPrank();
-      vm.prank(mintee);
+      vm.startPrank(mintee);
+      vm.expectRevert(bytes("Transferrable: transfers are disabled"));
       token.transfer(minter, 10);
-      assertEq(token.balanceOf(minter), 10);
+      vm.expectRevert(bytes("Transferrable: transfers are disabled"));
+      token.transferFrom(mintee, minter, 10);
     }
 
-    function testCannotTransferWhenPausedAndTransferEnabled() public {
-      token.mint(mintee, 100);
+    function testCanTransferWhenTransfersAreEnabled() public {
       token.enableTransfer();
-      token.pause();
+      token.mint(mintee, 100);
       vm.stopPrank();
-      vm.expectRevert(bytes("Pausable: paused"));
       vm.prank(mintee);
-      token.transfer(minter, 100);
+      token.transfer(minter,10);
+      assertEq(token.balanceOf(minter), 10);
+      vm.prank(minter);
+      token.transfer(mintee, 1);
+      assertEq(token.balanceOf(minter), 9);
+      assertEq(token.balanceOf(mintee), 91);
     }
 
-    function testTransferrerRoleCannotTransferWhenPaused() public {
-      token.grantRole(token.TRANSFERRER_ROLE(), mintee);
-      token.mint(mintee, 100);
-      token.pause();
+    function testCanTransferAsTransferrerWhenTransfersAreDisabled() public {
+      assertFalse(token.transferrable());
+      token.mint(transferrer, 100);
       vm.stopPrank();
-      vm.expectRevert(bytes("Pausable: paused"));
-      vm.prank(mintee);
-      token.transfer(minter, 100);
+      vm.prank(transferrer);
+      token.transfer(mintee, 10);
+      assertEq(token.balanceOf(mintee), 10);
+    }
+
+    function testCanTransferAsTransferrerWhenTransfersAreEnabled() public {
+      token.enableTransfer();
+      token.mint(transferrer, 100);
+      vm.stopPrank();
+      vm.prank(transferrer);
+      token.transfer(mintee, 10);
+      assertEq(token.balanceOf(mintee), 10);
     }
 
 }
