@@ -198,3 +198,23 @@ contract MintingGovernanceTokenTest is OGTHelper, Test {
         token.mint(mintee, 100);
     }
 }
+
+contract CappedGovernanceTokenTest is OGTHelper, Test {
+
+  function setUp() public {
+      vm.startPrank(owner);
+      token.grantRole(token.MINTER_ROLE(), minter);
+      vm.stopPrank();
+      vm.startPrank(minter);
+  }
+
+  function testCanMintUpToCappedSupply() public {
+    token.mint(mintee, 10000000000000000000000000000);
+    assertEq(token.balanceOf(mintee), 10000000000000000000000000000);
+  }
+
+  function testCannotMintMoreThanCappedSupply() public {
+    vm.expectRevert(bytes("ERC20Capped: cap exceeded"));
+    token.mint(mintee, 10000000000000000000000000001);
+  }
+}
