@@ -4,4 +4,9 @@ out = 'out'
 libs = ['lib']
 solc_version = "0.8.9"
 
-# See more config options https://github.com/foundry-rs/foundry/tree/master/config
+[rpc_endpoints]
+goerli = "${ALCHEMY_RPC_URL_GOERLI}"
+mumbai = "${ALCHEMY_RPC_URL_MUMBAI}"
+
+[etherscan]
+goerli = { key = "${ETHERSCAN_API_KEY}" }
