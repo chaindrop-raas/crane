@@ -17,10 +17,11 @@ We power our solidity development with `foundry`. The [book](https://book.getfou
 
 1. Ensure you've created a `.env` file (`cp {example,}.env`), populated its values and exported them to your shell (`direnv` is a convenient way of managing this).
 2. Install `cargo`: `curl https://sh.rustup.rs -sSf | sh`
-3. Install `foundry` ([instructions and details](https://book.getfoundry.sh/getting-started/installation)): 
+3. Install `foundry` ([instructions and details](https://book.getfoundry.sh/getting-started/installation)):
   * `curl -L https://foundry.paradigm.xyz | bash`
   * `foundryup`
 4. Install `argc`: `cargo install argc`
+5. Install `solhint`: `npm install -g solhint`
 
 ### Testing
 
@@ -46,6 +47,15 @@ Generate a coverage report:
 $ forge coverage
 ```
 
+## Linting
+
+Run the linter manually:
+
+```sh
+$ solhint src/*.sol
+```
+
 ## deploying
 
 Forthcoming.
+
