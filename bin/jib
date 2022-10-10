@@ -1,6 +1,10 @@
 # @describe Jib helps the crane hoist the cargo.
 # @version 0.1.0
 
+# @todo add upgrade commands for the factories
+# @todo add a command to set the factory implementations
+# @todo add upgrade commands for the tokens
+
 # @cmd deploy the governance token factory
 # @alias dgtf
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
