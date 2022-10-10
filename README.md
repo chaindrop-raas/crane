@@ -55,7 +55,19 @@ Run the linter manually:
 $ solhint src/*.sol
 ```
 
-## deploying
+## Deploying
 
-Forthcoming.
+This is handled via the `jib` command (a jib is the arm that supports the load on a crane). The command self-documents by passing `--help` to its commands, as in:
+
+```sh
+$ ./bin/jib --help
+```
+
+or
+
+```sh
+$ ./bin/jib cmt --help
+```
+
+Some commands require the address of a previously deployed contract (e.g. the clone commands). Those can be found on the notion page for [deployed contract addresses](https://www.notion.so/joinorigami/e3d0532f67c24b9ab607062183e77656?v=934998a17ddb4de887bcdd5effe177c5) (likewise, newly deployed contract addresses should be recorded there).
 
