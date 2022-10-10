@@ -1,0 +1,104 @@
+# @describe Jib helps the crane hoist the cargo.
+# @version 0.1.0
+
+# @cmd deploy the governance token factory
+# @alias dgtf
+deployGovTokenFactory() {
+	forge script script/Deploy.s.sol\:DeployScript \
+	  --fork-url http://localhost:8545 \
+		--sig "deployGovernanceTokenFactory()" \
+		--broadcast --verify -vvvv
+}
+
+# @cmd deploy the membership token factory
+# @alias dmtf
+deployMemTokenFactory() {
+	forge script script/Deploy.s.sol\:DeployScript \
+	  --fork-url http://localhost:8545 \
+		--sig "deployMembershipTokenFactory()" \
+		--broadcast --verify -vvvv
+}
+
+# @cmd deploy an instance of the governance token - PREFER CLONING WHENEVER POSSIBLE
+# @option --admin! the address entitled to call admin functions on the clone
+# @option --name! the name of the token
+# @option --symbol! the symbol for the token
+# @option --cap! the maximum supply of the token
+# @flag --ignore-deploy-warning
+deployGovToken() {
+  if [ $argc_ignore_deploy_warning ]; then
+    forge script script/Deploy.s.sol:DeployScript \
+      --fork-url http://localhost:8545 \
+      --sig "deployGovernanceToken(address,string,string,uint256)" \
+      --broadcast -vvvv --\
+      $argc_factory $argc_admin '$argc_name' '$argc_symbol' $argc_cap
+  else
+    echo
+    echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+    echo "!! WARNING: This will deploy a new Governance Token contract !!"
+    echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+    echo
+    echo " This is much more expensive than cloning. Avoid if possible."
+    echo " If you are sure you want to deploy a new token, re-run this"
+    echo " command with the --ignore-deploy-warning flag."
+    echo
+  fi
+}
+
+# @cmd deploy an instance of the membership token - PREFER CLONING WHENEVER POSSIBLE
+# @option --admin! the address entitled to call admin functions on the clone
+# @option --name! the name of the token
+# @option --symbol! the symbol for the token
+# @option --base-uri! the base uri for the token metadata
+# @flag --ignore-deploy-warning
+deployMemToken() {
+  if [ $argc_ignore_deploy_warning ]; then
+    forge script script/Deploy.s.sol:DeployScript \
+      --fork-url http://localhost:8545 \
+      --sig "deployMembershipToken(address,string,string,string)" \
+      --broadcast -vvvv --\
+      $argc_factory $argc_admin '$argc_name' '$argc_symbol' $argc_base_uri
+  else
+    echo
+    echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+    echo "!! WARNING: This will deploy a new Membership Token contract !!"
+    echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+    echo
+    echo " This is much more expensive than cloning. Avoid if possible."
+    echo " If you are sure you want to deploy a new token, re-run this"
+    echo " command with the --ignore-deploy-warning flag."
+    echo
+  fi
+}
+
+# @cmd deploy a clone of the governance token
+# @alias cgt
+# @arg factory! the address of the factory to deploy the clone from
+# @option -a --admin! the address entitled to call admin functions on the clone
+# @option -n --name! the name of the token
+# @option -s --symbol! the symbol for the token
+# @option -c --cap! the maximum supply of the token
+cloneGovToken() {
+  forge script script/Clone.s.sol:Clone \
+    --fork-url http://localhost:8545 \
+    --sig "cloneGovernanceToken(address,address,string,string,uint256)" \
+    --broadcast -vvvv --\
+    $argc_factory $argc_admin '$argc_name' '$argc_symbol' $argc_cap
+}
+
+# @cmd deploy a clone of the membership token
+# @alias cmt
+# @arg factory! the address of the factory to deploy the clone from
+# @option -a --admin! the address entitled to call admin functions on the clone
+# @option -n --name! the name of the token
+# @option -s --symbol! the symbol for the token
+# @option -u --base-uri! the maximum supply of the token
+cloneMemToken() {
+  forge script script/Clone.s.sol:Clone \
+    --fork-url http://localhost:8545 \
+    --sig "cloneMembershipToken(address,address,string,string,string)" \
+    --broadcast -vvvv --\
+    $argc_factory $argc_admin '$argc_name' '$argc_symbol' $argc_cap
+}
+
+eval $(argc "$0" "$@")
