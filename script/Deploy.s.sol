@@ -2,13 +2,12 @@
 pragma solidity 0.8.9;
 
 import "@std/Script.sol";
-import "@std/Test.sol";
 import "src/OrigamiMembershipToken.sol";
 import "src/OrigamiMembershipTokenFactory.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
-contract DeployScript is Script, Test {
+contract DeployScript is Script {
     function membershipTokenFactory() public {
         OrigamiMembershipTokenFactory factoryImpl;
         TransparentUpgradeableProxy factoryProxy;
@@ -17,8 +16,6 @@ contract DeployScript is Script, Test {
 
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
-
-        console.log(vm.addr(deployerPrivateKey));
 
         factoryAdmin = new ProxyAdmin();
         factoryImpl = new OrigamiMembershipTokenFactory();
@@ -44,15 +41,8 @@ contract DeployScript is Script, Test {
         OrigamiMembershipToken token;
         ProxyAdmin admin;
 
-        emit log_named_address("owner", owner);
-        emit log_named_string("name", name);
-        emit log_named_string("symbol", symbol);
-        emit log_named_string("baseURI", baseURI);
-
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
-
-        emit log_named_uint("deployer", deployerPrivateKey);
 
         admin = new ProxyAdmin();
         impl = new OrigamiMembershipToken();
