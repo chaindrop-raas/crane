@@ -3,20 +3,20 @@
 
 # @cmd deploy the governance token factory
 # @alias dgtf
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployGovTokenFactory() {
-	forge script script/Deploy.s.sol\:DeployScript \
-	  --fork-url http://localhost:8545 \
-		--sig "deployGovernanceTokenFactory()" \
-		--broadcast --verify -vvvv
+  forge script script/Deploy.s.sol\:DeployScript \
+    --rpc-url $argc_rpc_url --broadcast -vvvv \
+    --sig "deployGovernanceTokenFactory()"
 }
 
 # @cmd deploy the membership token factory
 # @alias dmtf
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployMemTokenFactory() {
-	forge script script/Deploy.s.sol\:DeployScript \
-	  --fork-url http://localhost:8545 \
-		--sig "deployMembershipTokenFactory()" \
-		--broadcast --verify -vvvv
+  forge script script/Deploy.s.sol\:DeployScript \
+    --rpc-url $argc_rpc_url --broadcast -vvvv \
+    --sig "deployMembershipTokenFactory()"
 }
 
 # @cmd deploy an instance of the governance token - PREFER CLONING WHENEVER POSSIBLE
@@ -24,14 +24,14 @@ deployMemTokenFactory() {
 # @option --name! the name of the token
 # @option --symbol! the symbol for the token
 # @option --cap! the maximum supply of the token
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 # @flag --ignore-deploy-warning
 deployGovToken() {
   if [ $argc_ignore_deploy_warning ]; then
     forge script script/Deploy.s.sol:DeployScript \
-      --fork-url http://localhost:8545 \
+      --rpc-url $argc_rpc_url --broadcast -vvvv \
       --sig "deployGovernanceToken(address,string,string,uint256)" \
-      --broadcast -vvvv --\
-      $argc_factory $argc_admin '$argc_name' '$argc_symbol' $argc_cap
+      -- $argc_admin "$argc_name" $argc_symbol $argc_cap
   else
     echo
     echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
@@ -50,14 +50,14 @@ deployGovToken() {
 # @option --name! the name of the token
 # @option --symbol! the symbol for the token
 # @option --base-uri! the base uri for the token metadata
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 # @flag --ignore-deploy-warning
 deployMemToken() {
   if [ $argc_ignore_deploy_warning ]; then
     forge script script/Deploy.s.sol:DeployScript \
-      --fork-url http://localhost:8545 \
+      --rpc-url $argc_rpc_url --broadcast -vvvv \
       --sig "deployMembershipToken(address,string,string,string)" \
-      --broadcast -vvvv --\
-      $argc_factory $argc_admin '$argc_name' '$argc_symbol' $argc_base_uri
+      -- $argc_admin "$argc_name" $argc_symbol $argc_base_uri
   else
     echo
     echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
@@ -78,12 +78,12 @@ deployMemToken() {
 # @option -n --name! the name of the token
 # @option -s --symbol! the symbol for the token
 # @option -c --cap! the maximum supply of the token
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 cloneGovToken() {
   forge script script/Clone.s.sol:Clone \
-    --fork-url http://localhost:8545 \
+    --rpc-url $argc_rpc_url --broadcast -vvvv \
     --sig "cloneGovernanceToken(address,address,string,string,uint256)" \
-    --broadcast -vvvv --\
-    $argc_factory $argc_admin '$argc_name' '$argc_symbol' $argc_cap
+    -- $argc_factory $argc_admin "$argc_name" $argc_symbol $argc_cap
 }
 
 # @cmd deploy a clone of the membership token
@@ -93,12 +93,12 @@ cloneGovToken() {
 # @option -n --name! the name of the token
 # @option -s --symbol! the symbol for the token
 # @option -u --base-uri! the maximum supply of the token
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 cloneMemToken() {
   forge script script/Clone.s.sol:Clone \
-    --fork-url http://localhost:8545 \
-    --sig "cloneMembershipToken(address,address,string,string,string)" \
-    --broadcast -vvvv --\
-    $argc_factory $argc_admin '$argc_name' '$argc_symbol' $argc_cap
+    --rpc-url $argc_rpc_url --broadcast -vvvv \
+    --sig 'cloneMembershipToken(address,address,string,string,string)' \
+    -- $argc_factory $argc_admin "$argc_name" $argc_symbol $argc_base_uri
 }
 
 eval $(argc "$0" "$@")
