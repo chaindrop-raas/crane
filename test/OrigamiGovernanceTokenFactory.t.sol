@@ -7,6 +7,7 @@ import "src/OrigamiGovernanceTokenFactory.sol";
 import "src/versions/OrigamiGovernanceTokenFactoryTestVersion.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
+import "@oz/utils/Strings.sol";
 
 abstract contract OGTFAddressHelper {
     address public admin = address(0x1);
@@ -91,10 +92,17 @@ contract DeployingGovernanceTokenFactoryTest is OGTFAddressHelper, Test {
 }
 
 contract AccessControlForGovernanceTokenFactoryTest is OGTFHelper {
-    function testOnlyAdminCanCreate() public {
+    function testNonAdminCantCreate(address nonAdmin) public {
+        vm.assume(nonAdmin != admin);
+
+        vm.stopPrank();
+        vm.prank(nonAdmin);
+
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(nonAdmin),
+                " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
         factory.createOrigamiGovernanceToken(
