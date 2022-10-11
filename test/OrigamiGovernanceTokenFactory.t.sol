@@ -9,17 +9,17 @@ import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
 abstract contract AddressHelper {
-    address admin = address(0x1);
-    address owner = address(0x2);
-    address rando = address(0x3);
+    address public admin = address(0x1);
+    address public owner = address(0x2);
+    address public rando = address(0x3);
 }
 
 abstract contract OMTFHelper is AddressHelper, Test {
-    OrigamiGovernanceTokenFactory factoryImpl;
-    TransparentUpgradeableProxy factoryProxy;
-    OrigamiGovernanceTokenFactory factory;
-    ProxyAdmin factoryAdmin;
-    OrigamiGovernanceToken token;
+    OrigamiGovernanceTokenFactory public factoryImpl;
+    TransparentUpgradeableProxy public factoryProxy;
+    OrigamiGovernanceTokenFactory public factory;
+    ProxyAdmin public factoryAdmin;
+    OrigamiGovernanceToken public token;
 
     function setUp() public {
         vm.startPrank(admin);
@@ -46,11 +46,11 @@ abstract contract OMTFHelper is AddressHelper, Test {
 }
 
 contract DeployingGovernanceTokenFactoryTest is AddressHelper, Test {
-    OrigamiGovernanceTokenFactory factoryImpl;
-    TransparentUpgradeableProxy factoryProxy;
-    OrigamiGovernanceTokenFactory factory;
-    ProxyAdmin factoryAdmin;
-    OrigamiGovernanceToken token;
+    OrigamiGovernanceTokenFactory public factoryImpl;
+    TransparentUpgradeableProxy public factoryProxy;
+    OrigamiGovernanceTokenFactory public factory;
+    ProxyAdmin public factoryAdmin;
+    OrigamiGovernanceToken public token;
 
     event OrigamiGovernanceTokenCreated(
         address indexed caller,
@@ -130,10 +130,10 @@ contract GovernanceTokenFactoryProxyAddressTest is OMTFHelper {
 }
 
 contract UpgradingGovernanceTokenFactoryTest is OMTFHelper {
-    OrigamiGovernanceTokenFactoryTestVersion newFactoryImpl;
-    OrigamiGovernanceTokenFactoryTestVersion newFactory;
-    OrigamiGovernanceTokenTestVersion newTokenImpl;
-    OrigamiGovernanceTokenTestVersion newToken;
+    OrigamiGovernanceTokenFactoryTestVersion public newFactoryImpl;
+    OrigamiGovernanceTokenFactoryTestVersion public newFactory;
+    OrigamiGovernanceTokenTestVersion public newTokenImpl;
+    OrigamiGovernanceTokenTestVersion public newToken;
 
     function testCanUpgradeFactory() public {
         vm.stopPrank();
@@ -171,8 +171,8 @@ contract UpgradingGovernanceTokenFactoryTest is OMTFHelper {
 }
 
 contract UpgradingOnlyTheGovernanceTokenImplementationTest is OMTFHelper {
-    OrigamiGovernanceTokenTestVersion newTokenImpl;
-    OrigamiGovernanceTokenTestVersion newToken;
+    OrigamiGovernanceTokenTestVersion public newTokenImpl;
+    OrigamiGovernanceTokenTestVersion public newToken;
 
     function testUpgradingTokenImplementationProducesUpdatedToken() public {
         vm.stopPrank();

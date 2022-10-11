@@ -8,19 +8,19 @@ import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
 abstract contract AddressHelper {
-    address owner = address(0x1);
-    address minter = address(0x2);
-    address mintee = address(0x3);
-    address recipient = address(0x4);
-    address revoker = address(0x5);
-    address pauser = address(0x6);
+    address public owner = address(0x1);
+    address public minter = address(0x2);
+    address public mintee = address(0x3);
+    address public recipient = address(0x4);
+    address public revoker = address(0x5);
+    address public pauser = address(0x6);
 }
 
 abstract contract OMTHelper is AddressHelper {
-    OrigamiMembershipToken impl;
-    TransparentUpgradeableProxy proxy;
-    OrigamiMembershipToken token;
-    ProxyAdmin admin;
+    OrigamiMembershipToken public impl;
+    TransparentUpgradeableProxy public proxy;
+    OrigamiMembershipToken public token;
+    ProxyAdmin public admin;
 
     constructor() {
         admin = new ProxyAdmin();
@@ -41,10 +41,10 @@ abstract contract OMTHelper is AddressHelper {
 }
 
 contract DeployMembershipTokenTest is Test {
-    OrigamiMembershipToken impl;
-    TransparentUpgradeableProxy proxy;
-    OrigamiMembershipToken token;
-    ProxyAdmin admin;
+    OrigamiMembershipToken public impl;
+    TransparentUpgradeableProxy public proxy;
+    OrigamiMembershipToken public token;
+    ProxyAdmin public admin;
 
     function setUp() public {
         admin = new ProxyAdmin();
@@ -69,12 +69,12 @@ contract DeployMembershipTokenTest is Test {
 }
 
 contract UpgradeMembershipTokenTest is Test, AddressHelper {
-    OrigamiMembershipTokenBeforeInitialAuditFeedback implV1;
-    OrigamiMembershipToken implV2;
-    TransparentUpgradeableProxy proxy;
-    OrigamiMembershipTokenBeforeInitialAuditFeedback tokenV1;
-    OrigamiMembershipToken tokenV2;
-    ProxyAdmin admin;
+    OrigamiMembershipTokenBeforeInitialAuditFeedback public implV1;
+    OrigamiMembershipToken public implV2;
+    TransparentUpgradeableProxy public proxy;
+    OrigamiMembershipTokenBeforeInitialAuditFeedback public tokenV1;
+    OrigamiMembershipToken public tokenV2;
+    ProxyAdmin public admin;
 
     event TransferEnabled(address indexed caller, bool value);
 

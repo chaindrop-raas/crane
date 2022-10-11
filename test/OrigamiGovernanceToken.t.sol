@@ -8,18 +8,18 @@ import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
 abstract contract AddressHelper {
-    address owner = address(0x1);
-    address minter = address(0x2);
-    address mintee = address(0x3);
-    address pauser = address(0x4);
-    address transferrer = address(0x5);
+    address public owner = address(0x1);
+    address public minter = address(0x2);
+    address public mintee = address(0x3);
+    address public pauser = address(0x4);
+    address public transferrer = address(0x5);
 }
 
 abstract contract OGTHelper is AddressHelper {
-    OrigamiGovernanceToken impl;
-    TransparentUpgradeableProxy proxy;
-    OrigamiGovernanceToken token;
-    ProxyAdmin admin;
+    OrigamiGovernanceToken public impl;
+    TransparentUpgradeableProxy public proxy;
+    OrigamiGovernanceToken public token;
+    ProxyAdmin public admin;
 
     constructor() {
         admin = new ProxyAdmin();
@@ -40,10 +40,10 @@ abstract contract OGTHelper is AddressHelper {
 }
 
 contract DeployGovernanceTokenTest is AddressHelper, Test {
-    OrigamiGovernanceToken impl;
-    TransparentUpgradeableProxy proxy;
-    OrigamiGovernanceToken token;
-    ProxyAdmin admin;
+    OrigamiGovernanceToken public impl;
+    TransparentUpgradeableProxy public proxy;
+    OrigamiGovernanceToken public token;
+    ProxyAdmin public admin;
 
     function setUp() public {
         admin = new ProxyAdmin();
@@ -82,12 +82,12 @@ contract DeployGovernanceTokenTest is AddressHelper, Test {
 }
 
 contract UpgradeGovernanceTokenTest is Test, AddressHelper {
-    OrigamiGovernanceTokenBeforeInitialAuditFeedback implV1;
-    OrigamiGovernanceToken implV2;
-    TransparentUpgradeableProxy proxy;
-    OrigamiGovernanceTokenBeforeInitialAuditFeedback tokenV1;
-    OrigamiGovernanceToken tokenV2;
-    ProxyAdmin admin;
+    OrigamiGovernanceTokenBeforeInitialAuditFeedback public implV1;
+    OrigamiGovernanceToken public implV2;
+    TransparentUpgradeableProxy public proxy;
+    OrigamiGovernanceTokenBeforeInitialAuditFeedback public tokenV1;
+    OrigamiGovernanceToken public tokenV2;
+    ProxyAdmin public admin;
 
     event TransferEnabled(address indexed caller, bool value);
 

@@ -9,17 +9,17 @@ import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
 abstract contract AddressHelper {
-    address admin = address(0x1);
-    address owner = address(0x2);
-    address rando = address(0x3);
+    address public admin = address(0x1);
+    address public owner = address(0x2);
+    address public rando = address(0x3);
 }
 
 abstract contract OMTFHelper is AddressHelper, Test {
-    OrigamiMembershipTokenFactory factoryImpl;
-    TransparentUpgradeableProxy factoryProxy;
-    OrigamiMembershipTokenFactory factory;
-    ProxyAdmin factoryAdmin;
-    OrigamiMembershipToken token;
+    OrigamiMembershipTokenFactory public factoryImpl;
+    TransparentUpgradeableProxy public factoryProxy;
+    OrigamiMembershipTokenFactory public factory;
+    ProxyAdmin public factoryAdmin;
+    OrigamiMembershipToken public token;
 
     function setUp() public {
         vm.startPrank(admin);
@@ -46,11 +46,11 @@ abstract contract OMTFHelper is AddressHelper, Test {
 }
 
 contract DeployingMembershipTokenFactoryTest is AddressHelper, Test {
-    OrigamiMembershipTokenFactory factoryImpl;
-    TransparentUpgradeableProxy factoryProxy;
-    OrigamiMembershipTokenFactory factory;
-    ProxyAdmin factoryAdmin;
-    OrigamiMembershipToken token;
+    OrigamiMembershipTokenFactory public factoryImpl;
+    TransparentUpgradeableProxy public factoryProxy;
+    OrigamiMembershipTokenFactory public factory;
+    ProxyAdmin public factoryAdmin;
+    OrigamiMembershipToken public token;
 
     event OrigamiMembershipTokenCreated(
         address indexed caller,
@@ -131,10 +131,10 @@ contract MembershipTokenFactoryProxyAddressTest is OMTFHelper {
 }
 
 contract UpgradingMembershipTokenFactoryTest is OMTFHelper {
-    OrigamiMembershipTokenFactoryTestVersion newFactoryImpl;
-    OrigamiMembershipTokenFactoryTestVersion newFactory;
-    OrigamiMembershipTokenTestVersion newTokenImpl;
-    OrigamiMembershipTokenTestVersion newToken;
+    OrigamiMembershipTokenFactoryTestVersion public newFactoryImpl;
+    OrigamiMembershipTokenFactoryTestVersion public newFactory;
+    OrigamiMembershipTokenTestVersion public newTokenImpl;
+    OrigamiMembershipTokenTestVersion public newToken;
 
     function testCanUpgradeFactory() public {
         vm.stopPrank();
@@ -172,8 +172,8 @@ contract UpgradingMembershipTokenFactoryTest is OMTFHelper {
 }
 
 contract UpgradingOnlyTheMembershipTokenImplementationTest is OMTFHelper {
-    OrigamiMembershipTokenTestVersion newTokenImpl;
-    OrigamiMembershipTokenTestVersion newToken;
+    OrigamiMembershipTokenTestVersion public newTokenImpl;
+    OrigamiMembershipTokenTestVersion public newToken;
 
     function testUpgradingTokenImplementationProducesUpdatedToken() public {
         vm.stopPrank();
