@@ -7,7 +7,7 @@ import "src/versions/OrigamiGovernanceTokenBeforeInitialAuditFeedback.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
-abstract contract AddressHelper {
+abstract contract OGTAddressHelper {
     address public owner = address(0x1);
     address public minter = address(0x2);
     address public mintee = address(0x3);
@@ -15,7 +15,7 @@ abstract contract AddressHelper {
     address public transferrer = address(0x5);
 }
 
-abstract contract OGTHelper is AddressHelper {
+abstract contract OGTHelper is OGTAddressHelper {
     OrigamiGovernanceToken public impl;
     TransparentUpgradeableProxy public proxy;
     OrigamiGovernanceToken public token;
@@ -39,7 +39,7 @@ abstract contract OGTHelper is AddressHelper {
     }
 }
 
-contract DeployGovernanceTokenTest is AddressHelper, Test {
+contract DeployGovernanceTokenTest is OGTAddressHelper, Test {
     OrigamiGovernanceToken public impl;
     TransparentUpgradeableProxy public proxy;
     OrigamiGovernanceToken public token;
@@ -81,7 +81,7 @@ contract DeployGovernanceTokenTest is AddressHelper, Test {
     }
 }
 
-contract UpgradeGovernanceTokenTest is Test, AddressHelper {
+contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
     OrigamiGovernanceTokenBeforeInitialAuditFeedback public implV1;
     OrigamiGovernanceToken public implV2;
     TransparentUpgradeableProxy public proxy;

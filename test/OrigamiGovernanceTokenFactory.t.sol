@@ -8,13 +8,13 @@ import "src/versions/OrigamiGovernanceTokenFactoryTestVersion.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
-abstract contract AddressHelper {
+abstract contract OGTFAddressHelper {
     address public admin = address(0x1);
     address public owner = address(0x2);
     address public rando = address(0x3);
 }
 
-abstract contract OMTFHelper is AddressHelper, Test {
+abstract contract OGTFHelper is OGTFAddressHelper, Test {
     OrigamiGovernanceTokenFactory public factoryImpl;
     TransparentUpgradeableProxy public factoryProxy;
     OrigamiGovernanceTokenFactory public factory;
@@ -45,7 +45,7 @@ abstract contract OMTFHelper is AddressHelper, Test {
     }
 }
 
-contract DeployingGovernanceTokenFactoryTest is AddressHelper, Test {
+contract DeployingGovernanceTokenFactoryTest is OGTFAddressHelper, Test {
     OrigamiGovernanceTokenFactory public factoryImpl;
     TransparentUpgradeableProxy public factoryProxy;
     OrigamiGovernanceTokenFactory public factory;
@@ -90,7 +90,7 @@ contract DeployingGovernanceTokenFactoryTest is AddressHelper, Test {
     }
 }
 
-contract AccessControlForGovernanceTokenFactoryTest is OMTFHelper {
+contract AccessControlForGovernanceTokenFactoryTest is OGTFHelper {
     function testOnlyAdminCanCreate() public {
         vm.expectRevert(
             bytes(
@@ -118,7 +118,7 @@ contract AccessControlForGovernanceTokenFactoryTest is OMTFHelper {
     }
 }
 
-contract GovernanceTokenFactoryProxyAddressTest is OMTFHelper {
+contract GovernanceTokenFactoryProxyAddressTest is OGTFHelper {
     function testProxyAddressIsCorrect() public {
         assertEq(address(token), address(factory.getProxyContractAddress(0)));
     }
@@ -129,7 +129,7 @@ contract GovernanceTokenFactoryProxyAddressTest is OMTFHelper {
     }
 }
 
-contract UpgradingGovernanceTokenFactoryTest is OMTFHelper {
+contract UpgradingGovernanceTokenFactoryTest is OGTFHelper {
     OrigamiGovernanceTokenFactoryTestVersion public newFactoryImpl;
     OrigamiGovernanceTokenFactoryTestVersion public newFactory;
     OrigamiGovernanceTokenTestVersion public newTokenImpl;
@@ -170,7 +170,7 @@ contract UpgradingGovernanceTokenFactoryTest is OMTFHelper {
     }
 }
 
-contract UpgradingOnlyTheGovernanceTokenImplementationTest is OMTFHelper {
+contract UpgradingOnlyTheGovernanceTokenImplementationTest is OGTFHelper {
     OrigamiGovernanceTokenTestVersion public newTokenImpl;
     OrigamiGovernanceTokenTestVersion public newToken;
 

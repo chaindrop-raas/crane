@@ -8,13 +8,13 @@ import "src/versions/OrigamiMembershipTokenFactoryTestVersion.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
-abstract contract AddressHelper {
+abstract contract OMTFAddressHelper {
     address public admin = address(0x1);
     address public owner = address(0x2);
     address public rando = address(0x3);
 }
 
-abstract contract OMTFHelper is AddressHelper, Test {
+abstract contract OMTFHelper is OMTFAddressHelper, Test {
     OrigamiMembershipTokenFactory public factoryImpl;
     TransparentUpgradeableProxy public factoryProxy;
     OrigamiMembershipTokenFactory public factory;
@@ -45,7 +45,7 @@ abstract contract OMTFHelper is AddressHelper, Test {
     }
 }
 
-contract DeployingMembershipTokenFactoryTest is AddressHelper, Test {
+contract DeployingMembershipTokenFactoryTest is OMTFAddressHelper, Test {
     OrigamiMembershipTokenFactory public factoryImpl;
     TransparentUpgradeableProxy public factoryProxy;
     OrigamiMembershipTokenFactory public factory;

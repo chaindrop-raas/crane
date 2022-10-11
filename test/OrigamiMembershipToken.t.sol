@@ -7,7 +7,7 @@ import "src/versions/OrigamiMembershipTokenBeforeInitialAuditFeedback.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
-abstract contract AddressHelper {
+abstract contract OMTAddressHelper {
     address public owner = address(0x1);
     address public minter = address(0x2);
     address public mintee = address(0x3);
@@ -16,7 +16,7 @@ abstract contract AddressHelper {
     address public pauser = address(0x6);
 }
 
-abstract contract OMTHelper is AddressHelper {
+abstract contract OMTHelper is OMTAddressHelper {
     OrigamiMembershipToken public impl;
     TransparentUpgradeableProxy public proxy;
     OrigamiMembershipToken public token;
@@ -68,7 +68,7 @@ contract DeployMembershipTokenTest is Test {
     }
 }
 
-contract UpgradeMembershipTokenTest is Test, AddressHelper {
+contract UpgradeMembershipTokenTest is Test, OMTAddressHelper {
     OrigamiMembershipTokenBeforeInitialAuditFeedback public implV1;
     OrigamiMembershipToken public implV2;
     TransparentUpgradeableProxy public proxy;
