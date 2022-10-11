@@ -7,6 +7,7 @@ import "src/OrigamiMembershipTokenFactory.sol";
 import "src/versions/OrigamiMembershipTokenFactoryTestVersion.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
+import "@oz/utils/Strings.sol";
 
 abstract contract OMTFAddressHelper {
     address public admin = address(0x1);
@@ -92,10 +93,16 @@ contract DeployingMembershipTokenFactoryTest is OMTFAddressHelper, Test {
 }
 
 contract AccessControlForMembershipTokenFactoryTest is OMTFHelper {
-    function testOnlyAdminCanCreate() public {
+    function testNonAdminCantCreate(address nonAdmin) public {
+        vm.assume(admin != nonAdmin);
+        vm.stopPrank();
+        vm.startPrank(nonAdmin);
+
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(nonAdmin),
+                " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
         factory.createOrigamiMembershipToken(
