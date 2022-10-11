@@ -6,8 +6,10 @@ import "src/OrigamiGovernanceToken.sol";
 import "src/versions/OrigamiGovernanceTokenBeforeInitialAuditFeedback.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
+import "@oz/utils/Strings.sol";
 
 abstract contract OGTAddressHelper {
+    address public deployer = address(0x6);
     address public owner = address(0x1);
     address public minter = address(0x2);
     address public mintee = address(0x3);
@@ -15,13 +17,14 @@ abstract contract OGTAddressHelper {
     address public transferrer = address(0x5);
 }
 
-abstract contract OGTHelper is OGTAddressHelper {
+abstract contract OGTHelper is OGTAddressHelper, Test {
     OrigamiGovernanceToken public impl;
     TransparentUpgradeableProxy public proxy;
     OrigamiGovernanceToken public token;
     ProxyAdmin public admin;
 
     constructor() {
+        vm.startPrank(deployer);
         admin = new ProxyAdmin();
         impl = new OrigamiGovernanceToken();
         proxy = new TransparentUpgradeableProxy(
@@ -36,6 +39,7 @@ abstract contract OGTHelper is OGTAddressHelper {
             "DTDG",
             10000000000000000000000000000
         );
+        vm.stopPrank();
     }
 }
 
@@ -71,7 +75,7 @@ contract DeployGovernanceTokenTest is OGTAddressHelper, Test {
 
     function testDeployRevertsWhenAdminIsAdressZero() public {
         token = OrigamiGovernanceToken(address(proxy));
-        vm.expectRevert(bytes("Admin address cannot be zero"));
+        vm.expectRevert("Admin address cannot be zero");
         token.initialize(
             address(0),
             "Deciduous Tree DAO Governance",
@@ -116,9 +120,7 @@ contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
     }
 
     function testCannotInitializeTwice() public {
-        vm.expectRevert(
-            bytes("Initializable: contract is already initialized")
-        );
+        vm.expectRevert("Initializable: contract is already initialized");
         tokenV1.initialize(
             owner,
             "EVEN MOAR Deciduous Tree DAO Governance",
@@ -142,7 +144,7 @@ contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
     }
 }
 
-contract MintingGovernanceTokenTest is OGTHelper, Test {
+contract MintingGovernanceTokenTest is OGTHelper {
     event GovernanceTokensMinted(
         address indexed caller,
         address indexed to,
@@ -156,18 +158,17 @@ contract MintingGovernanceTokenTest is OGTHelper, Test {
         vm.startPrank(minter);
     }
 
-    function testMinting() public {
-        token.mint(mintee, 100);
-        assertEq(token.balanceOf(mintee), 100);
-        assertEq(token.totalSupply(), 100);
+    function testMinting(uint96 amount) public {
+        vm.assume(amount < token.cap());
+        token.mint(mintee, amount);
+        assertEq(token.balanceOf(mintee), amount);
+        assertEq(token.totalSupply(), amount);
     }
 
     function testMintingRevertsWhenNotMinter() public {
         vm.stopPrank();
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6"
-            )
+            "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6"
         );
         token.mint(mintee, 100);
     }
@@ -176,24 +177,24 @@ contract MintingGovernanceTokenTest is OGTHelper, Test {
         vm.stopPrank();
         vm.prank(owner);
         token.pause();
-        vm.expectRevert(bytes("Pausable: paused"));
         vm.prank(minter);
+        vm.expectRevert("Pausable: paused");
         token.mint(mintee, 100);
     }
 
     function testMintingRevertsWhenMintingMoreThanCap() public {
-        vm.expectRevert(bytes("ERC20Capped: cap exceeded"));
+        vm.expectRevert("ERC20Capped: cap exceeded");
         token.mint(mintee, 10000000000000000000000000001);
     }
 
     function testMintingRevertsWhenMintingMoreThanCapAfterMinting() public {
         token.mint(mintee, 10000000000000000000000000000);
-        vm.expectRevert(bytes("ERC20Capped: cap exceeded"));
+        vm.expectRevert("ERC20Capped: cap exceeded");
         token.mint(mintee, 1);
     }
 
     function testMintingRevertsWhenMintingToZeroAddress() public {
-        vm.expectRevert(bytes("ERC20: mint to the zero address"));
+        vm.expectRevert("ERC20: mint to the zero address");
         token.mint(address(0), 100);
     }
 
@@ -204,7 +205,7 @@ contract MintingGovernanceTokenTest is OGTHelper, Test {
     }
 }
 
-contract CappedGovernanceTokenTest is OGTHelper, Test {
+contract CappedGovernanceTokenTest is OGTHelper {
     function setUp() public {
         vm.startPrank(owner);
         token.grantRole(token.MINTER_ROLE(), minter);
@@ -218,12 +219,12 @@ contract CappedGovernanceTokenTest is OGTHelper, Test {
     }
 
     function testCannotMintMoreThanCappedSupply() public {
-        vm.expectRevert(bytes("ERC20Capped: cap exceeded"));
+        vm.expectRevert("ERC20Capped: cap exceeded");
         token.mint(mintee, 10000000000000000000000000001);
     }
 }
 
-contract BurnGovernanceTokenTest is OGTHelper, Test {
+contract BurnGovernanceTokenTest is OGTHelper {
     event BurnEnabled(address indexed caller, bool value);
 
     function setUp() public {
@@ -242,23 +243,32 @@ contract BurnGovernanceTokenTest is OGTHelper, Test {
         assertFalse(token.burnable());
     }
 
-    function testRevertsWhenNonAdminAttemptsToEnableBurn() public {
+    function testRevertsWhenNonAdminAttemptsToEnableBurn(address nonAdmin)
+        public
+    {
+        vm.assume(nonAdmin != owner);
         vm.stopPrank();
-        vm.startPrank(minter);
+        vm.startPrank(nonAdmin);
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(nonAdmin),
+                " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
         token.enableBurn();
     }
 
-    function testRevertsWhenNonAdminAttemptsToDisableBurn() public {
+    function testRevertsWhenNonAdminAttemptsToDisableBurn(address nonAdmin)
+        public
+    {
         vm.stopPrank();
-        vm.startPrank(minter);
+        vm.startPrank(nonAdmin);
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(nonAdmin),
+                " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
         token.disableBurn();
@@ -266,14 +276,14 @@ contract BurnGovernanceTokenTest is OGTHelper, Test {
 
     function testRevertsWhenCallingEnableBurnAndBurnIsAlreadyEnabled() public {
         token.enableBurn();
-        vm.expectRevert(bytes("Burnable: burning is enabled"));
+        vm.expectRevert("Burnable: burning is enabled");
         token.enableBurn();
     }
 
     function testRevertsWhenCallingDisableBurnAndBurnIsAlreadyDisabled()
         public
     {
-        vm.expectRevert(bytes("Burnable: burning is disabled"));
+        vm.expectRevert("Burnable: burning is disabled");
         token.disableBurn();
     }
 
@@ -294,30 +304,34 @@ contract BurnGovernanceTokenTest is OGTHelper, Test {
         vm.stopPrank();
         vm.startPrank(minter);
         token.mint(mintee, 100);
-        vm.expectRevert(bytes("ERC20: insufficient allowance"));
+        vm.expectRevert("ERC20: insufficient allowance");
         token.burnFrom(mintee, 10);
     }
 
-    function testCanBurnAsHolderWhenBurnIsEnabled() public {
+    function testCanBurnAsHolderWhenBurnIsEnabled(uint96 amount) public {
+        vm.assume(amount < token.cap());
         token.enableBurn();
         vm.stopPrank();
         vm.prank(minter);
-        token.mint(mintee, 100);
+        token.mint(mintee, amount);
         vm.prank(mintee);
-        token.burn(10);
-        assertEq(token.balanceOf(mintee), 90);
+        token.burn(amount);
+        assertEq(token.balanceOf(mintee), 0);
     }
 
-    function testCanBurnFromWalletWithAllowanceWhenEnabled() public {
+    function testCanBurnFromWalletWithAllowanceWhenEnabled(uint96 amount)
+        public
+    {
+        vm.assume(amount < token.cap());
         token.enableBurn();
         vm.stopPrank();
         vm.prank(minter);
-        token.mint(mintee, 100);
+        token.mint(mintee, amount);
         vm.prank(mintee);
-        token.approve(minter, 10);
+        token.approve(minter, amount);
         vm.prank(minter);
-        token.burnFrom(mintee, 10);
-        assertEq(token.balanceOf(mintee), 90);
+        token.burnFrom(mintee, amount);
+        assertEq(token.balanceOf(mintee), 0);
     }
 
     function testCannotBurnMoreThanAllowanceWhenEnabled() public {
@@ -327,90 +341,110 @@ contract BurnGovernanceTokenTest is OGTHelper, Test {
         token.mint(mintee, 100);
         vm.prank(mintee);
         token.approve(minter, 10);
-        vm.expectRevert(bytes("ERC20: insufficient allowance"));
+        vm.expectRevert("ERC20: insufficient allowance");
         vm.prank(minter);
         token.burnFrom(mintee, 11);
     }
 }
 
-contract PauseGovernanceTokenTest is OGTHelper, Test {
+contract PauseGovernanceTokenTest is OGTHelper {
     function setUp() public {
         vm.startPrank(owner);
         token.grantRole(token.PAUSER_ROLE(), pauser);
     }
 
-    function testCannotPauseAsNonPauser() public {
+    function testCannotPauseAsNonPauser(address nonPauser) public {
+        vm.assume(nonPauser != deployer);
+        vm.assume(nonPauser != pauser);
+        vm.assume(nonPauser != owner);
+
         vm.stopPrank();
-        vm.prank(minter);
+        vm.prank(nonPauser);
+
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(nonPauser),
+                " is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
             )
         );
         token.pause();
     }
 
-    function testCannotUnpauseAsNonPauser() public {
+    function testCannotUnpauseAsNonPauser(address nonPauser) public {
+        vm.assume(nonPauser != deployer);
+        vm.assume(nonPauser != pauser);
+        vm.assume(nonPauser != owner);
+
         token.pause();
         vm.stopPrank();
-        vm.prank(minter);
+        vm.prank(nonPauser);
+
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(nonPauser),
+                " is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
             )
         );
         token.unpause();
     }
 
-    function testCanMintWhenUnpaused() public {
+    function testCanMintWhenUnpaused(uint96 amount) public {
+        vm.assume(amount < token.cap());
         assertFalse(token.paused());
-        token.mint(mintee, 100);
-        assertEq(token.balanceOf(mintee), 100);
+        token.mint(mintee, amount);
+        assertEq(token.balanceOf(mintee), amount);
     }
 
     function testCannotMintWhenPaused() public {
         token.pause();
-        vm.expectRevert(bytes("Pausable: paused"));
+        vm.expectRevert("Pausable: paused");
         token.mint(mintee, 100);
     }
 
-    function testCanBurnWhenUnpausedAndBurnable() public {
+    function testCanBurnWhenUnpausedAndBurnable(uint96 amount) public {
+        vm.assume(amount < token.cap());
         assertFalse(token.paused());
-        token.mint(mintee, 100);
+        token.mint(mintee, amount);
         token.enableBurn();
         vm.stopPrank();
         vm.prank(mintee);
-        token.burn(10);
-        assertEq(token.balanceOf(mintee), 90);
+        token.burn(amount);
+        assertEq(token.balanceOf(mintee), 0);
     }
 
     function testCannotBurnWhenPaused() public {
         token.mint(mintee, 100);
         token.pause();
         vm.stopPrank();
-        vm.expectRevert(bytes("Pausable: paused"));
+        vm.expectRevert("Pausable: paused");
         vm.prank(mintee);
         token.burn(100);
     }
 
-    function testCanTransferWhenUnpausedAndTransferrable() public {
+    function testCanTransferWhenUnpausedAndTransferrable(uint96 amount) public {
+        vm.assume(amount < token.cap());
         assertFalse(token.paused());
-        token.mint(mintee, 100);
+        token.mint(mintee, amount);
         token.enableTransfer();
         vm.stopPrank();
         vm.prank(mintee);
-        token.transfer(minter, 10);
-        assertEq(token.balanceOf(minter), 10);
+        token.transfer(minter, amount);
+        assertEq(token.balanceOf(minter), amount);
     }
 
-    function testCannotTransferWhenPausedAndTransferEnabled() public {
-        token.mint(mintee, 100);
+    function testCannotTransferWhenPausedAndTransferEnabled(uint96 amount)
+        public
+    {
+        vm.assume(amount < token.cap());
+        token.mint(mintee, amount);
         token.enableTransfer();
         token.pause();
         vm.stopPrank();
-        vm.expectRevert(bytes("Pausable: paused"));
+        vm.expectRevert("Pausable: paused");
         vm.prank(mintee);
-        token.transfer(minter, 100);
+        token.transfer(minter, amount);
     }
 
     function testTransferrerRoleCannotTransferWhenPaused() public {
@@ -418,13 +452,13 @@ contract PauseGovernanceTokenTest is OGTHelper, Test {
         token.mint(mintee, 100);
         token.pause();
         vm.stopPrank();
-        vm.expectRevert(bytes("Pausable: paused"));
+        vm.expectRevert("Pausable: paused");
         vm.prank(mintee);
         token.transfer(minter, 100);
     }
 }
 
-contract TransferGovernanceTokenTest is OGTHelper, Test {
+contract TransferGovernanceTokenTest is OGTHelper {
     event TransferEnabled(address indexed caller, bool value);
 
     function setUp() public {
@@ -445,11 +479,15 @@ contract TransferGovernanceTokenTest is OGTHelper, Test {
         token.disableTransfer();
     }
 
-    function testCanOnlyEnableTransferAsAdmin() public {
+    function testCanOnlyEnableTransferAsAdmin(address nonAdmin) public {
+        vm.assume(nonAdmin != owner);
         vm.stopPrank();
+        vm.prank(nonAdmin);
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(nonAdmin),
+                " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
         token.enableTransfer();
@@ -458,12 +496,16 @@ contract TransferGovernanceTokenTest is OGTHelper, Test {
         assertTrue(token.transferrable());
     }
 
-    function testCanOnlyDisableTransferAsAdmin() public {
+    function testCanOnlyDisableTransferAsAdmin(address nonAdmin) public {
+        vm.assume(nonAdmin != owner);
         token.enableTransfer();
         vm.stopPrank();
+        vm.prank(nonAdmin);
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(nonAdmin),
+                " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
         token.disableTransfer();
@@ -473,63 +515,62 @@ contract TransferGovernanceTokenTest is OGTHelper, Test {
     }
 
     function testCannotEnableTransferWhenAlreadyEnabled() public {
-      token.enableTransfer();
-      vm.expectRevert(bytes("Transferrable: transfers are enabled"));
-      token.enableTransfer();
+        token.enableTransfer();
+        vm.expectRevert("Transferrable: transfers are enabled");
+        token.enableTransfer();
     }
 
     function testCannotDisableTransferWhenAlreadyDisabled() public {
-      vm.expectRevert(bytes("Transferrable: transfers are disabled"));
-      token.disableTransfer();
+        vm.expectRevert("Transferrable: transfers are disabled");
+        token.disableTransfer();
     }
 
     function testCanMintWhenTransferIsDisabled() public {
-      assertFalse(token.transferrable());
-      token.mint(mintee, 100);
-      assertEq(token.balanceOf(mintee), 100);
+        assertFalse(token.transferrable());
+        token.mint(mintee, 100);
+        assertEq(token.balanceOf(mintee), 100);
     }
 
     function testCannotTransferWhenTransferDisabled() public {
-      token.enableBurn();
-      assertFalse(token.transferrable());
-      token.mint(mintee, 100);
-      vm.stopPrank();
-      vm.startPrank(mintee);
-      vm.expectRevert(bytes("Transferrable: transfers are disabled"));
-      token.transfer(minter, 10);
-      vm.expectRevert(bytes("Transferrable: transfers are disabled"));
-      token.transferFrom(mintee, minter, 10);
+        token.enableBurn();
+        assertFalse(token.transferrable());
+        token.mint(mintee, 100);
+        vm.stopPrank();
+        vm.startPrank(mintee);
+        vm.expectRevert("Transferrable: transfers are disabled");
+        token.transfer(minter, 10);
+        vm.expectRevert("Transferrable: transfers are disabled");
+        token.transferFrom(mintee, minter, 10);
     }
 
     function testCanTransferWhenTransfersAreEnabled() public {
-      token.enableTransfer();
-      token.mint(mintee, 100);
-      vm.stopPrank();
-      vm.prank(mintee);
-      token.transfer(minter,10);
-      assertEq(token.balanceOf(minter), 10);
-      vm.prank(minter);
-      token.transfer(mintee, 1);
-      assertEq(token.balanceOf(minter), 9);
-      assertEq(token.balanceOf(mintee), 91);
+        token.enableTransfer();
+        token.mint(mintee, 100);
+        vm.stopPrank();
+        vm.prank(mintee);
+        token.transfer(minter, 10);
+        assertEq(token.balanceOf(minter), 10);
+        vm.prank(minter);
+        token.transfer(mintee, 1);
+        assertEq(token.balanceOf(minter), 9);
+        assertEq(token.balanceOf(mintee), 91);
     }
 
     function testCanTransferAsTransferrerWhenTransfersAreDisabled() public {
-      assertFalse(token.transferrable());
-      token.mint(transferrer, 100);
-      vm.stopPrank();
-      vm.prank(transferrer);
-      token.transfer(mintee, 10);
-      assertEq(token.balanceOf(mintee), 10);
+        assertFalse(token.transferrable());
+        token.mint(transferrer, 100);
+        vm.stopPrank();
+        vm.prank(transferrer);
+        token.transfer(mintee, 10);
+        assertEq(token.balanceOf(mintee), 10);
     }
 
     function testCanTransferAsTransferrerWhenTransfersAreEnabled() public {
-      token.enableTransfer();
-      token.mint(transferrer, 100);
-      vm.stopPrank();
-      vm.prank(transferrer);
-      token.transfer(mintee, 10);
-      assertEq(token.balanceOf(mintee), 10);
+        token.enableTransfer();
+        token.mint(transferrer, 100);
+        vm.stopPrank();
+        vm.prank(transferrer);
+        token.transfer(mintee, 10);
+        assertEq(token.balanceOf(mintee), 10);
     }
-
 }
