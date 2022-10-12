@@ -209,3 +209,14 @@ contract UpgradingOnlyTheGovernanceTokenImplementationTest is OGTFHelper {
         factory.setTokenImplementation(address(newTokenImpl));
     }
 }
+
+contract InteractingWithTheGovernanceTokenClone is OGTFHelper {
+    function testCanMintTokens(uint96 amount, address recipient) public {
+        vm.assume(amount < token.cap());
+        vm.assume(recipient != address(0));
+        vm.assume(recipient != owner);
+
+        token.mint(recipient, amount);
+        assertEq(token.balanceOf(recipient), amount);
+    }
+}
