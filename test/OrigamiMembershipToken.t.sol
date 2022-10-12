@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: ITSATEST
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "@std/Test.sol";
 import "src/OrigamiMembershipToken.sol";
-import "src/versions/OrigamiMembershipTokenBeforeInitialAuditFeedback.sol";
+import "src/versions/OrigamiMembershipTokenTestVersion.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
@@ -69,24 +69,24 @@ contract DeployMembershipTokenTest is Test {
 }
 
 contract UpgradeMembershipTokenTest is Test, OMTAddressHelper {
-    OrigamiMembershipTokenBeforeInitialAuditFeedback public implV1;
-    OrigamiMembershipToken public implV2;
+    OrigamiMembershipToken public implV1;
+    OrigamiMembershipTokenTestVersion public implV2;
     TransparentUpgradeableProxy public proxy;
-    OrigamiMembershipTokenBeforeInitialAuditFeedback public tokenV1;
-    OrigamiMembershipToken public tokenV2;
+    OrigamiMembershipToken public tokenV1;
+    OrigamiMembershipTokenTestVersion public tokenV2;
     ProxyAdmin public admin;
 
     event TransferEnabled(address indexed caller, bool value);
 
     function setUp() public {
         admin = new ProxyAdmin();
-        implV1 = new OrigamiMembershipTokenBeforeInitialAuditFeedback();
+        implV1 = new OrigamiMembershipToken();
         proxy = new TransparentUpgradeableProxy(
             address(implV1),
             address(admin),
             ""
         );
-        tokenV1 = OrigamiMembershipTokenBeforeInitialAuditFeedback(
+        tokenV1 = OrigamiMembershipToken(
             address(proxy)
         );
 
@@ -115,9 +115,9 @@ contract UpgradeMembershipTokenTest is Test, OMTAddressHelper {
     }
 
     function testCanUpgrade() public {
-        implV2 = new OrigamiMembershipToken();
+        implV2 = new OrigamiMembershipTokenTestVersion();
         admin.upgrade(proxy, address(implV2));
-        tokenV2 = OrigamiMembershipToken(address(proxy));
+        tokenV2 = OrigamiMembershipTokenTestVersion(address(proxy));
         vm.prank(owner);
 
         vm.expectEmit(true, true, true, true, address(tokenV2));

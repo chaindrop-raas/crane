@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";

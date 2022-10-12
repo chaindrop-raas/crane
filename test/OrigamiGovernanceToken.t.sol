@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: ITSATEST
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "@std/Test.sol";
 import "src/OrigamiGovernanceToken.sol";
-import "src/versions/OrigamiGovernanceTokenBeforeInitialAuditFeedback.sol";
+import "src/versions/OrigamiGovernanceTokenTestVersion.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 import "@oz/utils/Strings.sol";
@@ -86,24 +86,24 @@ contract DeployGovernanceTokenTest is OGTAddressHelper, Test {
 }
 
 contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
-    OrigamiGovernanceTokenBeforeInitialAuditFeedback public implV1;
-    OrigamiGovernanceToken public implV2;
+    OrigamiGovernanceToken public implV1;
+    OrigamiGovernanceTokenTestVersion public implV2;
     TransparentUpgradeableProxy public proxy;
-    OrigamiGovernanceTokenBeforeInitialAuditFeedback public tokenV1;
-    OrigamiGovernanceToken public tokenV2;
+    OrigamiGovernanceToken public tokenV1;
+    OrigamiGovernanceTokenTestVersion public tokenV2;
     ProxyAdmin public admin;
 
     event TransferEnabled(address indexed caller, bool value);
 
     function setUp() public {
         admin = new ProxyAdmin();
-        implV1 = new OrigamiGovernanceTokenBeforeInitialAuditFeedback();
+        implV1 = new OrigamiGovernanceToken();
         proxy = new TransparentUpgradeableProxy(
             address(implV1),
             address(admin),
             ""
         );
-        tokenV1 = OrigamiGovernanceTokenBeforeInitialAuditFeedback(
+        tokenV1 = OrigamiGovernanceToken(
             address(proxy)
         );
 
@@ -130,9 +130,9 @@ contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
     }
 
     function testCanUpgrade() public {
-        implV2 = new OrigamiGovernanceToken();
+        implV2 = new OrigamiGovernanceTokenTestVersion();
         admin.upgrade(proxy, address(implV2));
-        tokenV2 = OrigamiGovernanceToken(address(proxy));
+        tokenV2 = OrigamiGovernanceTokenTestVersion(address(proxy));
         vm.prank(owner);
 
         vm.expectEmit(true, true, true, true, address(tokenV2));

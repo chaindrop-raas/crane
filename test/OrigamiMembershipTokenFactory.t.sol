@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: ITSATEST
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "@std/Test.sol";
 import "src/OrigamiMembershipToken.sol";

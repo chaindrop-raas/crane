@@ -2,7 +2,7 @@
 src = 'src'
 out = 'out'
 libs = ['lib']
-solc_version = "0.8.9"
+solc_version = "0.8.17"
 
 [rpc_endpoints]
 goerli = "${ALCHEMY_RPC_URL_GOERLI}"
