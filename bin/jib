@@ -10,7 +10,7 @@
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployGovTokenFactory() {
   forge script script/Deploy.s.sol\:DeployScript \
-    --rpc-url $argc_rpc_url --broadcast -vvvv \
+    --rpc-url $argc_rpc_url --broadcast -vvvv --verify \
     --sig "deployGovernanceTokenFactory()"
 }
 
@@ -19,7 +19,7 @@ deployGovTokenFactory() {
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployMemTokenFactory() {
   forge script script/Deploy.s.sol\:DeployScript \
-    --rpc-url $argc_rpc_url --broadcast -vvvv \
+    --rpc-url $argc_rpc_url --broadcast -vvvv --verify \
     --sig "deployMembershipTokenFactory()"
 }
 
@@ -33,7 +33,7 @@ deployMemTokenFactory() {
 deployGovToken() {
   if [ $argc_ignore_deploy_warning ]; then
     forge script script/Deploy.s.sol:DeployScript \
-      --rpc-url $argc_rpc_url --broadcast -vvvv \
+      --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
       --sig "deployGovernanceToken(address,string,string,uint256)" \
       -- $argc_admin "$argc_name" $argc_symbol $argc_cap
   else
@@ -59,7 +59,7 @@ deployGovToken() {
 deployMemToken() {
   if [ $argc_ignore_deploy_warning ]; then
     forge script script/Deploy.s.sol:DeployScript \
-      --rpc-url $argc_rpc_url --broadcast -vvvv \
+      --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
       --sig "deployMembershipToken(address,string,string,string)" \
       -- $argc_admin "$argc_name" $argc_symbol $argc_base_uri
   else
@@ -85,7 +85,7 @@ deployMemToken() {
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 cloneGovToken() {
   forge script script/Clone.s.sol:Clone \
-    --rpc-url $argc_rpc_url --broadcast -vvvv \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
     --sig "cloneGovernanceToken(address,address,string,string,uint256)" \
     -- $argc_factory $argc_admin "$argc_name" $argc_symbol $argc_cap
 }
@@ -100,7 +100,7 @@ cloneGovToken() {
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 cloneMemToken() {
   forge script script/Clone.s.sol:Clone \
-    --rpc-url $argc_rpc_url --broadcast -vvvv \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
     --sig 'cloneMembershipToken(address,address,string,string,string)' \
     -- $argc_factory $argc_admin "$argc_name" $argc_symbol $argc_base_uri
 }
