@@ -11,6 +11,7 @@
 deployGovTokenFactory() {
   forge script script/Deploy.s.sol\:DeployScript \
     --rpc-url $argc_rpc_url --broadcast -vvvv --verify \
+    --optimize --optimizer-runs 1000000 \
     --sig "deployGovernanceTokenFactory()"
 }
 
@@ -20,6 +21,7 @@ deployGovTokenFactory() {
 deployMemTokenFactory() {
   forge script script/Deploy.s.sol\:DeployScript \
     --rpc-url $argc_rpc_url --broadcast -vvvv --verify \
+    --optimize --optimizer-runs 1000000 \
     --sig "deployMembershipTokenFactory()"
 }
 
@@ -34,6 +36,7 @@ deployGovToken() {
   if [ $argc_ignore_deploy_warning ]; then
     forge script script/Deploy.s.sol:DeployScript \
       --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
+      --optimize --optimizer-runs 1000000 \
       --sig "deployGovernanceToken(address,string,string,uint256)" \
       -- $argc_admin "$argc_name" $argc_symbol $argc_cap
   else
@@ -60,6 +63,7 @@ deployMemToken() {
   if [ $argc_ignore_deploy_warning ]; then
     forge script script/Deploy.s.sol:DeployScript \
       --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
+      --optimize --optimizer-runs 1000000 \
       --sig "deployMembershipToken(address,string,string,string)" \
       -- $argc_admin "$argc_name" $argc_symbol $argc_base_uri
   else
