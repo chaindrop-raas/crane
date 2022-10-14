@@ -94,6 +94,7 @@ contract DeployingGovernanceTokenFactoryTest is OGTFAddressHelper, Test {
 contract AccessControlForGovernanceTokenFactoryTest is OGTFHelper {
     function testNonAdminCantCreate(address nonAdmin) public {
         vm.assume(nonAdmin != admin);
+        vm.assume(nonAdmin != address(factoryAdmin));
 
         vm.stopPrank();
         vm.prank(nonAdmin);
@@ -215,6 +216,7 @@ contract InteractingWithTheGovernanceTokenClone is OGTFHelper {
         vm.assume(amount < token.cap());
         vm.assume(recipient != address(0));
         vm.assume(recipient != owner);
+        vm.assume(recipient != address(factoryAdmin));
 
         token.mint(recipient, amount);
         assertEq(token.balanceOf(recipient), amount);

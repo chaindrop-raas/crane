@@ -94,7 +94,8 @@ contract DeployingMembershipTokenFactoryTest is OMTFAddressHelper, Test {
 
 contract AccessControlForMembershipTokenFactoryTest is OMTFHelper {
     function testNonAdminCantCreate(address nonAdmin) public {
-        vm.assume(admin != nonAdmin);
+        vm.assume(nonAdmin != admin);
+        vm.assume(nonAdmin != address(factoryAdmin));
         vm.stopPrank();
         vm.startPrank(nonAdmin);
 

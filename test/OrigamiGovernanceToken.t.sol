@@ -247,6 +247,7 @@ contract BurnGovernanceTokenTest is OGTHelper {
         public
     {
         vm.assume(nonAdmin != owner);
+        vm.assume(nonAdmin != address(admin));
         vm.stopPrank();
         vm.startPrank(nonAdmin);
         vm.expectRevert(
@@ -262,6 +263,8 @@ contract BurnGovernanceTokenTest is OGTHelper {
     function testRevertsWhenNonAdminAttemptsToDisableBurn(address nonAdmin)
         public
     {
+        vm.assume(nonAdmin != owner);
+        vm.assume(nonAdmin != address(admin));
         vm.stopPrank();
         vm.startPrank(nonAdmin);
         vm.expectRevert(
@@ -354,9 +357,9 @@ contract PauseGovernanceTokenTest is OGTHelper {
     }
 
     function testCannotPauseAsNonPauser(address nonPauser) public {
-        vm.assume(nonPauser != deployer);
-        vm.assume(nonPauser != pauser);
         vm.assume(nonPauser != owner);
+        vm.assume(nonPauser != pauser);
+        vm.assume(nonPauser != address(admin));
 
         vm.stopPrank();
         vm.prank(nonPauser);
@@ -372,9 +375,9 @@ contract PauseGovernanceTokenTest is OGTHelper {
     }
 
     function testCannotUnpauseAsNonPauser(address nonPauser) public {
-        vm.assume(nonPauser != deployer);
-        vm.assume(nonPauser != pauser);
         vm.assume(nonPauser != owner);
+        vm.assume(nonPauser != pauser);
+        vm.assume(nonPauser != address(admin));
 
         token.pause();
         vm.stopPrank();
@@ -481,6 +484,7 @@ contract TransferGovernanceTokenTest is OGTHelper {
 
     function testCanOnlyEnableTransferAsAdmin(address nonAdmin) public {
         vm.assume(nonAdmin != owner);
+        vm.assume(nonAdmin != address(admin));
         vm.stopPrank();
         vm.prank(nonAdmin);
         vm.expectRevert(
@@ -498,6 +502,7 @@ contract TransferGovernanceTokenTest is OGTHelper {
 
     function testCanOnlyDisableTransferAsAdmin(address nonAdmin) public {
         vm.assume(nonAdmin != owner);
+        vm.assume(nonAdmin != address(admin));
         token.enableTransfer();
         vm.stopPrank();
         vm.prank(nonAdmin);
