@@ -18,10 +18,13 @@ deployGovTokenFactory() {
 # @cmd deploy the membership token factory
 # @alias dmtf
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @flag --resume attempt to resume the deployment
 deployMemTokenFactory() {
+  # 17,500 runs seems to be about as many as we can use in this contract and still keep the bytecode under 24kb
   forge script script/Deploy.s.sol\:DeployScript \
     --rpc-url $argc_rpc_url --broadcast -vvvv --verify \
-    --optimize --optimizer-runs 1000000 \
+    --optimize --optimizer-runs 17500 \
+    ${argc_resume:+--resume} \
     --sig "deployMembershipTokenFactory()"
 }
 
