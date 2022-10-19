@@ -40,7 +40,11 @@ contract OrigamiGovernanceToken is
     /// @notice monitoring: this is fired when the burnEnabled state is changed.
     event BurnEnabled(address indexed caller, bool value);
     /// @notice monitoring: this is fired when governance tokens are minted.
-    event GovernanceTokensMinted(address indexed caller, address indexed to, uint256 amount);
+    event GovernanceTokensMinted(
+        address indexed caller,
+        address indexed to,
+        uint256 amount
+    );
 
     /// @notice the constructor is not used since the contract is upgradeable except to disable initializers in the implementations that are deployed.
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -106,14 +110,22 @@ contract OrigamiGovernanceToken is
 
     /// @dev this emits an event indicating that the transferrable state has been set to enabled and by whom.
     /// @notice this function enables transfers of governance tokens. Only the contract admin can call this function.
-    function enableTransfer() public onlyRole(DEFAULT_ADMIN_ROLE) whenNontransferrable {
+    function enableTransfer()
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        whenNontransferrable
+    {
         _transferEnabled = true;
         emit TransferEnabled(_msgSender(), _transferEnabled);
     }
 
     /// @dev this emits an event indicating that the transferrable state has been set to disabled and by whom.
     /// @notice this function disables transfers of governance tokens. Only the contract admin can call this function.
-    function disableTransfer() public onlyRole(DEFAULT_ADMIN_ROLE) whenTransferrable {
+    function disableTransfer()
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        whenTransferrable
+    {
         _transferEnabled = false;
         emit TransferEnabled(_msgSender(), _transferEnabled);
     }
@@ -151,7 +163,13 @@ contract OrigamiGovernanceToken is
 
     /// @dev this is overridden so we can apply the `whenTransferrable` modifier
     /// @notice this allows transfers when the transferrable state is enabled.
-    function transfer(address to, uint256 amount) public virtual override whenTransferrable returns (bool) {
+    function transfer(address to, uint256 amount)
+        public
+        virtual
+        override
+        whenTransferrable
+        returns (bool)
+    {
         return super.transfer(to, amount);
     }
 
@@ -174,11 +192,19 @@ contract OrigamiGovernanceToken is
         super._afterTokenTransfer(from, to, amount);
     }
 
-    function _mint(address to, uint256 amount) internal override(ERC20Upgradeable, ERC20CappedUpgradeable) {
+    function _mint(address to, uint256 amount)
+        internal
+        override(ERC20Upgradeable, ERC20CappedUpgradeable)
+    {
         super._mint(to, amount);
     }
 
-    function _burn(address account, uint256 amount) internal override(ERC20Upgradeable) whenNotPaused whenBurnable {
+    function _burn(address account, uint256 amount)
+        internal
+        override(ERC20Upgradeable)
+        whenNotPaused
+        whenBurnable
+    {
         super._burn(account, amount);
     }
 
@@ -202,7 +228,10 @@ contract OrigamiGovernanceToken is
 
     /// @notice this modifier allows us to ensure that something may only occur when the transfers are enabled
     modifier whenTransferrable() {
-        require(hasRole(TRANSFERRER_ROLE, _msgSender()) || transferrable(), "Transferrable: transfers are disabled");
+        require(
+            hasRole(TRANSFERRER_ROLE, _msgSender()) || transferrable(),
+            "Transferrable: transfers are disabled"
+        );
         _;
     }
 }
