@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@oz-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
-import "@oz-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
-import "@oz-upgradeable/security/PausableUpgradeable.sol";
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
+import "@oz-upgradeable/security/PausableUpgradeable.sol";
+import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@oz-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "@oz-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
+import "@oz-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
+import "@oz-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
 
 /// @title Origami Governance Token
 /// @author Stephen Caudill
@@ -18,7 +20,9 @@ contract OrigamiGovernanceToken is
     ERC20BurnableUpgradeable,
     PausableUpgradeable,
     AccessControlUpgradeable,
-    ERC20CappedUpgradeable
+    ERC20CappedUpgradeable,
+    ERC20PermitUpgradeable,
+    ERC20VotesUpgradeable
 {
     /// @notice the role hash for granting the ability to pause the contract. By default, this role is granted to the contract admin.
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -66,16 +70,18 @@ contract OrigamiGovernanceToken is
     ) public initializer {
         require(_admin != address(0x0), "Admin address cannot be zero");
 
-        __ERC20_init(_name, _symbol);
-        __ERC20Burnable_init();
-        __Pausable_init();
         __AccessControl_init();
+        __ERC20Burnable_init();
         __ERC20Capped_init(_supplyCap);
+        __ERC20Permit_init(_name);
+        __ERC20Votes_init();
+        __ERC20_init(_name, _symbol);
+        __Pausable_init();
 
         // grant all roles to the admin
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(PAUSER_ROLE, _admin);
         _grantRole(MINTER_ROLE, _admin);
+        _grantRole(PAUSER_ROLE, _admin);
         // TRANSFERRER_ROLE does not need to be assigned during initialization
 
         _burnEnabled = false;
@@ -188,20 +194,24 @@ contract OrigamiGovernanceToken is
         address from,
         address to,
         uint256 amount
-    ) internal override(ERC20Upgradeable) {
+    ) internal override(ERC20Upgradeable, ERC20VotesUpgradeable) {
         super._afterTokenTransfer(from, to, amount);
     }
 
     function _mint(address to, uint256 amount)
         internal
-        override(ERC20Upgradeable, ERC20CappedUpgradeable)
+        override(
+            ERC20Upgradeable,
+            ERC20CappedUpgradeable,
+            ERC20VotesUpgradeable
+        )
     {
         super._mint(to, amount);
     }
 
     function _burn(address account, uint256 amount)
         internal
-        override(ERC20Upgradeable)
+        override(ERC20Upgradeable, ERC20VotesUpgradeable)
         whenNotPaused
         whenBurnable
     {

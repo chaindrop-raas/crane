@@ -579,3 +579,91 @@ contract TransferGovernanceTokenTest is OGTHelper {
         assertEq(token.balanceOf(mintee), 10);
     }
 }
+
+contract GovernanceTokenVotingPowerTest is OGTHelper {
+
+    function setUp() public {
+        vm.startPrank(owner);
+        token.grantRole(token.TRANSFERRER_ROLE(), transferrer);
+    }
+
+    function testGetVotesIsZeroBeforeDelegation() public {
+        // mint some tokens as owner
+        token.enableTransfer();
+        token.mint(mintee, 100);
+        vm.stopPrank();
+
+        // check that mintee has no votes
+        assertEq(token.getVotes(mintee), 0);
+
+        // delegate and then check again
+        vm.prank(mintee);
+        token.delegate(mintee);
+        assertEq(token.getVotes(mintee), 100);
+
+        // mint and check updated balance
+        vm.prank(owner);
+        token.mint(mintee, 100);
+        assertEq(token.getVotes(mintee), 200);
+    }
+
+    function testGetPastVotesSnapshotsByBlock() public {
+        // mint some tokens as owner
+        token.enableTransfer();
+        token.mint(mintee, 100);
+        vm.stopPrank();
+
+        // delegate to self
+        vm.roll(42);
+        vm.prank(mintee);
+        token.delegate(mintee);
+
+        // mint some more tokens as owner
+        vm.roll(43);
+        vm.prank(owner);
+        token.mint(mintee, 100);
+
+        // visit the next block and make assertions
+        vm.roll(44);
+        assertEq(token.getPastVotes(mintee, 41), 0);   // minting happened in block 1 but delegation hasn't happened yet
+        assertEq(token.getPastVotes(mintee, 42), 100); // delegation happened in block 42
+        assertEq(token.getPastVotes(mintee, 43), 200); // more minting happened in block 43
+    }
+
+    function testGetPastTotalSupplySnapshotsByBlock() public {
+        // mint some tokens as owner
+        token.enableTransfer();
+        token.mint(mintee, 100);
+        vm.stopPrank();
+
+        // delegate to self
+        vm.roll(42);
+        vm.prank(mintee);
+        token.delegate(mintee);
+
+        // mint some more tokens as owner
+        vm.roll(43);
+        vm.prank(owner);
+        token.mint(mintee, 100);
+
+        // visit the next block and make assertions
+        vm.roll(44);
+        assertEq(token.getPastTotalSupply(41), 100); // total supply is calc'd regardless of delegation
+        assertEq(token.getPastTotalSupply(42), 100); // delegation happened in block 42
+        assertEq(token.getPastTotalSupply(43), 200); // more minting happened in block 43
+    }
+
+    function testDelegatesReturnsDelegateOf(address delegatee) public {
+        // mint some tokens as owner
+        token.enableTransfer();
+        token.mint(mintee, 100);
+        vm.stopPrank();
+
+        // delegate to self
+        vm.prank(mintee);
+        token.delegate(delegatee);
+
+        // visit the next block and make assertions
+        assertEq(token.delegates(mintee), delegatee);
+    }
+}
