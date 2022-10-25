@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "@oz-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import "@oz-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import "@oz-upgradeable/security/PausableUpgradeable.sol";
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
-import "@oz-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
+import "@oz-upgradeable/security/PausableUpgradeable.sol";
+import "@oz-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@oz-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
+import "@oz-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@oz-upgradeable/token/ERC721/extensions/draft-ERC721VotesUpgradeable.sol";
 import "@oz-upgradeable/utils/CountersUpgradeable.sol";
+import "@oz-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 
 /// @title Origami Membership Token
 /// @author Stephen Caudill
@@ -19,7 +21,9 @@ contract OrigamiMembershipToken is
     ERC721EnumerableUpgradeable,
     PausableUpgradeable,
     AccessControlUpgradeable,
-    ERC721BurnableUpgradeable
+    ERC721BurnableUpgradeable,
+    EIP712Upgradeable,
+    ERC721VotesUpgradeable
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
@@ -230,6 +234,14 @@ contract OrigamiMembershipToken is
     }
 
     // The following functions are overrides required by Solidity.
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal override(ERC721Upgradeable, ERC721VotesUpgradeable) {
+        super._afterTokenTransfer(from, to, tokenId);
+    }
 
     function _burn(uint256 tokenId) internal override(ERC721Upgradeable) {
         super._burn(tokenId);
