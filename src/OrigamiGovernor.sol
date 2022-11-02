@@ -27,19 +27,21 @@ contract OrigamiGovernor is
     /// TODO: implement something similar to {GovernorVotesUpgradeable-_getVotes}
 
     function initialize(
+        string calldata governorName,
         TimelockControllerUpgradeable _timelock,
         uint24 _votingDelay,
         uint24 _votingPeriod,
+        uint8 quorumPercentage,
         uint16 _proposalThreshold
     ) public initializer {
-        __Governor_init("OrigamiGovernor");
+        __Governor_init(governorName);
         __GovernorSettings_init(
             _votingDelay,
             _votingPeriod,
             _proposalThreshold
         );
         __GovernorCountingSimple_init();
-        __GovernorVotesQuorumFraction_init(10);
+        __GovernorVotesQuorumFraction_init(quorumPercentage);
         __GovernorTimelockControl_init(_timelock);
     }
 

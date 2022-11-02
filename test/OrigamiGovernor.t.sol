@@ -26,6 +26,7 @@ abstract contract GovHelper is GovAddressHelper, Test {
     constructor() {
         vm.startPrank(proxyAdmin);
 
+        // deploy timelock via proxy
         timelockAdmin = new ProxyAdmin();
         timelockImpl = new OrigamiTimelock();
         timelockProxy = new TransparentUpgradeableProxy(
@@ -36,7 +37,7 @@ abstract contract GovHelper is GovAddressHelper, Test {
         timelock = OrigamiTimelock(payable(timelockProxy));
         timelock.initialize(0, new address[](0), new address[](0));
 
-
+        // deploy governor via proxy
         admin = new ProxyAdmin();
         impl = new OrigamiGovernor();
         proxy = new TransparentUpgradeableProxy(
@@ -46,14 +47,14 @@ abstract contract GovHelper is GovAddressHelper, Test {
         );
         governor = OrigamiGovernor(payable(proxy));
         vm.stopPrank();
-        governor.initialize(timelock, 91984, 91984, 0);
+        governor.initialize("TestDAOGovernor", timelock, 91984, 91984, 10, 0);
     }
 }
 
 contract OrigamiGovernorTest is GovHelper {
     function testInformationalFunctions() public {
         assertEq(address(governor.timelock()), address(timelock));
-        assertEq(governor.name(), "OrigamiGovernor");
+        assertEq(governor.name(), "TestDAOGovernor");
         assertEq(governor.votingDelay(), 91984);
         assertEq(governor.votingPeriod(), 91984);
         assertEq(governor.proposalThreshold(), 0);
