@@ -29,6 +29,7 @@ contract OrigamiGovernor is
     function initialize(
         string calldata governorName,
         TimelockControllerUpgradeable _timelock,
+        IVotesUpgradeable _defaultToken,
         uint24 _votingDelay,
         uint24 _votingPeriod,
         uint8 quorumPercentage,
@@ -41,6 +42,7 @@ contract OrigamiGovernor is
             _proposalThreshold
         );
         __GovernorCountingSimple_init();
+        __GovernorVotes_init(_defaultToken);
         __GovernorVotesQuorumFraction_init(quorumPercentage);
         __GovernorTimelockControl_init(_timelock);
     }
