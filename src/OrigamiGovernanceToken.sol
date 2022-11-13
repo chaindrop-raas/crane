@@ -9,6 +9,7 @@ import "@oz-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
+import "@oz/governance/utils/IVotes.sol";
 
 /// @title Origami Governance Token
 /// @author Stephen Caudill
@@ -243,5 +244,17 @@ contract OrigamiGovernanceToken is
             "Transferrable: transfers are disabled"
         );
         _;
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControlUpgradeable)
+        returns (bool)
+    {
+        return
+            interfaceId == type(IVotes).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 }

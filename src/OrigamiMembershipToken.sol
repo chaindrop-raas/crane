@@ -10,6 +10,7 @@ import "@oz-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol"
 import "@oz-upgradeable/token/ERC721/extensions/draft-ERC721VotesUpgradeable.sol";
 import "@oz-upgradeable/utils/CountersUpgradeable.sol";
 import "@oz-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
+import "@oz/governance/utils/IVotes.sol";
 
 /// @title Origami Membership Token
 /// @author Stephen Caudill
@@ -270,7 +271,9 @@ contract OrigamiMembershipToken is
         )
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+        return
+            interfaceId == type(IVotes).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /// @notice this modifier allows us to ensure that no more than one token is minted to a given wallet.
