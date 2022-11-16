@@ -15,6 +15,7 @@ abstract contract GovAddressHelper {
     address public owner = address(0x2);
     address public proposer = address(0x3);
     address public voter = address(0x4);
+    address public anon = address(0x5);
 }
 
 // solhint-disable-next-line max-states-count
@@ -110,7 +111,14 @@ abstract contract GovHelper is GovAddressHelper, Test {
         memToken.safeMint(voter);
         govToken.mint(voter, 100000000);
 
+        // let's travel an arbitrary and small amount of time forward so
+        // proposals snapshot after these mints.
+        vm.roll(42);
         vm.stopPrank();
+
+        // self-delegate the NFT
+        vm.prank(voter);
+        memToken.delegate(voter);
     }
 }
 
@@ -184,16 +192,25 @@ contract OrigamiGovernorProposalTest is GovHelper {
             183969,
             "New proposal"
         );
+        governor.propose(targets, values, calldatas, "New proposal");
+    }
+
+    function testCanVoteOnProposal() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+
+        vm.prank(proposer);
         uint256 proposalId = governor.propose(
             targets,
             values,
             calldatas,
             "New proposal"
         );
-        vm.roll(91986);
+        vm.roll(92027);
         vm.prank(voter);
         vm.expectEmit(true, true, true, true, address(governor));
-        emit VoteCast(voter, proposalId, 0, 0, "");
+        // our voting weight is 1 here, since this vote uses the membership token
+        emit VoteCast(voter, proposalId, 0, 1, "");
         governor.castVote(proposalId, 0);
     }
 
@@ -251,7 +268,7 @@ contract OrigamiGovernorProposalTest is GovHelper {
         values[0] = uint256(0xdead);
         calldatas[0] = "0x";
 
-        vm.expectRevert("Governor: proposal token does not support IVotes");
+        vm.expectRevert("Governor: proposal token must support IVotes");
         governor.proposeWithParams(
             targets,
             values,
@@ -274,10 +291,15 @@ contract OrigamiGovernorProposalTest is GovHelper {
             "New proposal",
             params
         );
-        vm.roll(91986);
+
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        vm.roll(92027);
         vm.prank(voter);
         vm.expectEmit(true, true, true, true, address(governor));
-        emit VoteCastWithParams(voter, proposalId, 0, 0, "I like it", params);
+        emit VoteCastWithParams(voter, proposalId, 0, 100000000, "I like it", params);
         governor.castVoteWithReasonAndParams(
             proposalId,
             0,

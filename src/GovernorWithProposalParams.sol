@@ -18,6 +18,10 @@ abstract contract GovernorWithProposalParams is
         address token;
     }
 
+    function hydrateParams(bytes memory params) public pure returns (address) {
+        return abi.decode(params, (address));
+    }
+
     function _defaultProposalParams() internal virtual returns (bytes memory) {
         address defaultToken = address(token);
         return abi.encode(defaultToken);
@@ -39,10 +43,10 @@ abstract contract GovernorWithProposalParams is
         string memory description,
         bytes memory params
     ) public virtual returns (uint256) {
-        address proposalToken = abi.decode(params, (address));
+        address proposalToken = hydrateParams(params);
         require(
             ERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
-            "Governor: proposal token does not support IVotes"
+            "Governor: proposal token must support IVotes"
         );
 
         uint256 proposalId = super.propose(
@@ -51,10 +55,10 @@ abstract contract GovernorWithProposalParams is
             calldatas,
             description
         );
-        _proposalParams[proposalId] = abi.decode(params, (ProposalParams));
 
-        ProposalParams memory proposalParams = _proposalParams[proposalId];
+        ProposalParams memory proposalParams;
         proposalParams.token = proposalToken;
+        _proposalParams[proposalId] = proposalParams;
 
         return proposalId;
     }

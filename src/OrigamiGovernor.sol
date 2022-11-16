@@ -45,6 +45,21 @@ contract OrigamiGovernor is
         __GovernorTimelockControl_init(_timelock);
     }
 
+    function _getVotes(
+        address account,
+        uint256 blockNumber,
+        bytes memory params
+    ) internal view override(GovernorUpgradeable, GovernorVotesUpgradeable) returns (uint256) {
+        if(keccak256(params) == keccak256(_defaultParams())) {
+            return super._getVotes(account, blockNumber, params);
+        } else {
+            address proposalToken = hydrateParams(params);
+            uint256 pastVotes = IVotes(proposalToken).getPastVotes(account, blockNumber);
+            require(pastVotes > 0, "Governor: only accounts with delegated voting power can vote");
+            return pastVotes;
+        }
+    }
+
     // The following functions are overrides required by Solidity.
 
     function votingDelay()
