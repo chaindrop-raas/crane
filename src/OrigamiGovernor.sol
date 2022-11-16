@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
+import "./GovernorWithProposalParams.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
@@ -12,19 +12,17 @@ import "@oz-upgradeable/proxy/utils/Initializable.sol";
 /// @custom:security-contact contract-security@joinorigami.com
 contract OrigamiGovernor is
     Initializable,
-    GovernorUpgradeable,
-    GovernorSettingsUpgradeable,
     GovernorCountingSimpleUpgradeable,
+    GovernorSettingsUpgradeable,
+    GovernorTimelockControlUpgradeable,
     GovernorVotesUpgradeable,
     GovernorVotesQuorumFractionUpgradeable,
-    GovernorTimelockControlUpgradeable
+    GovernorWithProposalParams
 {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
-
-    /// TODO: implement something similar to {GovernorVotesUpgradeable-_getVotes}
 
     function initialize(
         string calldata governorName,
@@ -95,7 +93,14 @@ contract OrigamiGovernor is
         override(GovernorUpgradeable, IGovernorUpgradeable)
         returns (uint256)
     {
-        return super.propose(targets, values, calldatas, description);
+        return
+            proposeWithParams(
+                targets,
+                values,
+                calldatas,
+                description,
+                _defaultProposalParams()
+            );
     }
 
     function proposalThreshold()

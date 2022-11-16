@@ -4,16 +4,20 @@ pragma solidity 0.8.17;
 import "@std/Test.sol";
 import "src/OrigamiGovernor.sol";
 import "src/OrigamiMembershipToken.sol";
+import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiTimelock.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
+import "@oz/governance/IGovernor.sol";
 
 abstract contract GovAddressHelper {
     address public deployer = address(0x1);
     address public owner = address(0x2);
     address public proposer = address(0x3);
+    address public voter = address(0x4);
 }
 
+// solhint-disable-next-line max-states-count
 abstract contract GovHelper is GovAddressHelper, Test {
     OrigamiMembershipToken public memTokenImpl;
     TransparentUpgradeableProxy public memTokenProxy;
@@ -30,10 +34,15 @@ abstract contract GovHelper is GovAddressHelper, Test {
     OrigamiGovernor public governor;
     ProxyAdmin public admin;
 
+    OrigamiGovernanceToken public govTokenImpl;
+    TransparentUpgradeableProxy public govTokenProxy;
+    OrigamiGovernanceToken public govToken;
+    ProxyAdmin public govTokenAdmin;
+
     constructor() {
         vm.startPrank(deployer);
 
-        // deploy gov token via proxy
+        // deploy membership token via proxy
         memTokenAdmin = new ProxyAdmin();
         memTokenImpl = new OrigamiMembershipToken();
         memTokenProxy = new TransparentUpgradeableProxy(
@@ -60,6 +69,22 @@ abstract contract GovHelper is GovAddressHelper, Test {
         timelock = OrigamiTimelock(payable(timelockProxy));
         timelock.initialize(0, new address[](0), new address[](0));
 
+        // deploy gov token via proxy
+        govTokenAdmin = new ProxyAdmin();
+        govTokenImpl = new OrigamiGovernanceToken();
+        govTokenProxy = new TransparentUpgradeableProxy(
+            address(govTokenImpl),
+            address(govTokenAdmin),
+            ""
+        );
+        govToken = OrigamiGovernanceToken(address(govTokenProxy));
+        govToken.initialize(
+            owner,
+            "Deciduous Tree DAO Membership",
+            "DTDM",
+            10000000000000000000000000000
+        );
+
         // deploy governor via proxy
         admin = new ProxyAdmin();
         impl = new OrigamiGovernor();
@@ -79,6 +104,13 @@ abstract contract GovHelper is GovAddressHelper, Test {
             10,
             0
         );
+        vm.startPrank(owner);
+
+        // issue the voter some tokens
+        memToken.safeMint(voter);
+        govToken.mint(voter, 100000000);
+
+        vm.stopPrank();
     }
 }
 
@@ -106,6 +138,23 @@ contract OrigamiGovernorProposalTest is GovHelper {
         string description
     );
 
+    event VoteCast(
+        address indexed voter,
+        uint256 proposalId,
+        uint8 support,
+        uint256 weight,
+        string reason
+    );
+
+    event VoteCastWithParams(
+        address indexed voter,
+        uint256 proposalId,
+        uint8 support,
+        uint256 weight,
+        string reason,
+        bytes params
+    );
+
     address[] public targets;
     uint256[] public values;
     bytes[] public calldatas;
@@ -121,12 +170,11 @@ contract OrigamiGovernorProposalTest is GovHelper {
     function testCanSubmitProposal() public {
         targets[0] = address(0xbeef);
         values[0] = uint256(0xdead);
-        calldatas[0] = "0x";
 
         vm.prank(proposer);
-        vm.expectEmit(true, true, true, true, address(governor));
+        vm.expectEmit(true, true, true, false, address(governor));
         emit ProposalCreated(
-            21284495225446007869661364305915652377384362518400550250897600969950500894956,
+            27805474734109527106678436453108520455405719583396555275526236178632433511344,
             proposer,
             targets,
             values,
@@ -136,7 +184,17 @@ contract OrigamiGovernorProposalTest is GovHelper {
             183969,
             "New proposal"
         );
-        governor.propose(targets, values, calldatas, "New proposal");
+        uint256 proposalId = governor.propose(
+            targets,
+            values,
+            calldatas,
+            "New proposal"
+        );
+        vm.roll(91986);
+        vm.prank(voter);
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCast(voter, proposalId, 0, 0, "");
+        governor.castVote(proposalId, 0);
     }
 
     function testCannotSubmitProposalWithZeroTargets() public {
@@ -173,4 +231,58 @@ contract OrigamiGovernorProposalTest is GovHelper {
         governor.propose(targets, values, calldatas, "New proposal");
     }
 
+    function testCanRetrieveProposalParams() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        uint256 proposalId = governor.proposeWithParams(
+            targets,
+            values,
+            calldatas,
+            "New proposal",
+            abi.encode(address(govToken))
+        );
+        assertEq(governor.getProposalParams(proposalId), address(govToken));
+    }
+
+    function testProposalWithParamsTokenMustSupportIVotes() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        vm.expectRevert("Governor: proposal token does not support IVotes");
+        governor.proposeWithParams(
+            targets,
+            values,
+            calldatas,
+            "New proposal",
+            abi.encode(address(timelock))
+        );
+    }
+
+    function testCanVoteOnProposalWithParams() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+        bytes memory params = abi.encode(address(govToken));
+
+        uint256 proposalId = governor.proposeWithParams(
+            targets,
+            values,
+            calldatas,
+            "New proposal",
+            params
+        );
+        vm.roll(91986);
+        vm.prank(voter);
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCastWithParams(voter, proposalId, 0, 0, "I like it", params);
+        governor.castVoteWithReasonAndParams(
+            proposalId,
+            0,
+            "I like it",
+            params
+        );
+    }
 }
