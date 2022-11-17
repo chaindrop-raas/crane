@@ -16,7 +16,8 @@ abstract contract GovAddressHelper {
     address public proposer = address(0x3);
     address public voter = address(0x4);
     address public newVoter = address(0x5);
-    address public anon = address(0x6);
+    address public nonMember = address(0x6);
+    address public anon = address(0x7);
 }
 
 // solhint-disable-next-line max-states-count
@@ -112,6 +113,7 @@ abstract contract GovHelper is GovAddressHelper, Test {
         memToken.safeMint(voter);
         memToken.safeMint(newVoter);
         govToken.mint(voter, 100000000);
+        govToken.mint(nonMember, 50000000);
 
         // let's travel an arbitrary and small amount of time forward so
         // proposals snapshot after these mints.
@@ -364,6 +366,40 @@ contract OrigamiGovernorProposalTest is GovHelper {
             proposalId,
             1,
             "I don't like it.",
+            params
+        );
+    }
+
+    function testAddressWithoutMembershipTokenCanDelegateToMember() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        bytes memory params = abi.encode(address(govToken));
+
+        uint256 proposalId = governor.proposeWithParams(
+            targets,
+            values,
+            calldatas,
+            "New proposal",
+            params
+        );
+
+        // self-delegate to get voting power
+        vm.prank(nonMember);
+        govToken.delegate(newVoter);
+
+        vm.roll(92027);
+        vm.prank(newVoter);
+
+        // newVoter has the weight of nonMember's delegated tokens
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCastWithParams(newVoter, proposalId, 0, 50000000, "I vote with their weight!", params);
+        governor.castVoteWithReasonAndParams(
+            proposalId,
+            0,
+            "I vote with their weight!",
             params
         );
     }
