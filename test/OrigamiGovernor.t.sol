@@ -27,6 +27,11 @@ abstract contract GovHelper is GovAddressHelper, Test {
     OrigamiMembershipToken public memToken;
     ProxyAdmin public memTokenAdmin;
 
+    OrigamiGovernanceToken public govTokenImpl;
+    TransparentUpgradeableProxy public govTokenProxy;
+    OrigamiGovernanceToken public govToken;
+    ProxyAdmin public govTokenAdmin;
+
     OrigamiTimelock public timelockImpl;
     TransparentUpgradeableProxy public timelockProxy;
     OrigamiTimelock public timelock;
@@ -36,11 +41,6 @@ abstract contract GovHelper is GovAddressHelper, Test {
     TransparentUpgradeableProxy public proxy;
     OrigamiGovernor public governor;
     ProxyAdmin public admin;
-
-    OrigamiGovernanceToken public govTokenImpl;
-    TransparentUpgradeableProxy public govTokenProxy;
-    OrigamiGovernanceToken public govToken;
-    ProxyAdmin public govTokenAdmin;
 
     constructor() {
         vm.startPrank(deployer);
@@ -99,13 +99,7 @@ abstract contract GovHelper is GovAddressHelper, Test {
         governor = OrigamiGovernor(payable(proxy));
         vm.stopPrank();
         governor.initialize(
-            "TestDAOGovernor",
-            timelock,
-            memToken,
-            91984,
-            91984,
-            10,
-            0
+            "TestDAOGovernor", timelock, memToken, 91984, 91984, 10, 0
         );
         vm.startPrank(owner);
 
@@ -180,7 +174,7 @@ contract OrigamiGovernorProposalTest is GovHelper {
             91985,
             183969,
             "New proposal"
-        );
+            );
         governor.propose(targets, values, calldatas, "New proposal");
     }
 
@@ -228,9 +222,12 @@ contract OrigamiGovernorProposalTest is GovHelper {
             values,
             calldatas,
             "New proposal",
-            abi.encode(address(govToken))
+            abi.encode(address(govToken), address(governor))
         );
-        assertEq(governor.getProposalParams(proposalId), address(govToken));
+        (address token, address counter) =
+            governor.getProposalParams(proposalId);
+        assertEq(token, address(govToken));
+        assertEq(counter, address(governor));
     }
 
     function testProposalWithParamsTokenMustSupportIVotes() public {
@@ -244,7 +241,7 @@ contract OrigamiGovernorProposalTest is GovHelper {
             values,
             calldatas,
             "New proposal",
-            abi.encode(address(timelock))
+            abi.encode(address(timelock), address(governor))
         );
     }
 }
@@ -285,23 +282,16 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
         calldatas[0] = "0x";
 
         // use the gov token for vote weight
-        params = abi.encode(address(govToken));
+        params = abi.encode(address(govToken), address(governor));
 
         proposalId = governor.proposeWithParams(
-            targets,
-            values,
-            calldatas,
-            "New proposal",
-            params
+            targets, values, calldatas, "New proposal", params
         );
     }
 
     function testCanVoteOnProposalWithDefaultParams() public {
         proposalId = governor.propose(
-            targets,
-            values,
-            calldatas,
-            "Simple Voting Proposal"
+            targets, values, calldatas, "Simple Voting Proposal"
         );
         vm.roll(92027);
         vm.prank(voter);
@@ -320,19 +310,9 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
         vm.prank(voter);
         vm.expectEmit(true, true, true, true, address(governor));
         emit VoteCastWithParams(
-            voter,
-            proposalId,
-            0,
-            100000000,
-            "I like it",
-            params
-        );
-        governor.castVoteWithReasonAndParams(
-            proposalId,
-            0,
-            "I like it",
-            params
-        );
+            voter, proposalId, 0, 100000000, "I like it", params
+            );
+        governor.castVoteWithReasonAndParams(proposalId, 0, "I like it", params);
     }
 
     function testAddressWithoutMembershipTokenCanDelegateToMember() public {
@@ -352,12 +332,9 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
             50000000,
             "I vote with their weight!",
             params
-        );
+            );
         governor.castVoteWithReasonAndParams(
-            proposalId,
-            0,
-            "I vote with their weight!",
-            params
+            proposalId, 0, "I vote with their weight!", params
         );
     }
 
@@ -374,10 +351,7 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
             "Governor: only accounts with delegated voting power can vote"
         );
         governor.castVoteWithReasonAndParams(
-            proposalId,
-            1,
-            "I don't like it.",
-            params
+            proposalId, 1, "I don't like it.", params
         );
     }
 
@@ -388,5 +362,4 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
         vm.expectRevert("OrigamiGovernor: only members may vote");
         governor.castVoteWithReason(proposalId, 1, "I don't like it.");
     }
-
 }

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import "@std/console.sol";
 import "./GovernorWithProposalParams.sol";
 import "./OrigamiMembershipToken.sol";
+import "./OrigamiGovernor/counting/SimpleCounting.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
-import "@oz-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
@@ -13,12 +14,12 @@ import "@oz-upgradeable/proxy/utils/Initializable.sol";
 /// @custom:security-contact contract-security@joinorigami.com
 contract OrigamiGovernor is
     Initializable,
-    GovernorCountingSimpleUpgradeable,
     GovernorSettingsUpgradeable,
     GovernorTimelockControlUpgradeable,
     GovernorVotesUpgradeable,
     GovernorVotesQuorumFractionUpgradeable,
-    GovernorWithProposalParams
+    GovernorWithProposalParams,
+    SimpleCounting
 {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -40,7 +41,6 @@ contract OrigamiGovernor is
             _votingPeriod,
             _proposalThreshold
         );
-        __GovernorCountingSimple_init();
         __GovernorVotes_init(_defaultToken);
         __GovernorVotesQuorumFraction_init(quorumPercentage);
         __GovernorTimelockControl_init(_timelock);
@@ -64,10 +64,25 @@ contract OrigamiGovernor is
         if(keccak256(params) == keccak256(_defaultParams())) {
             return super._getVotes(account, blockNumber, params);
         } else {
-            address proposalToken = hydrateParams(params);
+            (address proposalToken,) = hydrateParams(params);
             uint256 pastVotes = IVotes(proposalToken).getPastVotes(account, blockNumber);
             require(pastVotes > 0, "Governor: only accounts with delegated voting power can vote");
             return pastVotes;
+        }
+    }
+
+    function _countVote(
+        uint256 proposalId,
+        address account,
+        uint8 support,
+        uint256 weight,
+        bytes memory params
+    ) internal override(GovernorUpgradeable) {
+        if(keccak256(params) == keccak256(_defaultParams())) {
+            countVote(proposalId, account, support, weight, params);
+        } else {
+            (, address counter) = hydrateParams(params);
+            ICounting(counter).countVote(proposalId, account, support, weight, params);
         }
     }
 

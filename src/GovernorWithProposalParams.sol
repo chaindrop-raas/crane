@@ -12,28 +12,28 @@ abstract contract GovernorWithProposalParams is
     GovernorUpgradeable,
     GovernorVotesUpgradeable
 {
-    mapping(uint256 => ProposalParams) private _proposalParams;
+    mapping(uint256 => bytes) private _proposalParams;
 
-    struct ProposalParams {
-        address token;
-    }
-
-    function hydrateParams(bytes memory params) public pure returns (address) {
-        return abi.decode(params, (address));
+    function hydrateParams(bytes memory params)
+        public
+        pure
+        returns (address token, address counter)
+    {
+        (token, counter) = abi.decode(params, (address, address));
     }
 
     function _defaultProposalParams() internal virtual returns (bytes memory) {
-        address defaultToken = address(token);
-        return abi.encode(defaultToken);
+        // in the case of OrigamiGovernor, if we fall back to defaults we won't
+        // use the counting implementation, so we have a nice steak instead.
+        return abi.encode(address(token), address(0xbeef));
     }
 
     function getProposalParams(uint256 proposalId)
         public
         view
-        returns (address token)
+        returns (address token, address counter)
     {
-        ProposalParams memory params = _proposalParams[proposalId];
-        return params.token;
+        return hydrateParams(_proposalParams[proposalId]);
     }
 
     function proposeWithParams(
@@ -43,22 +43,16 @@ abstract contract GovernorWithProposalParams is
         string memory description,
         bytes memory params
     ) public virtual returns (uint256) {
-        address proposalToken = hydrateParams(params);
+        (address proposalToken,) = hydrateParams(params);
         require(
             ERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
             "Governor: proposal token must support IVotes"
         );
 
-        uint256 proposalId = super.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        uint256 proposalId =
+            super.propose(targets, values, calldatas, description);
 
-        ProposalParams memory proposalParams;
-        proposalParams.token = proposalToken;
-        _proposalParams[proposalId] = proposalParams;
+        _proposalParams[proposalId] = params;
 
         return proposalId;
     }
