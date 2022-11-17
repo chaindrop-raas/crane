@@ -152,23 +152,6 @@ contract OrigamiGovernorProposalTest is GovHelper {
         string description
     );
 
-    event VoteCast(
-        address indexed voter,
-        uint256 proposalId,
-        uint8 support,
-        uint256 weight,
-        string reason
-    );
-
-    event VoteCastWithParams(
-        address indexed voter,
-        uint256 proposalId,
-        uint8 support,
-        uint256 weight,
-        string reason,
-        bytes params
-    );
-
     address[] public targets;
     uint256[] public values;
     bytes[] public calldatas;
@@ -199,25 +182,6 @@ contract OrigamiGovernorProposalTest is GovHelper {
             "New proposal"
         );
         governor.propose(targets, values, calldatas, "New proposal");
-    }
-
-    function testCanVoteOnProposal() public {
-        targets[0] = address(0xbeef);
-        values[0] = uint256(0xdead);
-
-        vm.prank(proposer);
-        uint256 proposalId = governor.propose(
-            targets,
-            values,
-            calldatas,
-            "New proposal"
-        );
-        vm.roll(92027);
-        vm.prank(voter);
-        vm.expectEmit(true, true, true, true, address(governor));
-        // our voting weight is 1 here, since this vote uses the membership token
-        emit VoteCast(voter, proposalId, 0, 1, "");
-        governor.castVote(proposalId, 0);
     }
 
     function testCannotSubmitProposalWithZeroTargets() public {
@@ -283,21 +247,71 @@ contract OrigamiGovernorProposalTest is GovHelper {
             abi.encode(address(timelock))
         );
     }
+}
 
-    function testCanVoteOnProposalWithParams() public {
+contract OrigamiGovernorProposalVoteTest is GovHelper {
+    event VoteCast(
+        address indexed voter,
+        uint256 proposalId,
+        uint8 support,
+        uint256 weight,
+        string reason
+    );
+
+    event VoteCastWithParams(
+        address indexed voter,
+        uint256 proposalId,
+        uint8 support,
+        uint256 weight,
+        string reason,
+        bytes params
+    );
+
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
         targets[0] = address(0xbeef);
         values[0] = uint256(0xdead);
         calldatas[0] = "0x";
-        bytes memory params = abi.encode(address(govToken));
 
-        uint256 proposalId = governor.proposeWithParams(
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken));
+
+        proposalId = governor.proposeWithParams(
             targets,
             values,
             calldatas,
             "New proposal",
             params
         );
+    }
 
+    function testCanVoteOnProposalWithDefaultParams() public {
+        proposalId = governor.propose(
+            targets,
+            values,
+            calldatas,
+            "Simple Voting Proposal"
+        );
+        vm.roll(92027);
+        vm.prank(voter);
+        vm.expectEmit(true, true, true, true, address(governor));
+        // our voting weight is 1 here, since this vote uses the membership token
+        emit VoteCast(voter, proposalId, 0, 1, "");
+        governor.castVote(proposalId, 0);
+    }
+
+    function testCanVoteOnProposalWithParams() public {
         // self-delegate to get voting power
         vm.prank(voter);
         govToken.delegate(voter);
@@ -305,7 +319,14 @@ contract OrigamiGovernorProposalTest is GovHelper {
         vm.roll(92027);
         vm.prank(voter);
         vm.expectEmit(true, true, true, true, address(governor));
-        emit VoteCastWithParams(voter, proposalId, 0, 100000000, "I like it", params);
+        emit VoteCastWithParams(
+            voter,
+            proposalId,
+            0,
+            100000000,
+            "I like it",
+            params
+        );
         governor.castVoteWithReasonAndParams(
             proposalId,
             0,
@@ -314,78 +335,7 @@ contract OrigamiGovernorProposalTest is GovHelper {
         );
     }
 
-    function testCanLimitVotingToMembershipTokenHolders() public {
-        targets[0] = address(0xbeef);
-        values[0] = uint256(0xdead);
-        calldatas[0] = "0x";
-
-        uint256 proposalId = governor.propose(
-            targets,
-            values,
-            calldatas,
-            "New proposal"
-        );
-
-        vm.roll(92027);
-        vm.prank(anon);
-
-        vm.expectRevert("OrigamiGovernor: only members may vote");
-        governor.castVoteWithReason(
-            proposalId,
-            1,
-            "I don't like it."
-        );
-    }
-
-    function testCanLimitVotingByWeight() public {
-        targets[0] = address(0xbeef);
-        values[0] = uint256(0xdead);
-        calldatas[0] = "0x";
-
-        // use the gov token for vote weight
-        bytes memory params = abi.encode(address(govToken));
-
-        uint256 proposalId = governor.proposeWithParams(
-            targets,
-            values,
-            calldatas,
-            "New proposal",
-            params
-        );
-
-        // self-delegate to get voting power
-        vm.prank(newVoter);
-        govToken.delegate(newVoter);
-
-        vm.roll(92027);
-        vm.prank(newVoter);
-
-        // newVoter has correctly self-delegated, but their weight is zero
-        vm.expectRevert("Governor: only accounts with delegated voting power can vote");
-        governor.castVoteWithReasonAndParams(
-            proposalId,
-            1,
-            "I don't like it.",
-            params
-        );
-    }
-
     function testAddressWithoutMembershipTokenCanDelegateToMember() public {
-        targets[0] = address(0xbeef);
-        values[0] = uint256(0xdead);
-        calldatas[0] = "0x";
-
-        // use the gov token for vote weight
-        bytes memory params = abi.encode(address(govToken));
-
-        uint256 proposalId = governor.proposeWithParams(
-            targets,
-            values,
-            calldatas,
-            "New proposal",
-            params
-        );
-
         // self-delegate to get voting power
         vm.prank(nonMember);
         govToken.delegate(newVoter);
@@ -395,7 +345,14 @@ contract OrigamiGovernorProposalTest is GovHelper {
 
         // newVoter has the weight of nonMember's delegated tokens
         vm.expectEmit(true, true, true, true, address(governor));
-        emit VoteCastWithParams(newVoter, proposalId, 0, 50000000, "I vote with their weight!", params);
+        emit VoteCastWithParams(
+            newVoter,
+            proposalId,
+            0,
+            50000000,
+            "I vote with their weight!",
+            params
+        );
         governor.castVoteWithReasonAndParams(
             proposalId,
             0,
@@ -403,4 +360,33 @@ contract OrigamiGovernorProposalTest is GovHelper {
             params
         );
     }
+
+    function testCanLimitVotingByWeight() public {
+        // self-delegate to get voting power
+        vm.prank(newVoter);
+        govToken.delegate(newVoter);
+
+        vm.roll(92027);
+        vm.prank(newVoter);
+
+        // newVoter has correctly self-delegated, but their weight is zero
+        vm.expectRevert(
+            "Governor: only accounts with delegated voting power can vote"
+        );
+        governor.castVoteWithReasonAndParams(
+            proposalId,
+            1,
+            "I don't like it.",
+            params
+        );
+    }
+
+    function testCanLimitVotingToMembershipTokenHolders() public {
+        vm.roll(92027);
+        vm.prank(anon);
+
+        vm.expectRevert("OrigamiGovernor: only members may vote");
+        governor.castVoteWithReason(proposalId, 1, "I don't like it.");
+    }
+
 }
