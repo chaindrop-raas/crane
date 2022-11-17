@@ -10,3 +10,6 @@ mumbai = "${ALCHEMY_RPC_URL_MUMBAI}"
 
 [etherscan]
 goerli = { key = "${ETHERSCAN_API_KEY}" }
+
+[fmt]
+line_length = 80
