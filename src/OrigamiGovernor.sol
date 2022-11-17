@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import "./GovernorWithProposalParams.sol";
+import "./OrigamiMembershipToken.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
@@ -43,6 +44,16 @@ contract OrigamiGovernor is
         __GovernorVotes_init(_defaultToken);
         __GovernorVotesQuorumFraction_init(quorumPercentage);
         __GovernorTimelockControl_init(_timelock);
+    }
+
+    function _castVote(
+        uint256 proposalId,
+        address account,
+        uint8 support,
+        string memory reason,
+        bytes memory params
+    ) internal override onlyMember(account) returns (uint256) {
+        return super._castVote(proposalId, account, support, reason, params);
     }
 
     function _getVotes(
@@ -169,5 +180,13 @@ contract OrigamiGovernor is
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    modifier onlyMember(address account) {
+        require(
+            OrigamiMembershipToken(address(token)).balanceOf(account) > 0,
+            "OrigamiGovernor: only members may vote"
+        );
+        _;
     }
 }

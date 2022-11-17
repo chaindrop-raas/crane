@@ -15,7 +15,8 @@ abstract contract GovAddressHelper {
     address public owner = address(0x2);
     address public proposer = address(0x3);
     address public voter = address(0x4);
-    address public anon = address(0x5);
+    address public newVoter = address(0x5);
+    address public anon = address(0x6);
 }
 
 // solhint-disable-next-line max-states-count
@@ -109,6 +110,7 @@ abstract contract GovHelper is GovAddressHelper, Test {
 
         // issue the voter some tokens
         memToken.safeMint(voter);
+        memToken.safeMint(newVoter);
         govToken.mint(voter, 100000000);
 
         // let's travel an arbitrary and small amount of time forward so
@@ -119,6 +121,8 @@ abstract contract GovHelper is GovAddressHelper, Test {
         // self-delegate the NFT
         vm.prank(voter);
         memToken.delegate(voter);
+        vm.prank(newVoter);
+        memToken.delegate(newVoter);
     }
 }
 
@@ -304,6 +308,62 @@ contract OrigamiGovernorProposalTest is GovHelper {
             proposalId,
             0,
             "I like it",
+            params
+        );
+    }
+
+    function testCanLimitVotingToMembershipTokenHolders() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        uint256 proposalId = governor.propose(
+            targets,
+            values,
+            calldatas,
+            "New proposal"
+        );
+
+        vm.roll(92027);
+        vm.prank(anon);
+
+        vm.expectRevert("OrigamiGovernor: only members may vote");
+        governor.castVoteWithReason(
+            proposalId,
+            1,
+            "I don't like it."
+        );
+    }
+
+    function testCanLimitVotingByWeight() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        bytes memory params = abi.encode(address(govToken));
+
+        uint256 proposalId = governor.proposeWithParams(
+            targets,
+            values,
+            calldatas,
+            "New proposal",
+            params
+        );
+
+        // self-delegate to get voting power
+        vm.prank(newVoter);
+        govToken.delegate(newVoter);
+
+        vm.roll(92027);
+        vm.prank(newVoter);
+
+        // newVoter has correctly self-delegated, but their weight is zero
+        vm.expectRevert("Governor: only accounts with delegated voting power can vote");
+        governor.castVoteWithReasonAndParams(
+            proposalId,
+            1,
+            "I don't like it.",
             params
         );
     }
