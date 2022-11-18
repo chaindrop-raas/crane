@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "./GovernorWithProposalParams.sol";
-import "./OrigamiMembershipToken.sol";
-import "./OrigamiGovernor/counting/SimpleCounting.sol";
+import "src/GovernorWithProposalParams.sol";
+import "src/OrigamiMembershipToken.sol";
+import "src/governor/SimpleCounting.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";

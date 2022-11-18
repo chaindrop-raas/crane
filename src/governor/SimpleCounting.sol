@@ -1,10 +1,9 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "./ICounting.sol";
 import "src/GovernorWithProposalParams.sol";
 
-abstract contract SimpleCounting is ICounting, GovernorWithProposalParams {
+abstract contract SimpleCounting is GovernorWithProposalParams {
     enum VoteType {
         Against,
         For,

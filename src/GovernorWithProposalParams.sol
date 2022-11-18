@@ -2,15 +2,13 @@
 pragma solidity 0.8.17;
 
 import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
-import "@oz-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
 import "@oz/governance/utils/IVotes.sol";
 import "@oz/utils/introspection/ERC165.sol";
 
 abstract contract GovernorWithProposalParams is
     Initializable,
-    GovernorUpgradeable,
-    GovernorVotesUpgradeable
+    GovernorUpgradeable
 {
     mapping(uint256 => bytes) private _proposalParams;
 
