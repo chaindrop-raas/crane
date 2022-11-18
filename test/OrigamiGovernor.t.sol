@@ -222,12 +222,14 @@ contract OrigamiGovernorProposalTest is GovHelper {
             values,
             calldatas,
             "New proposal",
-            abi.encode(address(govToken), address(governor))
+            abi.encode(
+                address(govToken), bytes4(keccak256("_simpleWeight(uint256)"))
+            )
         );
-        (address token, address counter) =
+        (address token, bytes32 counterSignature) =
             governor.getProposalParams(proposalId);
         assertEq(token, address(govToken));
-        assertEq(counter, address(governor));
+        assertEq(counterSignature, bytes4(keccak256("_simpleWeight(uint256)")));
     }
 
     function testProposalWithParamsTokenMustSupportIVotes() public {
@@ -241,7 +243,9 @@ contract OrigamiGovernorProposalTest is GovHelper {
             values,
             calldatas,
             "New proposal",
-            abi.encode(address(timelock), address(governor))
+            abi.encode(
+                address(timelock), bytes4(keccak256("_simpleWeight(uint256)"))
+            )
         );
     }
 }
@@ -282,7 +286,9 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
         calldatas[0] = "0x";
 
         // use the gov token for vote weight
-        params = abi.encode(address(govToken), address(governor));
+        params = abi.encode(
+            address(govToken), bytes4(keccak256("_simpleWeight(uint256)"))
+        );
 
         proposalId = governor.proposeWithParams(
             targets, values, calldatas, "New proposal", params
@@ -361,5 +367,67 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
 
         vm.expectRevert("OrigamiGovernor: only members may vote");
         governor.castVoteWithReason(proposalId, 1, "I don't like it.");
+    }
+}
+
+contract OrigamiGovernorProposalQuadraticVoteTest is GovHelper {
+    event VoteCast(
+        address indexed voter,
+        uint256 proposalId,
+        uint8 support,
+        uint256 weight,
+        string reason
+    );
+
+    event VoteCastWithParams(
+        address indexed voter,
+        uint256 proposalId,
+        uint8 support,
+        uint256 weight,
+        string reason,
+        bytes params
+    );
+
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        params = abi.encode(
+            address(govToken), bytes4(keccak256("_quadraticWeight(uint256)"))
+        );
+
+        proposalId = governor.proposeWithParams(
+            targets, values, calldatas, "New proposal", params
+        );
+    }
+
+    function testCanVoteOnProposalWithQuadraticCounting() public {
+        // self-delegate to get voting power
+        vm.startPrank(voter);
+        govToken.delegate(voter);
+
+        vm.roll(92027);
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCastWithParams(
+            voter, proposalId, 0, 100000000, "I like it", params
+            );
+        governor.castVoteWithReasonAndParams(
+            proposalId, 0, "I vote with their weight!", params
+        );
+        governor.castVoteWithReasonAndParams(proposalId, 0, "I like it", params);
     }
 }

@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "@std/console.sol";
 import "./GovernorWithProposalParams.sol";
 import "./OrigamiMembershipToken.sol";
 import "./OrigamiGovernor/counting/SimpleCounting.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
-import "@oz-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
 
@@ -16,11 +14,12 @@ contract OrigamiGovernor is
     Initializable,
     GovernorSettingsUpgradeable,
     GovernorTimelockControlUpgradeable,
-    GovernorVotesUpgradeable,
     GovernorVotesQuorumFractionUpgradeable,
     GovernorWithProposalParams,
     SimpleCounting
 {
+    IVotesUpgradeable public defaultToken;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -36,14 +35,10 @@ contract OrigamiGovernor is
         uint16 _proposalThreshold
     ) public initializer {
         __Governor_init(governorName);
-        __GovernorSettings_init(
-            _votingDelay,
-            _votingPeriod,
-            _proposalThreshold
-        );
-        __GovernorVotes_init(_defaultToken);
+        __GovernorSettings_init(_votingDelay, _votingPeriod, _proposalThreshold);
         __GovernorVotesQuorumFraction_init(quorumPercentage);
         __GovernorTimelockControl_init(_timelock);
+        defaultToken = _defaultToken;
     }
 
     function _castVote(
@@ -60,13 +55,22 @@ contract OrigamiGovernor is
         address account,
         uint256 blockNumber,
         bytes memory params
-    ) internal view override(GovernorUpgradeable, GovernorVotesUpgradeable) returns (uint256) {
-        if(keccak256(params) == keccak256(_defaultParams())) {
-            return super._getVotes(account, blockNumber, params);
+    )
+        internal
+        view
+        override (GovernorUpgradeable, GovernorVotesUpgradeable)
+        returns (uint256)
+    {
+        if (keccak256(params) == keccak256(_defaultParams())) {
+            return defaultToken.getPastVotes(account, blockNumber);
         } else {
             (address proposalToken,) = hydrateParams(params);
-            uint256 pastVotes = IVotes(proposalToken).getPastVotes(account, blockNumber);
-            require(pastVotes > 0, "Governor: only accounts with delegated voting power can vote");
+            uint256 pastVotes =
+                IVotes(proposalToken).getPastVotes(account, blockNumber);
+            require(
+                pastVotes > 0,
+                "Governor: only accounts with delegated voting power can vote"
+            );
             return pastVotes;
         }
     }
@@ -77,12 +81,64 @@ contract OrigamiGovernor is
         uint8 support,
         uint256 weight,
         bytes memory params
-    ) internal override(GovernorUpgradeable) {
-        if(keccak256(params) == keccak256(_defaultParams())) {
-            countVote(proposalId, account, support, weight, params);
-        } else {
-            (, address counter) = hydrateParams(params);
-            ICounting(counter).countVote(proposalId, account, support, weight, params);
+    ) internal override (GovernorUpgradeable) {
+        countVote(proposalId, account, support, weight, params);
+    }
+
+    /**
+     * @dev See {Governor-_quorumReached}.
+     */
+    function _quorumReached(uint256 proposalId)
+        internal
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        (, uint256 forVotes, uint256 abstainVotes) = proposalVotes(proposalId);
+
+        return quorum(proposalSnapshot(proposalId)) <= forVotes + abstainVotes;
+    }
+
+    /**
+     * @dev See {Governor-_voteSucceeded}. In this module, the forVotes must be strictly over the againstVotes.
+     */
+    function _voteSucceeded(uint256 proposalId)
+        internal
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        (uint256 againstVotes, uint256 forVotes,) = proposalVotes(proposalId);
+
+        return forVotes > againstVotes;
+    }
+
+    function proposalVotes(uint256 proposalId)
+        public
+        view
+        virtual
+        returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
+    {
+        (, bytes4 counterSignature) = getProposalParams(proposalId);
+        address[] memory voters = proposalVoters(proposalId);
+        for (uint256 i = 0; i < voters.length; i++) {
+            address voter = voters[i];
+            bytes memory vote = proposalByteVotes(proposalId, voter);
+            (VoteType support, uint256 weight) = decodeVote(vote);
+            (bool success, bytes memory data) = address(this).staticcall(
+                abi.encodeWithSelector(counterSignature, weight)
+            );
+            uint256 calculatedWeight = abi.decode(data, (uint256));
+            require(success, "Governor: failed to calculate weight");
+            if (support == VoteType.Abstain) {
+                abstainVotes += calculatedWeight;
+            } else if (support == VoteType.For) {
+                forVotes += calculatedWeight;
+            } else if (support == VoteType.Against) {
+                againstVotes += calculatedWeight;
+            }
         }
     }
 
@@ -91,7 +147,7 @@ contract OrigamiGovernor is
     function votingDelay()
         public
         view
-        override(IGovernorUpgradeable, GovernorSettingsUpgradeable)
+        override (IGovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
         return super.votingDelay();
@@ -100,7 +156,7 @@ contract OrigamiGovernor is
     function votingPeriod()
         public
         view
-        override(IGovernorUpgradeable, GovernorSettingsUpgradeable)
+        override (IGovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
         return super.votingPeriod();
@@ -109,7 +165,7 @@ contract OrigamiGovernor is
     function quorum(uint256 blockNumber)
         public
         view
-        override(IGovernorUpgradeable, GovernorVotesQuorumFractionUpgradeable)
+        override (IGovernorUpgradeable, GovernorVotesQuorumFractionUpgradeable)
         returns (uint256)
     {
         return super.quorum(blockNumber);
@@ -118,7 +174,7 @@ contract OrigamiGovernor is
     function state(uint256 proposalId)
         public
         view
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
+        override (GovernorUpgradeable, GovernorTimelockControlUpgradeable)
         returns (ProposalState)
     {
         return super.state(proposalId);
@@ -131,23 +187,18 @@ contract OrigamiGovernor is
         string memory description
     )
         public
-        override(GovernorUpgradeable, IGovernorUpgradeable)
+        override (GovernorUpgradeable, IGovernorUpgradeable)
         returns (uint256)
     {
-        return
-            proposeWithParams(
-                targets,
-                values,
-                calldatas,
-                description,
-                _defaultProposalParams()
-            );
+        return proposeWithParams(
+            targets, values, calldatas, description, _defaultProposalParams()
+        );
     }
 
     function proposalThreshold()
         public
         view
-        override(GovernorUpgradeable, GovernorSettingsUpgradeable)
+        override (GovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
         return super.proposalThreshold();
@@ -161,7 +212,7 @@ contract OrigamiGovernor is
         bytes32 descriptionHash
     )
         internal
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
+        override (GovernorUpgradeable, GovernorTimelockControlUpgradeable)
     {
         super._execute(proposalId, targets, values, calldatas, descriptionHash);
     }
@@ -173,7 +224,7 @@ contract OrigamiGovernor is
         bytes32 descriptionHash
     )
         internal
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
+        override (GovernorUpgradeable, GovernorTimelockControlUpgradeable)
         returns (uint256)
     {
         return super._cancel(targets, values, calldatas, descriptionHash);
@@ -182,7 +233,7 @@ contract OrigamiGovernor is
     function _executor()
         internal
         view
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
+        override (GovernorUpgradeable, GovernorTimelockControlUpgradeable)
         returns (address)
     {
         return super._executor();
@@ -191,7 +242,7 @@ contract OrigamiGovernor is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
+        override (GovernorUpgradeable, GovernorTimelockControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
@@ -199,7 +250,7 @@ contract OrigamiGovernor is
 
     modifier onlyMember(address account) {
         require(
-            OrigamiMembershipToken(address(token)).balanceOf(account) > 0,
+            OrigamiMembershipToken(address(defaultToken)).balanceOf(account) > 0,
             "OrigamiGovernor: only members may vote"
         );
         _;

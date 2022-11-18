@@ -2,9 +2,9 @@
 pragma solidity 0.8.17;
 
 import "./ICounting.sol";
-import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
+import "src/GovernorWithProposalParams.sol";
 
-abstract contract SimpleCounting is ICounting, GovernorUpgradeable {
+abstract contract SimpleCounting is ICounting, GovernorWithProposalParams {
     enum VoteType {
         Against,
         For,
@@ -18,17 +18,17 @@ abstract contract SimpleCounting is ICounting, GovernorUpgradeable {
     // proposalId => voter address => true if voted
     mapping(uint256 => mapping(address => bool)) private _proposalHasVoted;
 
+    struct ProposalVote {
+        VoteType support;
+        uint256 weight;
+    }
+
     /**
      * @dev See {IGovernor-COUNTING_MODE}.
      */
     // solhint-disable-next-line func-name-mixedcase
     function COUNTING_MODE() public pure override returns (string memory) {
         return "support=bravo&quorum=for,abstain";
-    }
-
-    struct ProposalVote {
-        VoteType support;
-        uint256 weight;
     }
 
     function encodeVote(VoteType support, uint256 weight)
@@ -47,6 +47,22 @@ abstract contract SimpleCounting is ICounting, GovernorUpgradeable {
         return abi.decode(vote, (VoteType, uint256));
     }
 
+    function proposalVoters(uint256 proposalId)
+        internal
+        view
+        returns (address[] memory)
+    {
+        return _proposalVoters[proposalId];
+    }
+
+    function proposalByteVotes(uint256 proposalId, address voter)
+        internal
+        view
+        returns (bytes memory)
+    {
+        return _proposalByteVotes[proposalId][voter];
+    }
+
     function countVote(
         uint256 proposalId,
         address account,
@@ -61,24 +77,21 @@ abstract contract SimpleCounting is ICounting, GovernorUpgradeable {
         return weight;
     }
 
-    function proposalVotes(uint256 proposalId)
-        public
-        view
-        returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
-    {
-        address[] memory voters = _proposalVoters[proposalId];
-        for (uint256 i = 0; i < voters.length; i++) {
-            address voter = voters[i];
-            bytes memory vote = _proposalByteVotes[proposalId][voter];
-            (VoteType support, uint256 weight) = decodeVote(vote);
-            if (support == VoteType.Abstain) {
-                abstainVotes += weight;
-            } else if (support == VoteType.For) {
-                forVotes += weight;
-            } else if (support == VoteType.Against) {
-                againstVotes += weight;
-            }
+    function _squareRoot(uint256 x) private pure returns (uint256 y) {
+        uint256 z = (x + 1) / 2;
+        y = x;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
         }
+    }
+
+    function _simpleWeight(uint256 weight) private pure returns (uint256) {
+        return weight;
+    }
+
+    function _quadraticWeight(uint256 weight) private pure returns (uint256) {
+        return _squareRoot(weight);
     }
 
     function hasVoted(uint256 proposalId, address account)
@@ -88,36 +101,6 @@ abstract contract SimpleCounting is ICounting, GovernorUpgradeable {
         returns (bool)
     {
         return _proposalHasVoted[proposalId][account];
-    }
-
-    /**
-     * @dev See {Governor-_quorumReached}.
-     */
-    function _quorumReached(uint256 proposalId)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        (, uint256 forVotes, uint256 abstainVotes) = proposalVotes(proposalId);
-
-        return quorum(proposalSnapshot(proposalId)) <= forVotes + abstainVotes;
-    }
-
-    /**
-     * @dev See {Governor-_voteSucceeded}. In this module, the forVotes must be strictly over the againstVotes.
-     */
-    function _voteSucceeded(uint256 proposalId)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        (uint256 againstVotes, uint256 forVotes,) = proposalVotes(proposalId);
-
-        return forVotes > againstVotes;
     }
 
     /**

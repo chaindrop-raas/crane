@@ -17,21 +17,19 @@ abstract contract GovernorWithProposalParams is
     function hydrateParams(bytes memory params)
         public
         pure
-        returns (address token, address counter)
+        returns (address token, bytes4 counterSignature)
     {
-        (token, counter) = abi.decode(params, (address, address));
+        (token, counterSignature) = abi.decode(params, (address, bytes4));
     }
 
-    function _defaultProposalParams() internal virtual returns (bytes memory) {
-        // in the case of OrigamiGovernor, if we fall back to defaults we won't
-        // use the counting implementation, so we have a nice steak instead.
-        return abi.encode(address(token), address(0xbeef));
+    function _defaultProposalParams() internal virtual pure returns (bytes memory) {
+        return abi.encode(address(0x0), bytes4(keccak256("_simpleWeight(uint256)")));
     }
 
     function getProposalParams(uint256 proposalId)
         public
         view
-        returns (address token, address counter)
+        returns (address token, bytes4 counterSignature)
     {
         return hydrateParams(_proposalParams[proposalId]);
     }
@@ -43,6 +41,9 @@ abstract contract GovernorWithProposalParams is
         string memory description,
         bytes memory params
     ) public virtual returns (uint256) {
+        if(keccak256(params) == keccak256(_defaultProposalParams())) {
+            return super.propose(targets, values, calldatas, description);
+        }
         (address proposalToken,) = hydrateParams(params);
         require(
             ERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
