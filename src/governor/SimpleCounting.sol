@@ -93,6 +93,11 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
         return _squareRoot(weight);
     }
 
+    /**
+     * @dev See {IGovernor-_hasVote}.
+     * we differ from the base implementation in that we don't want to prevent
+     * multiple votes, we instead update their previous vote.
+     */
     function hasVoted(uint256 proposalId, address account)
         public
         view
