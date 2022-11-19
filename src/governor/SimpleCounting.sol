@@ -11,7 +11,7 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     }
 
     // proposalId => voter address => voteBytes
-    mapping(uint256 => mapping(address => bytes)) private _proposalByteVotes;
+    mapping(uint256 => mapping(address => bytes)) private _proposalVote;
     // proposalId => voter addresses (provides index)
     mapping(uint256 => address[]) private _proposalVoters;
     // proposalId => voter address => true if voted
@@ -23,7 +23,30 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     }
 
     /**
+     * @notice module:reputation
+     */
+    function applyWeightStrategy(uint256 weight, bytes4 weightingSelector) public view returns (uint256) {
+        (bool success, bytes memory data) = address(this).staticcall(abi.encodeWithSelector(weightingSelector, weight));
+        if (success) {
+            return abi.decode(data, (uint256));
+        } else {
+            revert("Governor: weighting strategy not found");
+        }
+    }
+
+    /**
+     * @dev See {IGovernor-_hasVoted}.
+     * @notice module:voting
+     * we differ from the base implementation in that we don't want to prevent
+     * multiple votes, we instead update their previous vote.
+     */
+    function hasVoted(uint256 proposalId, address account) public view override returns (bool) {
+        return _proposalHasVoted[proposalId][account];
+    }
+
+    /**
      * @dev See {IGovernor-COUNTING_MODE}.
+     * @notice module:voting
      */
     // solhint-disable-next-line func-name-mixedcase
     function COUNTING_MODE() public pure override returns (string memory) {
@@ -31,65 +54,31 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     }
 
     /**
-     * @notice module:voting
+     * @notice module:reputation
      */
-    function encodeVote(VoteType support, uint256 weight)
-        public
-        pure
-        returns (bytes memory)
-    {
-        return abi.encode(support, weight);
-    }
-
-    /**
-     * @notice module:voting
-     */
-    function decodeVote(bytes memory vote)
-        public
-        pure
-        returns (VoteType support, uint256 weight)
-    {
-        return abi.decode(vote, (VoteType, uint256));
-    }
-
-    /**
-     * @notice module:voting
-     */
-    function proposalVoters(uint256 proposalId)
+    function _countVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory)
         internal
-        view
-        returns (address[] memory)
+        override (GovernorUpgradeable)
     {
+        bytes memory vote = abi.encode(VoteType(support), weight);
+        _proposalVote[proposalId][account] = vote;
+        _proposalVoters[proposalId].push(account);
+        _proposalHasVoted[proposalId][account] = true;
+    }
+
+    /**
+     * @notice module:voting
+     */
+    function _getProposalVoters(uint256 proposalId) internal view returns (address[] memory) {
         return _proposalVoters[proposalId];
     }
 
     /**
      * @notice module:voting
      */
-    function proposalByteVotes(uint256 proposalId, address voter)
-        internal
-        view
-        returns (bytes memory)
-    {
-        return _proposalByteVotes[proposalId][voter];
+    function _getVote(uint256 proposalId, address voter) internal view returns (VoteType, uint256) {
+        return abi.decode(_proposalVote[proposalId][voter], (VoteType, uint256));
     }
-
-    /**
-     * @notice module:reputation
-     */
-    function _countVote(
-        uint256 proposalId,
-        address account,
-        uint8 support,
-        uint256 weight,
-        bytes memory
-    ) internal override (GovernorUpgradeable) {
-        bytes memory vote = encodeVote(VoteType(support), weight);
-        _proposalByteVotes[proposalId][account] = vote;
-        _proposalVoters[proposalId].push(account);
-        _proposalHasVoted[proposalId][account] = true;
-    }
-
 
     function _squareRoot(uint256 x) private pure returns (uint256 y) {
         uint256 z = (x + 1) / 2;
@@ -112,38 +101,6 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
      */
     function _quadraticWeight(uint256 weight) private pure returns (uint256) {
         return _squareRoot(weight);
-    }
-
-    /**
-     * @notice module:reputation
-     */
-    function applyWeightStrategy(uint256 weight, bytes4 weightingSelector)
-        public
-        view
-        returns (uint256)
-    {
-        (bool success, bytes memory data) = address(this).staticcall(
-            abi.encodeWithSelector(weightingSelector, weight)
-        );
-        if(success) {
-            return abi.decode(data, (uint256));
-        } else {
-            revert("Governor: weighting strategy not found");
-        }
-    }
-
-    /**
-     * @dev See {IGovernor-_hasVote}.
-     * we differ from the base implementation in that we don't want to prevent
-     * multiple votes, we instead update their previous vote.
-     */
-    function hasVoted(uint256 proposalId, address account)
-        public
-        view
-        override
-        returns (bool)
-    {
-        return _proposalHasVoted[proposalId][account];
     }
 
     /**
