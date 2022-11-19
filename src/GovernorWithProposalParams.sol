@@ -15,9 +15,9 @@ abstract contract GovernorWithProposalParams is
     function hydrateParams(bytes memory params)
         public
         pure
-        returns (address token, bytes4 counterSignature)
+        returns (address token, bytes4 weightingSelector)
     {
-        (token, counterSignature) = abi.decode(params, (address, bytes4));
+        (token, weightingSelector) = abi.decode(params, (address, bytes4));
     }
 
     function _defaultProposalParams() internal virtual pure returns (bytes memory) {
@@ -27,7 +27,7 @@ abstract contract GovernorWithProposalParams is
     function getProposalParams(uint256 proposalId)
         public
         view
-        returns (address token, bytes4 counterSignature)
+        returns (address token, bytes4 weightingSelector)
     {
         return hydrateParams(_proposalParams[proposalId]);
     }

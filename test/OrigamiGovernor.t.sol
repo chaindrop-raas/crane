@@ -226,10 +226,10 @@ contract OrigamiGovernorProposalTest is GovHelper {
                 address(govToken), bytes4(keccak256("_simpleWeight(uint256)"))
             )
         );
-        (address token, bytes32 counterSignature) =
+        (address token, bytes32 weightingSelector) =
             governor.getProposalParams(proposalId);
         assertEq(token, address(govToken));
-        assertEq(counterSignature, bytes4(keccak256("_simpleWeight(uint256)")));
+        assertEq(weightingSelector, bytes4(keccak256("_simpleWeight(uint256)")));
     }
 
     function testProposalWithParamsTokenMustSupportIVotes() public {

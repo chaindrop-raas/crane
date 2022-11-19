@@ -41,6 +41,10 @@ contract OrigamiGovernor is
         defaultToken = _defaultToken;
     }
 
+    /**
+     * @notice module:voting
+     */
+
     function _castVote(
         uint256 proposalId,
         address account,
@@ -50,6 +54,10 @@ contract OrigamiGovernor is
     ) internal override onlyMember(account) returns (uint256) {
         return super._castVote(proposalId, account, support, reason, params);
     }
+
+    /**
+     * @notice module:reputation
+     */
 
     function _getVotes(
         address account,
@@ -75,17 +83,8 @@ contract OrigamiGovernor is
         }
     }
 
-    function _countVote(
-        uint256 proposalId,
-        address account,
-        uint8 support,
-        uint256 weight,
-        bytes memory params
-    ) internal override (GovernorUpgradeable) {
-        countVote(proposalId, account, support, weight, params);
-    }
-
     /**
+     * @notice module:core
      * @dev See {Governor-_quorumReached}.
      */
     function _quorumReached(uint256 proposalId)
@@ -101,6 +100,7 @@ contract OrigamiGovernor is
     }
 
     /**
+     * @notice module:core
      * @dev See {Governor-_voteSucceeded}. In this module, the forVotes must be strictly over the againstVotes.
      */
     function _voteSucceeded(uint256 proposalId)
@@ -115,23 +115,24 @@ contract OrigamiGovernor is
         return forVotes > againstVotes;
     }
 
+    /**
+     * @notice module:core
+     * @dev this delegates weight calculation to the strategy specified in the params
+     */
     function proposalVotes(uint256 proposalId)
         public
         view
         virtual
         returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
     {
-        (, bytes4 counterSignature) = getProposalParams(proposalId);
+        (, bytes4 weightingSelector) = getProposalParams(proposalId);
         address[] memory voters = proposalVoters(proposalId);
         for (uint256 i = 0; i < voters.length; i++) {
             address voter = voters[i];
             bytes memory vote = proposalByteVotes(proposalId, voter);
             (VoteType support, uint256 weight) = decodeVote(vote);
-            (bool success, bytes memory data) = address(this).staticcall(
-                abi.encodeWithSelector(counterSignature, weight)
-            );
-            uint256 calculatedWeight = abi.decode(data, (uint256));
-            require(success, "Governor: failed to calculate weight");
+            uint256 calculatedWeight =
+                applyWeightStrategy(weight, weightingSelector);
             if (support == VoteType.Abstain) {
                 abstainVotes += calculatedWeight;
             } else if (support == VoteType.For) {
@@ -143,7 +144,9 @@ contract OrigamiGovernor is
     }
 
     // The following functions are overrides required by Solidity.
-
+    /**
+     * @notice module:core
+     */
     function votingDelay()
         public
         view
@@ -153,6 +156,9 @@ contract OrigamiGovernor is
         return super.votingDelay();
     }
 
+    /**
+     * @notice module:core
+     */
     function votingPeriod()
         public
         view
@@ -162,6 +168,9 @@ contract OrigamiGovernor is
         return super.votingPeriod();
     }
 
+    /**
+     * @notice module:core
+     */
     function quorum(uint256 blockNumber)
         public
         view
@@ -171,6 +180,9 @@ contract OrigamiGovernor is
         return super.quorum(blockNumber);
     }
 
+    /**
+     * @notice module:core
+     */
     function state(uint256 proposalId)
         public
         view
@@ -180,6 +192,9 @@ contract OrigamiGovernor is
         return super.state(proposalId);
     }
 
+    /**
+     * @notice module:core
+     */
     function propose(
         address[] memory targets,
         uint256[] memory values,
@@ -195,6 +210,9 @@ contract OrigamiGovernor is
         );
     }
 
+    /**
+     * @notice module:core
+     */
     function proposalThreshold()
         public
         view
@@ -204,6 +222,9 @@ contract OrigamiGovernor is
         return super.proposalThreshold();
     }
 
+    /**
+     * @notice module:core
+     */
     function _execute(
         uint256 proposalId,
         address[] memory targets,
@@ -217,6 +238,9 @@ contract OrigamiGovernor is
         super._execute(proposalId, targets, values, calldatas, descriptionHash);
     }
 
+    /**
+     * @notice module:core
+     */
     function _cancel(
         address[] memory targets,
         uint256[] memory values,
@@ -230,6 +254,9 @@ contract OrigamiGovernor is
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
+    /**
+     * @notice module:core
+     */
     function _executor()
         internal
         view
@@ -239,6 +266,9 @@ contract OrigamiGovernor is
         return super._executor();
     }
 
+    /**
+     * @notice module:core
+     */
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -248,6 +278,9 @@ contract OrigamiGovernor is
         return super.supportsInterface(interfaceId);
     }
 
+    /**
+     * @notice module:origami-governor
+     */
     modifier onlyMember(address account) {
         require(
             OrigamiMembershipToken(address(defaultToken)).balanceOf(account) > 0,
