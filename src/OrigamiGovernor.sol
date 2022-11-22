@@ -73,15 +73,22 @@ contract OrigamiGovernor is
     }
 
     /**
+     * @dev Returns the quorum for a block number, in terms of number of votes: `supply * numerator / denominator`.
      * @notice module:core
      */
-    function quorum(uint256 blockNumber)
+    // NB: this used to take blockNumber as a parameter, but now it takes
+    // proposalId, both uint256. Need to make sure this doesn't have any
+    // unintended consequences.
+    function quorum(uint256 proposalId)
         public
         view
-        override (IGovernorUpgradeable, GovernorVotesQuorumFractionUpgradeable)
+        override (GovernorVotesQuorumFractionUpgradeable, IGovernorUpgradeable)
         returns (uint256)
     {
-        return super.quorum(blockNumber);
+        (address proposalToken,) = _getProposalParams(proposalId);
+        uint256 snapshot = proposalSnapshot(proposalId);
+        uint256 snapshotTotalSupply = VotesUpgradeable(proposalToken).getPastTotalSupply(snapshot);
+        return (snapshotTotalSupply * quorumNumerator(snapshot)) / quorumDenominator();
     }
 
     /**
@@ -182,8 +189,8 @@ contract OrigamiGovernor is
      * @notice module:core
      * @dev this delegates weight calculation to the strategy specified in the params
      */
-    function _proposalVotes(uint256 proposalId)
-        internal
+    function proposalVotes(uint256 proposalId)
+        public
         view
         virtual
         returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
@@ -209,9 +216,9 @@ contract OrigamiGovernor is
      * @dev See {Governor-_quorumReached}.
      */
     function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
-        (, uint256 forVotes, uint256 abstainVotes) = _proposalVotes(proposalId);
-
-        return quorum(proposalSnapshot(proposalId)) <= forVotes + abstainVotes;
+        (, uint256 forVotes, uint256 abstainVotes) = proposalVotes(proposalId);
+        (, bytes4 weightingSelector) = _getProposalParams(proposalId);
+        return applyWeightStrategy(quorum(proposalId), weightingSelector) <= forVotes + abstainVotes;
     }
 
     /**
@@ -219,7 +226,7 @@ contract OrigamiGovernor is
      * @dev See {Governor-_voteSucceeded}. In this module, the forVotes must be strictly over the againstVotes.
      */
     function _voteSucceeded(uint256 proposalId) internal view virtual override returns (bool) {
-        (uint256 againstVotes, uint256 forVotes,) = _proposalVotes(proposalId);
+        (uint256 againstVotes, uint256 forVotes,) = proposalVotes(proposalId);
 
         return forVotes > againstVotes;
     }
