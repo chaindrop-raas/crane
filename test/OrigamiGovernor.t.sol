@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import "@std/Test.sol";
+import "@oz/utils/Strings.sol";
 import "src/OrigamiGovernor.sol";
 import "src/OrigamiMembershipToken.sol";
 import "src/OrigamiGovernanceToken.sol";
@@ -22,6 +23,7 @@ abstract contract GovAddressHelper {
     address public newVoter = address(0x8);
     address public nonMember = address(0x9);
     address public anon = address(0xa);
+    address public executor = address(0xc);
 }
 
 // solhint-disable-next-line max-states-count
@@ -69,7 +71,6 @@ abstract contract GovHelper is GovAddressHelper, Test {
             ""
         );
         timelock = OrigamiTimelock(payable(timelockProxy));
-        timelock.initialize(0, new address[](0), new address[](0));
 
         // deploy gov token via proxy
         govTokenAdmin = new ProxyAdmin();
@@ -91,9 +92,20 @@ abstract contract GovHelper is GovAddressHelper, Test {
             ""
         );
         governor = OrigamiGovernor(payable(proxy));
-        vm.stopPrank();
         governor.initialize("TestDAOGovernor", timelock, memToken, 91984, 91984, 10, 0);
+
+        // initialize the timelock after we have an address for the governor
+        address[] memory proposers = new address[](1);
+        proposers[0] = address(governor);
+        address[] memory executors = new address[](1);
+        executors[0] = address(governor);
+        // timelocked for 1 day
+        timelock.initialize(7200, proposers, executors);
+
+        vm.stopPrank();
+
         vm.startPrank(owner);
+
 
         // issue the voter some tokens
         memToken.safeMint(voter);
@@ -139,9 +151,24 @@ contract OrigamiGovernorTest is GovHelper {
         assertEq(address(governor.timelock()), address(timelock));
         assertEq(governor.name(), "TestDAOGovernor");
         assertEq(governor.votingDelay(), 91984);
+        assertEq(governor.version(), "1.1.0");
         assertEq(governor.votingPeriod(), 91984);
         assertEq(governor.proposalThreshold(), 0);
         assertEq(governor.quorumNumerator(), 10);
+        assertEq(governor.COUNTING_MODE(), "support=bravo&quorum=for,abstain");
+        // just to be clear about the external implementation of the domainSeparator:
+        assertEq(
+            governor.domainSeparator(),
+            keccak256(
+                abi.encode(
+                    keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                    keccak256(bytes(governor.name())),
+                    keccak256(bytes(governor.version())),
+                    block.chainid,
+                    address(governor)
+                )
+            )
+        );
     }
 }
 
@@ -240,7 +267,7 @@ contract OrigamiGovernorProposalTest is GovHelper {
     }
 }
 
-contract OrigamiGovernorProposalVoteTest is GovHelper {
+contract OrigamiGovernorProposalInformationalTest is GovHelper {
     event VoteCast(address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason);
 
     event VoteCastWithParams(
@@ -270,6 +297,55 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
         proposalId = governor.proposeWithParams(targets, values, calldatas, "New proposal", params);
     }
 
+    function testInformationalFunctions() public {
+        // 42 - our arbitrary amount of blocks we have advanced
+        assertEq(block.number, 42);
+        // 91984 - our default period until voting opens
+        assertEq(governor.votingDelay(), 91984);
+        // 92026 - current block plus voting delay
+        assertEq(governor.proposalSnapshot(proposalId), 92026);
+        // 91984 - our default voting period
+        assertEq(governor.votingPeriod(), 91984);
+        // 184010 - snapshot block plus voting period
+        assertEq(governor.proposalDeadline(proposalId), 184010);
+        // be explicit about how the proposal hash is derived
+        assertEq(governor.hashProposal(targets, values, calldatas, keccak256(bytes("New proposal"))), proposalId);
+        //
+    }
+}
+
+contract OrigamiGovernorProposalVoteTest is GovHelper {
+    event VoteCast(address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason);
+
+    event VoteCastWithParams(
+        address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason, bytes params
+    );
+
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+    bytes32 public proposalHash;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0x0);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("_simpleWeight(uint256)")));
+        proposalHash = keccak256(bytes("New proposal"));
+
+        proposalId = governor.proposeWithParams(targets, values, calldatas, "New proposal", params);
+    }
+
     function testCanVoteOnProposalWithDefaultParams() public {
         proposalId = governor.propose(targets, values, calldatas, "Simple Voting Proposal");
         vm.roll(92027);
@@ -288,8 +364,8 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
         vm.roll(92027);
         vm.prank(voter);
         vm.expectEmit(true, true, true, true, address(governor));
-        emit VoteCastWithParams(voter, proposalId, 0, 100000000, "I like it", params);
-        governor.castVoteWithReasonAndParams(proposalId, 0, "I like it", params);
+        emit VoteCastWithParams(voter, proposalId, 1, 100000000, "I like it", params);
+        governor.castVoteWithReasonAndParams(proposalId, 1, "I like it", params);
     }
 
     function testAddressWithoutMembershipTokenCanDelegateToMember() public {
@@ -316,7 +392,7 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
 
         // newVoter has correctly self-delegated, but their weight is zero
         vm.expectRevert("Governor: only accounts with delegated voting power can vote");
-        governor.castVoteWithReasonAndParams(proposalId, 1, "I don't like it.", params);
+        governor.castVoteWithReasonAndParams(proposalId, 0, "I don't like it.", params);
     }
 
     function testCanLimitVotingToMembershipTokenHolders() public {
@@ -324,7 +400,157 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
         vm.prank(anon);
 
         vm.expectRevert("OrigamiGovernor: only members may vote");
-        governor.castVoteWithReason(proposalId, 1, "I don't like it.");
+        governor.castVoteWithReason(proposalId, 0, "I don't like it.");
+    }
+
+    function testCanReviseVote() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        vm.roll(92027);
+        vm.prank(voter);
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCastWithParams(voter, proposalId, 1, 100000000, "I like it", params);
+        governor.castVoteWithReasonAndParams(proposalId, 1, "I like it", params);
+
+        // our voting system allows us to change our vote at any time,
+        // regardless of the value of hasVoted
+        assertEq(governor.hasVoted(proposalId, voter), true);
+
+        vm.roll(92028);
+        vm.prank(voter);
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCastWithParams(voter, proposalId, 0, 100000000, "I don't like it", params);
+        governor.castVoteWithReasonAndParams(proposalId, 0, "I don't like it", params);
+
+        assertEq(governor.hasVoted(proposalId, voter), true);
+    }
+
+    function testCanTransitionProposalThroughAllStates() public {
+        // we test Defeated explicitly elsewhere
+
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // proposal is created in the pending state
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+        // advance to the voting period
+        vm.roll(92027);
+        vm.prank(voter);
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCastWithParams(voter, proposalId, 1, 100000000, "I like it", params);
+        governor.castVoteWithReasonAndParams(proposalId, 1, "I like it", params);
+
+        // proposal is in the active state
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Active));
+
+        // advance to the voting deadline
+        vm.roll(184011);
+
+        // proposal is in the succeeded state
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+        // console2.log("PR", Strings.toHexString(uint256(timelock.PROPOSER_ROLE())), 32);
+
+        // Enqueue the proposal
+        governor.queue(targets, values, calldatas, proposalHash);
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
+
+        // advance block timestamp so that it's after the proposal's required queuing time
+        vm.warp(7201);
+        governor.execute(targets, values, calldatas, proposalHash);
+
+        // advance to the the next block
+        vm.roll(184012);
+
+        // proposal is in the executed state
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Executed));
+    }
+}
+
+contract OrigamiGovernorProposalQuorumTest is GovHelper {
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("_simpleWeight(uint256)")));
+
+        proposalId = governor.proposeWithParams(targets, values, calldatas, "New proposal", params);
+    }
+
+    function testUnreachedQuorumDefeatsProposal() public {
+        // travel to proposal voting period completion
+        vm.roll(92027 + 91984);
+        assertEq(governor.quorum(proposalId), 74375000);
+        // there have been no votes, so quorum will not be reached and state will be Defeated
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
+    }
+
+    function testReachedQuorumButDefeated() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // travel to proposal voting period
+        vm.roll(92027);
+
+        // vote against the proposal - voter weight exceeds quorum
+        vm.prank(voter);
+        governor.castVoteWithReasonAndParams(
+            proposalId, uint8(SimpleCounting.VoteType.Against), "I don't like it.", params
+        );
+
+        // travel to proposal voting period completion
+        vm.roll(92027 + 91984);
+
+        // assert vote failed
+        (uint256 againstVotes, uint256 forVotes,) = governor.proposalVotes(proposalId);
+        assertGt(againstVotes, forVotes);
+
+        // quorum is reached, but the proposal is defeated
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
+    }
+
+    function testReachedQuorumAndSucceeded() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // travel to proposal voting period
+        vm.roll(92027);
+
+        // vote against the proposal - voter weight exceeds quorum
+        vm.prank(voter);
+        governor.castVoteWithReasonAndParams(
+            proposalId, uint8(SimpleCounting.VoteType.For), "I like it.", params
+        );
+
+        // travel to proposal voting period completion
+        vm.roll(92027 + 91984);
+
+        // assert vote failed
+        (uint256 againstVotes, uint256 forVotes,) = governor.proposalVotes(proposalId);
+        assertGt(forVotes, againstVotes);
+
+        // quorum is reached, but the proposal is defeated
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
     }
 }
 
@@ -363,8 +589,8 @@ contract OrigamiGovernorProposalQuadraticVoteTest is GovHelper {
 
         vm.roll(92027);
         vm.expectEmit(true, true, true, true, address(governor));
-        emit VoteCastWithParams(voter, proposalId, 0, 100000000, "I like it!", params);
-        governor.castVoteWithReasonAndParams(proposalId, 0, "I like it!", params);
+        emit VoteCastWithParams(voter, proposalId, 1, 100000000, "I like it!", params);
+        governor.castVoteWithReasonAndParams(proposalId, 1, "I like it!", params);
     }
 }
 

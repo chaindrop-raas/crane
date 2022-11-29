@@ -42,6 +42,14 @@ contract OrigamiGovernor is
     }
 
     /**
+     * @dev Returns the contract's {EIP712} domain separator.
+     */
+    // solhint-disable-next-line func-name-mixedcase
+    function domainSeparator() external view returns (bytes32) {
+        return _domainSeparatorV4();
+    }
+
+    /**
      * @notice module:core
      */
     function propose(
@@ -125,6 +133,17 @@ contract OrigamiGovernor is
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    /**
+     * @notice module:core
+     * @dev Version of the governor instance (used in building the ERC712 domain
+     *      separator). Indicate v1.1.0 so it's understood we have diverged from
+     *      the OZ implementation.
+     * @return The version number.
+     */
+    function version() public pure override(GovernorUpgradeable, IGovernorUpgradeable) returns (string memory) {
+        return "1.1.0";
     }
 
     /**
