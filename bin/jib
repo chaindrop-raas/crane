@@ -114,6 +114,7 @@ cloneMemToken() {
 
 # @cmd output test coverage data for the contracts
 # @alias cov
+# @flag --no-open do not open the coverage report in the browser
 coverage() {
   forge coverage --report lcov
   lcov -r lcov.info "test/*" \
@@ -123,7 +124,7 @@ coverage() {
     --rc lcov_branch_coverage=1
   genhtml -o coverage/ lcov-filtered.info
   rm lcov.info lcov-filtered.info
-  open coverage/index.html
+  [ $argc_no_open ] || open coverage/index.html
 }
 
 eval $(argc "$0" "$@")
