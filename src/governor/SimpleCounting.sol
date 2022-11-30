@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "src/GovernorWithProposalParams.sol";
+import "./GovernorWithProposalParams.sol";
 
 abstract contract SimpleCounting is GovernorWithProposalParams {
     enum VoteType {
