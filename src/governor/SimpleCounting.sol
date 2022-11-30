@@ -55,7 +55,13 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
         internal
         override (GovernorUpgradeable)
     {
-        bytes memory vote = abi.encode(VoteType(support), weight);
+        bytes memory vote;
+        if (keccak256(_getProposalParamsBytes(proposalId)) == keccak256(_defaultParams())) {
+            vote = abi.encode(VoteType(support), weight, weight);
+        } else {
+            (, bytes4 weightingSelector) = _getProposalParams(proposalId);
+            vote = abi.encode(VoteType(support), weight, applyWeightStrategy(weight, weightingSelector));
+        }
         _proposalVote[proposalId][account] = vote;
         _proposalVoters[proposalId].push(account);
         _proposalHasVoted[proposalId][account] = true;
@@ -71,8 +77,8 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     /**
      * @notice module:voting
      */
-    function _getVote(uint256 proposalId, address voter) internal view returns (VoteType, uint256) {
-        return abi.decode(_proposalVote[proposalId][voter], (VoteType, uint256));
+    function _getVote(uint256 proposalId, address voter) internal view returns (VoteType, uint256, uint256) {
+        return abi.decode(_proposalVote[proposalId][voter], (VoteType, uint256, uint256));
     }
 
     function _squareRoot(uint256 x) private pure returns (uint256 y) {
@@ -87,7 +93,7 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     /**
      * @notice module:reputation
      */
-     //FIXME: if these aren't public, staticcall fails
+    //FIXME: if these aren't public, staticcall fails
     function _simpleWeight(uint256 weight) public pure returns (uint256) {
         return weight;
     }
@@ -95,7 +101,7 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     /**
      * @notice module:reputation
      */
-     //FIXME: if these aren't public, staticcall fails
+    //FIXME: if these aren't public, staticcall fails
     function _quadraticWeight(uint256 weight) public pure returns (uint256) {
         return _squareRoot(weight);
     }

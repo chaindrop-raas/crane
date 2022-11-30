@@ -230,12 +230,10 @@ contract OrigamiGovernor is
         virtual
         returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
     {
-        (, bytes4 weightingSelector) = _getProposalParams(proposalId);
         address[] memory voters = _getProposalVoters(proposalId);
         for (uint256 i = 0; i < voters.length; i++) {
             address voter = voters[i];
-            (VoteType support, uint256 weight) = _getVote(proposalId, voter);
-            uint256 calculatedWeight = applyWeightStrategy(weight, weightingSelector);
+            (VoteType support, , uint256 calculatedWeight) = _getVote(proposalId, voter);
             if (support == VoteType.Abstain) {
                 abstainVotes += calculatedWeight;
             } else if (support == VoteType.For) {

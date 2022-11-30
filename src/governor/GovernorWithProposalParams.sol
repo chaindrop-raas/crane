@@ -38,6 +38,13 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
     /**
      * @notice module:proposal-params
      */
+    function _getProposalParamsBytes(uint256 proposalId) internal view returns (bytes memory) {
+        return _proposalParams[proposalId];
+    }
+
+    /**
+     * @notice module:proposal-params
+     */
     function _getProposalParams(uint256 proposalId) internal view returns (address token, bytes4 weightingSelector) {
         return _hydrateParams(_proposalParams[proposalId]);
     }
