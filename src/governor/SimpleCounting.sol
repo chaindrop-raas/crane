@@ -17,11 +17,6 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     // proposalId => voter address => true if voted
     mapping(uint256 => mapping(address => bool)) private _proposalHasVoted;
 
-    struct ProposalVote {
-        VoteType support;
-        uint256 weight;
-    }
-
     /**
      * @notice module:reputation
      */
