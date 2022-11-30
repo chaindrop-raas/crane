@@ -18,9 +18,8 @@ contract Clone is Script {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        OrigamiMembershipTokenFactory factory = OrigamiMembershipTokenFactory(
-            factoryProxy
-        );
+        OrigamiMembershipTokenFactory factory = OrigamiMembershipTokenFactory(factoryProxy);
+        // slither-disable-next-line unused-return
         factory.createOrigamiMembershipToken(admin, name, symbol, baseURI);
 
         vm.stopBroadcast();
@@ -36,9 +35,8 @@ contract Clone is Script {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        OrigamiGovernanceTokenFactory factory = OrigamiGovernanceTokenFactory(
-            factoryProxy
-        );
+        OrigamiGovernanceTokenFactory factory = OrigamiGovernanceTokenFactory(factoryProxy);
+        // slither-disable-next-line unused-return
         factory.createOrigamiGovernanceToken(admin, name, symbol, supplyCap);
 
         vm.stopBroadcast();
