@@ -5,6 +5,9 @@ out/
 # Coverage files
 coverage/
 
+# slither-related files
+.venv/
+
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*
