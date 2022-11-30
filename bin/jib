@@ -112,4 +112,18 @@ cloneMemToken() {
     -- $argc_factory $argc_admin "$argc_name" $argc_symbol $argc_base_uri
 }
 
+# @cmd output test coverage data for the contracts
+# @alias cov
+coverage() {
+  forge coverage --report lcov
+  lcov -r lcov.info "test/*" \
+    -r lcov.info "script/*" \
+    -r lcov.info "src/versions/*" \
+    -o lcov-filtered.info \
+    --rc lcov_branch_coverage=1
+  genhtml -o coverage/ lcov-filtered.info
+  rm lcov.info lcov-filtered.info
+  open coverage/index.html
+}
+
 eval $(argc "$0" "$@")
