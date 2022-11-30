@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import "src/GovernorWithProposalParams.sol";
 import "src/OrigamiMembershipToken.sol";
 import "src/governor/SimpleCounting.sol";
+import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
@@ -12,12 +13,15 @@ import "@oz-upgradeable/proxy/utils/Initializable.sol";
 /// @custom:security-contact contract-security@joinorigami.com
 contract OrigamiGovernor is
     Initializable,
+    AccessControlUpgradeable,
     GovernorSettingsUpgradeable,
     GovernorTimelockControlUpgradeable,
     GovernorVotesQuorumFractionUpgradeable,
     GovernorWithProposalParams,
     SimpleCounting
 {
+    bytes32 public constant CANCELLER_ROLE = keccak256("CANCELLER_ROLE");
+
     IVotesUpgradeable public defaultToken;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -32,13 +36,16 @@ contract OrigamiGovernor is
         uint24 _votingDelay,
         uint24 _votingPeriod,
         uint8 quorumPercentage,
-        uint16 _proposalThreshold
+        uint16 _proposalThreshold,
+        address _admin
     ) public initializer {
         __Governor_init(governorName);
         __GovernorSettings_init(_votingDelay, _votingPeriod, _proposalThreshold);
         __GovernorVotesQuorumFraction_init(quorumPercentage);
         __GovernorTimelockControl_init(_timelock);
         defaultToken = _defaultToken;
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(CANCELLER_ROLE, _admin);
     }
 
     /**
@@ -129,7 +136,7 @@ contract OrigamiGovernor is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override (GovernorUpgradeable, GovernorTimelockControlUpgradeable)
+        override (GovernorUpgradeable, GovernorTimelockControlUpgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
@@ -144,6 +151,15 @@ contract OrigamiGovernor is
      */
     function version() public pure override(GovernorUpgradeable, IGovernorUpgradeable) returns (string memory) {
         return "1.1.0";
+    }
+
+    function cancel(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) public onlyRole(CANCELLER_ROLE) {
+        _cancel(targets, values, calldatas, descriptionHash);
     }
 
     /**
