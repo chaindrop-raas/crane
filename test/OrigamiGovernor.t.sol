@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.17;
 
-import "@std/Test.sol";
-import "@oz/utils/Strings.sol";
+// our source
 import "src/OrigamiGovernor.sol";
 import "src/OrigamiMembershipToken.sol";
 import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiTimelock.sol";
 import "src/governor/SimpleCounting.sol";
+
+// libs
+import "@std/Test.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
+import "@oz/utils/Strings.sol";
+
+// interfaces
 import "@oz/governance/IGovernor.sol";
 import "@oz/governance/extensions/IGovernorTimelock.sol";
 import "@oz/access/IAccessControl.sol";
