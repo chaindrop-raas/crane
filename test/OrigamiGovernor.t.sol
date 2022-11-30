@@ -11,6 +11,8 @@ import "src/governor/SimpleCounting.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 import "@oz/governance/IGovernor.sol";
+import "@oz/governance/extensions/IGovernorTimelock.sol";
+import "@oz/access/IAccessControl.sol";
 
 abstract contract GovAddressHelper {
     address public deployer = address(0x1);
@@ -313,6 +315,12 @@ contract OrigamiGovernorProposalInformationalTest is GovHelper {
         assertEq(governor.hashProposal(targets, values, calldatas, keccak256(bytes("New proposal"))), proposalId);
         //
     }
+
+    function testSupportsInterface() public {
+        assertTrue(governor.supportsInterface(type(IGovernor).interfaceId));
+        assertTrue(governor.supportsInterface(type(IAccessControl).interfaceId));
+        assertTrue(governor.supportsInterface(type(IGovernorTimelock).interfaceId));
+    }
 }
 
 contract OrigamiGovernorProposalVoteTest is GovHelper {
@@ -428,51 +436,6 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
         governor.castVoteWithReasonAndParams(proposalId, 0, "I don't like it", params);
 
         assertEq(governor.hasVoted(proposalId, voter), true);
-    }
-
-    function testCanTransitionProposalThroughToExecution() public {
-        // we test Defeated explicitly elsewhere
-
-        // self-delegate to get voting power
-        vm.prank(voter);
-        govToken.delegate(voter);
-
-        // proposal is created in the pending state
-        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
-
-        // advance to the voting period
-        vm.roll(92027);
-        vm.prank(voter);
-        vm.expectEmit(true, true, true, true, address(governor));
-        emit VoteCastWithParams(voter, proposalId, 1, 100000000, "I like it", params);
-        governor.castVoteWithReasonAndParams(proposalId, 1, "I like it", params);
-
-        // proposal is in the active state
-        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Active));
-
-        // advance to the voting deadline
-        vm.roll(184011);
-
-        // proposal is in the succeeded state
-        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
-
-        // console2.log("PR", Strings.toHexString(uint256(timelock.PROPOSER_ROLE())), 32);
-
-        // Enqueue the proposal
-        governor.queue(targets, values, calldatas, proposalHash);
-        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
-
-        // advance block timestamp so that it's after the proposal's required queuing time
-        vm.warp(7201);
-        vm.expectEmit(true, true, true, true, address(governor));
-        emit ProposalExecuted(proposalId);
-        governor.execute(targets, values, calldatas, proposalHash);
-
-        // advance to the the next block
-        vm.roll(184012);
-
-        // proposal is in the executed state
-        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Executed));
     }
 }
 
@@ -756,8 +719,6 @@ contract OrigamiGovernorLifeCycleTest is GovHelper {
         // proposal is in the succeeded state
         assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
 
-        // console2.log("PR", Strings.toHexString(uint256(timelock.PROPOSER_ROLE())), 32);
-
         // Enqueue the proposal
         governor.queue(targets, values, calldatas, proposalHash);
         assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
@@ -774,5 +735,32 @@ contract OrigamiGovernorLifeCycleTest is GovHelper {
 
         // proposal is in the canceled state
         assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Canceled));
+    }
+
+    function testCannotQueueIfProposalIsDefeated() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // proposal is created in the pending state
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+        // advance to the voting period
+        vm.roll(92027);
+        vm.prank(voter);
+        governor.castVoteWithReasonAndParams(proposalId, 0, "I Don't like it", params);
+
+        // proposal is in the active state
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Active));
+
+        // advance to the voting deadline
+        vm.roll(184011);
+
+        // proposal is in the succeeded state
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
+
+        vm.expectRevert("Governor: proposal not successful");
+        // Enqueue the proposal
+        governor.queue(targets, values, calldatas, proposalHash);
     }
 }
