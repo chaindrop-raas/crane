@@ -270,7 +270,7 @@ contract OrigamiGovernorProposalTest is GovHelper {
             values,
             calldatas,
             "New proposal",
-            abi.encode(address(timelock), bytes4(keccak256("_simpleWeight(uint256)")))
+            abi.encode(address(timelock), bytes4(keccak256("simpleWeight(uint256)")))
         );
     }
 }
@@ -300,7 +300,7 @@ contract OrigamiGovernorProposalInformationalTest is GovHelper {
         calldatas[0] = "0x";
 
         // use the gov token for vote weight
-        params = abi.encode(address(govToken), bytes4(keccak256("_simpleWeight(uint256)")));
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
 
         proposalId = governor.proposeWithParams(targets, values, calldatas, "New proposal", params);
     }
@@ -356,7 +356,7 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
         calldatas[0] = "0x";
 
         // use the gov token for vote weight
-        params = abi.encode(address(govToken), bytes4(keccak256("_simpleWeight(uint256)")));
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
         proposalHash = keccak256(bytes("New proposal"));
 
         proposalId = governor.proposeWithParams(targets, values, calldatas, "New proposal", params);
@@ -463,7 +463,7 @@ contract OrigamiGovernorProposalQuorumTest is GovHelper {
         calldatas[0] = "0x";
 
         // use the gov token for vote weight
-        params = abi.encode(address(govToken), bytes4(keccak256("_simpleWeight(uint256)")));
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
 
         proposalId = governor.proposeWithParams(targets, values, calldatas, "New proposal", params);
     }
@@ -550,7 +550,7 @@ contract OrigamiGovernorProposalQuadraticVoteTest is GovHelper {
         calldatas[0] = "0x";
 
         // use the gov token for vote weight
-        params = abi.encode(address(govToken), bytes4(keccak256("_quadraticWeight(uint256)")));
+        params = abi.encode(address(govToken), bytes4(keccak256("quadraticWeight(uint256)")));
 
         proposalId = governor.proposeWithParams(targets, values, calldatas, "New proposal", params);
     }
@@ -586,7 +586,7 @@ contract OrigamiGovernorProposalQuadraticVoteResultsTest is GovHelper {
         calldatas[0] = "0x";
 
         // use the gov token for vote weight
-        params = abi.encode(address(govToken), bytes4(keccak256("_quadraticWeight(uint256)")));
+        params = abi.encode(address(govToken), bytes4(keccak256("quadraticWeight(uint256)")));
 
         proposalId = governor.proposeWithParams(targets, values, calldatas, "Quadratic Proposal", params);
     }
@@ -662,7 +662,7 @@ contract OrigamiGovernorLifeCycleTest is GovHelper {
         calldatas[0] = "0x";
 
         // use the gov token for vote weight
-        params = abi.encode(address(govToken), bytes4(keccak256("_simpleWeight(uint256)")));
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
         proposalHash = keccak256(bytes("New proposal"));
 
         proposalId = governor.proposeWithParams(targets, values, calldatas, "New proposal", params);

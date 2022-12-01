@@ -14,10 +14,10 @@ contract OrigamiTimelock is Initializable, TimelockControllerUpgradeable {
      * @notice Initialize the timelock contract
      * @dev the only reason we need an implementation of this is so that the initializer is public
      */
-    function initialize(uint256 _minDelay, address[] memory _proposers, address[] memory _executors)
+    function initialize(uint256 minDelay, address[] memory proposers, address[] memory executors)
         public
         initializer
     {
-        __TimelockController_init(_minDelay, _proposers, _executors);
+        __TimelockController_init(minDelay, proposers, executors);
     }
 }

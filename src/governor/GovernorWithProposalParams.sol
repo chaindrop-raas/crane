@@ -53,7 +53,7 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
      * @notice module:proposal-params
      */
     function _defaultProposalParams() internal pure virtual returns (bytes memory) {
-        return abi.encode(address(0x0), bytes4(keccak256("_simpleWeight(uint256)")));
+        return abi.encode(address(0x0), bytes4(keccak256("simpleWeight(uint256)")));
     }
 
     /**

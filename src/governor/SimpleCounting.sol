@@ -96,7 +96,7 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
      * @notice module:reputation
      */
     //FIXME: if these aren't public, staticcall fails
-    function _simpleWeight(uint256 weight) public pure returns (uint256) {
+    function simpleWeight(uint256 weight) public pure returns (uint256) {
         return weight;
     }
 
@@ -104,7 +104,7 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
      * @notice module:reputation
      */
     //FIXME: if these aren't public, staticcall fails
-    function _quadraticWeight(uint256 weight) public pure returns (uint256) {
+    function quadraticWeight(uint256 weight) public pure returns (uint256) {
         return _squareRoot(weight);
     }
 }

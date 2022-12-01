@@ -31,27 +31,26 @@ contract OrigamiGovernor is
 
     function initialize(
         string calldata governorName,
-        TimelockControllerUpgradeable _timelock,
-        IVotesUpgradeable _defaultToken,
-        uint24 _votingDelay,
-        uint24 _votingPeriod,
-        uint8 quorumPercentage,
-        uint16 _proposalThreshold,
-        address _admin
+        TimelockControllerUpgradeable timelock,
+        IVotesUpgradeable token,
+        uint24 delay,
+        uint24 period,
+        uint8 quorumPercentage_,
+        uint16 threshold,
+        address admin
     ) public initializer {
         __Governor_init(governorName);
-        __GovernorSettings_init(_votingDelay, _votingPeriod, _proposalThreshold);
-        __GovernorVotesQuorumFraction_init(quorumPercentage);
-        __GovernorTimelockControl_init(_timelock);
-        defaultToken = _defaultToken;
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(CANCELLER_ROLE, _admin);
+        __GovernorSettings_init(delay, period, threshold);
+        __GovernorVotesQuorumFraction_init(quorumPercentage_);
+        __GovernorTimelockControl_init(timelock);
+        defaultToken = token;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(CANCELLER_ROLE, admin);
     }
 
     /**
      * @dev Returns the contract's {EIP712} domain separator.
      */
-    // solhint-disable-next-line func-name-mixedcase
     function domainSeparator() external view returns (bytes32) {
         return _domainSeparatorV4();
     }
