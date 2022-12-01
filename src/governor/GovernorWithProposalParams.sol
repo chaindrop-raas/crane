@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity 0.8.16;
 
 import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
