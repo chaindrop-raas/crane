@@ -6,6 +6,7 @@ import "src/OrigamiMembershipToken.sol";
 import "src/versions/OrigamiMembershipTokenTestVersion.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
+import "@oz/utils/Strings.sol";
 
 abstract contract OMTAddressHelper {
     address public owner = address(0x1);
@@ -31,12 +32,7 @@ abstract contract OMTHelper is OMTAddressHelper {
             ""
         );
         token = OrigamiMembershipToken(address(proxy));
-        token.initialize(
-            owner,
-            "Deciduous Tree DAO Membership",
-            "DTDM",
-            "https://example.com/metadata/"
-        );
+        token.initialize(owner, "Deciduous Tree DAO Membership", "DTDM", "https://example.com/metadata/");
     }
 }
 
@@ -59,12 +55,7 @@ contract DeployMembershipTokenTest is Test {
 
     function testCannotDeployToAddressZero() public {
         vm.expectRevert(bytes("Admin address cannot be zero"));
-        token.initialize(
-            address(0x0),
-            "Deciduous Tree DAO Membership",
-            "DTDM",
-            "https://example.com/metadata"
-        );
+        token.initialize(address(0x0), "Deciduous Tree DAO Membership", "DTDM", "https://example.com/metadata");
     }
 }
 
@@ -86,16 +77,9 @@ contract UpgradeMembershipTokenTest is Test, OMTAddressHelper {
             address(admin),
             ""
         );
-        tokenV1 = OrigamiMembershipToken(
-            address(proxy)
-        );
+        tokenV1 = OrigamiMembershipToken(address(proxy));
 
-        tokenV1.initialize(
-            owner,
-            "Deciduous Tree DAO Membership",
-            "DTDM",
-            "https://example.com/metadata"
-        );
+        tokenV1.initialize(owner, "Deciduous Tree DAO Membership", "DTDM", "https://example.com/metadata");
     }
 
     function testCanInitialize() public {
@@ -103,15 +87,8 @@ contract UpgradeMembershipTokenTest is Test, OMTAddressHelper {
     }
 
     function testCannotInitializeTwice() public {
-        vm.expectRevert(
-            bytes("Initializable: contract is already initialized")
-        );
-        tokenV1.initialize(
-            owner,
-            "EVEN MOAR Deciduous Tree DAO Membership",
-            "EMDTDM",
-            "https://example.com/metadata/"
-        );
+        vm.expectRevert(bytes("Initializable: contract is already initialized"));
+        tokenV1.initialize(owner, "EVEN MOAR Deciduous Tree DAO Membership", "EMDTDM", "https://example.com/metadata/");
     }
 
     function testCanUpgrade() public {
@@ -173,8 +150,10 @@ contract MetadataMembershipTokenTest is OMTHelper, Test {
     function testRevertsWhenNonAdminChangesBaseURI() public {
         vm.stopPrank();
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(uint160(address(this)), 20),
+                " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
         token.setBaseURI("https://example.com/metadata/");
@@ -203,8 +182,10 @@ contract PausingMembershipTokenTest is OMTHelper, Test {
     function testRevertsWhenNonAdminPauses() public {
         vm.stopPrank();
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(uint160(address(this)), 20),
+                " is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
             )
         );
         token.pause();
@@ -214,8 +195,10 @@ contract PausingMembershipTokenTest is OMTHelper, Test {
         token.pause();
         vm.stopPrank();
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(uint160(address(this)), 20),
+                " is missing role 0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a"
             )
         );
         token.unpause();
@@ -266,8 +249,10 @@ contract TransferrabilityMembershipTokenTest is OMTHelper, Test {
     function testRevertsWhenNonAdminEnablesTransfer() public {
         vm.stopPrank();
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(uint160(address(this)), 20),
+                " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
         token.enableTransfer();
@@ -277,8 +262,10 @@ contract TransferrabilityMembershipTokenTest is OMTHelper, Test {
         token.enableTransfer();
         vm.stopPrank();
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(uint160(address(this)), 20),
+                " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
         token.disableTransfer();
@@ -337,9 +324,7 @@ contract TransferrabilityMembershipTokenTest is OMTHelper, Test {
         token.enableTransfer();
         vm.stopPrank();
         vm.prank(recipient);
-        vm.expectRevert(
-            bytes("ERC721: caller is not token owner nor approved")
-        );
+        vm.expectRevert(bytes("ERC721: caller is not token owner nor approved"));
         token.transferFrom(mintee, recipient, 1);
     }
 
@@ -372,8 +357,10 @@ contract RevokeMembershipTokenTest is OMTHelper, Test {
     function testRevertsWhenNonAdminRevokes() public {
         vm.stopPrank();
         vm.expectRevert(
-            bytes(
-                "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(uint160(address(this)), 20),
+                " is missing role 0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30"
             )
         );
         token.revoke(mintee);
@@ -406,6 +393,7 @@ contract RevokeMembershipTokenTest is OMTHelper, Test {
         assertEq(token.balanceOf(mintee), 0);
     }
 }
+
 contract MembershipTokenVotingPowerTest is OMTHelper, Test {
     function setUp() public {
         vm.startPrank(owner);
@@ -449,13 +437,12 @@ contract MembershipTokenVotingPowerTest is OMTHelper, Test {
 
         // visit the next block and make assertions
         vm.roll(44);
-        assertEq(token.getPastVotes(mintee, 41), 0);   // minting happened in block 1 but delegation hasn't happened yet
+        assertEq(token.getPastVotes(mintee, 41), 0); // minting happened in block 1 but delegation hasn't happened yet
         assertEq(token.getPastVotes(mintee, 42), 1); // delegation happened in block 42
         assertEq(token.getPastVotes(mintee, 43), 0); // more minting happened in block 43
     }
 
     function testGetPastTotalSupplySnapshotsByBlock() public {
-
         // mint token as owner
         token.enableTransfer();
         token.safeMint(mintee);

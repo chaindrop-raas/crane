@@ -33,12 +33,7 @@ abstract contract OGTHelper is OGTAddressHelper, Test {
             ""
         );
         token = OrigamiGovernanceToken(address(proxy));
-        token.initialize(
-            owner,
-            "Deciduous Tree DAO Governance",
-            "DTDG",
-            10000000000000000000000000000
-        );
+        token.initialize(owner, "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
         vm.stopPrank();
     }
 }
@@ -61,12 +56,7 @@ contract DeployGovernanceTokenTest is OGTAddressHelper, Test {
 
     function testDeploy() public {
         token = OrigamiGovernanceToken(address(proxy));
-        token.initialize(
-            owner,
-            "Deciduous Tree DAO Governance",
-            "DTDG",
-            10000000000000000000000000000
-        );
+        token.initialize(owner, "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
         assertEq(token.name(), "Deciduous Tree DAO Governance");
         assertEq(token.symbol(), "DTDG");
         assertEq(token.totalSupply(), 0);
@@ -76,12 +66,7 @@ contract DeployGovernanceTokenTest is OGTAddressHelper, Test {
     function testDeployRevertsWhenAdminIsAdressZero() public {
         token = OrigamiGovernanceToken(address(proxy));
         vm.expectRevert("Admin address cannot be zero");
-        token.initialize(
-            address(0),
-            "Deciduous Tree DAO Governance",
-            "DTDG",
-            10000000000000000000000000000
-        );
+        token.initialize(address(0), "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
     }
 }
 
@@ -103,16 +88,9 @@ contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
             address(admin),
             ""
         );
-        tokenV1 = OrigamiGovernanceToken(
-            address(proxy)
-        );
+        tokenV1 = OrigamiGovernanceToken(address(proxy));
 
-        tokenV1.initialize(
-            owner,
-            "Deciduous Tree DAO Governance",
-            "DTDG",
-            10000000000000000000000000000
-        );
+        tokenV1.initialize(owner, "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
     }
 
     function testCanInitialize() public {
@@ -121,12 +99,7 @@ contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
 
     function testCannotInitializeTwice() public {
         vm.expectRevert("Initializable: contract is already initialized");
-        tokenV1.initialize(
-            owner,
-            "EVEN MOAR Deciduous Tree DAO Governance",
-            "EMDTDG",
-            10000000000000000000000000000
-        );
+        tokenV1.initialize(owner, "EVEN MOAR Deciduous Tree DAO Governance", "EMDTDG", 10000000000000000000000000000);
     }
 
     function testCanUpgrade() public {
@@ -145,11 +118,7 @@ contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
 }
 
 contract MintingGovernanceTokenTest is OGTHelper {
-    event GovernanceTokensMinted(
-        address indexed caller,
-        address indexed to,
-        uint256 amount
-    );
+    event GovernanceTokensMinted(address indexed caller, address indexed to, uint256 amount);
 
     function setUp() public {
         vm.startPrank(owner);
@@ -168,7 +137,11 @@ contract MintingGovernanceTokenTest is OGTHelper {
     function testMintingRevertsWhenNotMinter() public {
         vm.stopPrank();
         vm.expectRevert(
-            "AccessControl: account 0xb4c79dab8f259c7aee6e5b2aa729821864227e84 is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6"
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(address(this)),
+                " is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6"
+            )
         );
         token.mint(mintee, 100);
     }
@@ -243,9 +216,7 @@ contract BurnGovernanceTokenTest is OGTHelper {
         assertFalse(token.burnable());
     }
 
-    function testRevertsWhenNonAdminAttemptsToEnableBurn(address nonAdmin)
-        public
-    {
+    function testRevertsWhenNonAdminAttemptsToEnableBurn(address nonAdmin) public {
         vm.assume(nonAdmin != owner);
         vm.assume(nonAdmin != address(admin));
         vm.stopPrank();
@@ -260,9 +231,7 @@ contract BurnGovernanceTokenTest is OGTHelper {
         token.enableBurn();
     }
 
-    function testRevertsWhenNonAdminAttemptsToDisableBurn(address nonAdmin)
-        public
-    {
+    function testRevertsWhenNonAdminAttemptsToDisableBurn(address nonAdmin) public {
         vm.assume(nonAdmin != owner);
         vm.assume(nonAdmin != address(admin));
         vm.stopPrank();
@@ -283,9 +252,7 @@ contract BurnGovernanceTokenTest is OGTHelper {
         token.enableBurn();
     }
 
-    function testRevertsWhenCallingDisableBurnAndBurnIsAlreadyDisabled()
-        public
-    {
+    function testRevertsWhenCallingDisableBurnAndBurnIsAlreadyDisabled() public {
         vm.expectRevert("Burnable: burning is disabled");
         token.disableBurn();
     }
@@ -322,9 +289,7 @@ contract BurnGovernanceTokenTest is OGTHelper {
         assertEq(token.balanceOf(mintee), 0);
     }
 
-    function testCanBurnFromWalletWithAllowanceWhenEnabled(uint96 amount)
-        public
-    {
+    function testCanBurnFromWalletWithAllowanceWhenEnabled(uint96 amount) public {
         vm.assume(amount < token.cap());
         token.enableBurn();
         vm.stopPrank();
@@ -437,9 +402,7 @@ contract PauseGovernanceTokenTest is OGTHelper {
         assertEq(token.balanceOf(minter), amount);
     }
 
-    function testCannotTransferWhenPausedAndTransferEnabled(uint96 amount)
-        public
-    {
+    function testCannotTransferWhenPausedAndTransferEnabled(uint96 amount) public {
         vm.assume(amount < token.cap());
         token.mint(mintee, amount);
         token.enableTransfer();
@@ -581,7 +544,6 @@ contract TransferGovernanceTokenTest is OGTHelper {
 }
 
 contract GovernanceTokenVotingPowerTest is OGTHelper {
-
     function setUp() public {
         vm.startPrank(owner);
         token.grantRole(token.TRANSFERRER_ROLE(), transferrer);
@@ -625,7 +587,7 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
 
         // visit the next block and make assertions
         vm.roll(44);
-        assertEq(token.getPastVotes(mintee, 41), 0);   // minting happened in block 1 but delegation hasn't happened yet
+        assertEq(token.getPastVotes(mintee, 41), 0); // minting happened in block 1 but delegation hasn't happened yet
         assertEq(token.getPastVotes(mintee, 42), 100); // delegation happened in block 42
         assertEq(token.getPastVotes(mintee, 43), 200); // more minting happened in block 43
     }
