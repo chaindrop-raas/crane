@@ -48,6 +48,8 @@ contract OrigamiGovernanceTokenFactory is Initializable, AccessControlUpgradeabl
         string memory _symbol,
         uint256 _supplyCap
     ) public onlyRole(DEFAULT_ADMIN_ROLE) returns (address) {
+        // There is no credible risk of reentrancy here. We do not call any
+        // external contracts and we do not transfer any funds.
         address clone = ClonesUpgradeable.clone(tokenImplementation);
         bytes memory data = abi.encodeWithSelector(
             OrigamiGovernanceToken(clone).initialize.selector, _admin, _name, _symbol, _supplyCap
@@ -57,7 +59,9 @@ contract OrigamiGovernanceTokenFactory is Initializable, AccessControlUpgradeabl
             _msgSender(),
             data
         );
+        // slither-disable-next-line reentrancy-benign
         proxiedContracts.push(address(proxy));
+        // slither-disable-next-line reentrancy-events
         emit OrigamiGovernanceTokenCreated(_msgSender(), address(proxy));
         return address(proxy);
     }

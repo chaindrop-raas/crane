@@ -21,6 +21,8 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
      * @notice module:reputation
      */
     function applyWeightStrategy(uint256 weight, bytes4 weightingSelector) public view returns (uint256) {
+        // We check for success and only issue this as staticcall
+        // slither-disable-next-line low-level-calls
         (bool success, bytes memory data) = address(this).staticcall(abi.encodeWithSelector(weightingSelector, weight));
         if (success) {
             return abi.decode(data, (uint256));
