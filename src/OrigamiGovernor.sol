@@ -121,7 +121,7 @@ contract OrigamiGovernor is
         override (GovernorVotesQuorumFractionUpgradeable, IGovernorUpgradeable)
         returns (uint256)
     {
-        (address proposalToken,) = _getProposalParams(proposalId);
+        (address proposalToken,) = getProposalParams(proposalId);
         uint256 snapshot = proposalSnapshot(proposalId);
         uint256 snapshotTotalSupply = VotesUpgradeable(proposalToken).getPastTotalSupply(snapshot);
         return (snapshotTotalSupply * quorumNumerator(snapshot)) / quorumDenominator();
@@ -269,7 +269,7 @@ contract OrigamiGovernor is
         if (keccak256(params) == keccak256(_defaultParams())) {
             return defaultToken.getPastVotes(account, blockNumber);
         } else {
-            (address proposalToken,) = _hydrateParams(params);
+            (address proposalToken,) = hydrateParams(params);
             uint256 pastVotes = IVotes(proposalToken).getPastVotes(account, blockNumber);
             require(pastVotes > 0, "Governor: only accounts with delegated voting power can vote");
             return pastVotes;
@@ -291,10 +291,10 @@ contract OrigamiGovernor is
         virtual
         returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
     {
-        address[] memory voters = _getProposalVoters(proposalId);
+        address[] memory voters = getProposalVoters(proposalId);
         for (uint256 i = 0; i < voters.length; i++) {
             address voter = voters[i];
-            (VoteType support,, uint256 calculatedWeight) = _getVote(proposalId, voter);
+            (VoteType support,, uint256 calculatedWeight) = getVote(proposalId, voter);
             if (support == VoteType.Abstain) {
                 abstainVotes += calculatedWeight;
             } else if (support == VoteType.For) {
@@ -313,7 +313,7 @@ contract OrigamiGovernor is
      */
     function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
         (, uint256 forVotes, uint256 abstainVotes) = proposalVotes(proposalId);
-        (, bytes4 weightingSelector) = _getProposalParams(proposalId);
+        (, bytes4 weightingSelector) = getProposalParams(proposalId);
         return applyWeightStrategy(quorum(proposalId), weightingSelector) <= forVotes + abstainVotes;
     }
 

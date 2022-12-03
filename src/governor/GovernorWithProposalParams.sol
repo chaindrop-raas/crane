@@ -7,7 +7,7 @@ import "@oz/governance/utils/IVotes.sol";
 import "@oz/utils/introspection/ERC165.sol";
 
 abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeable {
-    mapping(uint256 => bytes) private _proposalParams;
+    mapping(uint256 => bytes) private proposalParams;
 
     /**
      * @notice module:proposal-params
@@ -22,7 +22,7 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
         if (keccak256(params) == keccak256(_defaultProposalParams())) {
             return super.propose(targets, values, calldatas, description);
         }
-        (address proposalToken,) = _hydrateParams(params);
+        (address proposalToken,) = hydrateParams(params);
         require(
             ERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
             "Governor: proposal token must support IVotes"
@@ -30,7 +30,7 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
 
         uint256 proposalId = super.propose(targets, values, calldatas, description);
 
-        _proposalParams[proposalId] = params;
+        proposalParams[proposalId] = params;
 
         return proposalId;
     }
@@ -38,15 +38,15 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
     /**
      * @notice module:proposal-params
      */
-    function _getProposalParamsBytes(uint256 proposalId) internal view returns (bytes memory) {
-        return _proposalParams[proposalId];
+    function getProposalParamsBytes(uint256 proposalId) internal view returns (bytes memory) {
+        return proposalParams[proposalId];
     }
 
     /**
      * @notice module:proposal-params
      */
-    function _getProposalParams(uint256 proposalId) internal view returns (address token, bytes4 weightingSelector) {
-        return _hydrateParams(_proposalParams[proposalId]);
+    function getProposalParams(uint256 proposalId) internal view returns (address token, bytes4 weightingSelector) {
+        return hydrateParams(proposalParams[proposalId]);
     }
 
     /**
@@ -59,7 +59,7 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
     /**
      * @notice module:proposal-params
      */
-    function _hydrateParams(bytes memory params) internal pure returns (address token, bytes4 weightingSelector) {
+    function hydrateParams(bytes memory params) internal pure returns (address token, bytes4 weightingSelector) {
         (token, weightingSelector) = abi.decode(params, (address, bytes4));
     }
 }

@@ -15,11 +15,11 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     }
 
     // proposalId => voter address => voteBytes
-    mapping(uint256 => mapping(address => bytes)) private _proposalVote;
+    mapping(uint256 => mapping(address => bytes)) private proposalVote;
     // proposalId => voter addresses (provides index)
-    mapping(uint256 => address[]) private _proposalVoters;
+    mapping(uint256 => address[]) private proposalVoters;
     // proposalId => voter address => true if voted
-    mapping(uint256 => mapping(address => bool)) private _proposalHasVoted;
+    mapping(uint256 => mapping(address => bool)) private proposalHasVoted;
 
     /**
      * @notice Applies the indicated weighting strategy to the amount `weight` that is supplied.
@@ -47,7 +47,7 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
      * module:voting
      */
     function hasVoted(uint256 proposalId, address account) public view override returns (bool) {
-        return _proposalHasVoted[proposalId][account];
+        return proposalHasVoted[proposalId][account];
     }
 
     /**
@@ -59,65 +59,6 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     // solhint-disable-next-line func-name-mixedcase
     function COUNTING_MODE() public pure override returns (string memory) {
         return "support=bravo&quorum=for,abstain";
-    }
-
-    /**
-     * @dev a version of _countVote that is compatible with the GovernorWithProposalParams implementation.
-     * @param proposalId the proposal to record the vote for
-     * @param account the account that is voting
-     * @param support the VoteType that the account is voting
-     * @param weight the weight of their vote as of the proposal snapshot
-     * module:reputation
-     */
-    function _countVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory)
-        internal
-        override (GovernorUpgradeable)
-    {
-        bytes memory vote;
-        if (keccak256(_getProposalParamsBytes(proposalId)) == keccak256(_defaultParams())) {
-            vote = abi.encode(VoteType(support), weight, weight);
-        } else {
-            (, bytes4 weightingSelector) = _getProposalParams(proposalId);
-            vote = abi.encode(VoteType(support), weight, applyWeightStrategy(weight, weightingSelector));
-        }
-        _proposalVote[proposalId][account] = vote;
-        _proposalVoters[proposalId].push(account);
-        _proposalHasVoted[proposalId][account] = true;
-    }
-
-    /**
-     * @dev used by OrigamiGovernor when totaling proposal outcomes. We defer tallying so that individual voters can change their vote during the voting period.
-     * @param proposalId the id of the proposal to retrieve voters for.
-     * @return the list of voters for the proposal.
-     * module:voting
-     */
-    function _getProposalVoters(uint256 proposalId) internal view returns (address[] memory) {
-        return _proposalVoters[proposalId];
-    }
-
-    /**
-     * @dev decodes the vote for a given proposal and voter.
-     * @param proposalId the id of the proposal.
-     * @param voter the address of the voter.
-     * @return the vote type, the weight of the vote, and the weight of the vote with the weighting strategy applied.
-     * module:voting
-     */
-    function _getVote(uint256 proposalId, address voter) internal view returns (VoteType, uint256, uint256) {
-        return abi.decode(_proposalVote[proposalId][voter], (VoteType, uint256, uint256));
-    }
-
-    /**
-     * @dev square root algorithm from https://github.com/ethereum/dapp-bin/pull/50#issuecomment-1075267374
-     * @param x the number to derive the square root of.
-     * @return y - the square root of x.
-     */
-    function _squareRoot(uint256 x) private pure returns (uint256 y) {
-        uint256 z = (x + 1) / 2;
-        y = x;
-        while (z < y) {
-            y = z;
-            z = (x / z + z) / 2;
-        }
     }
 
     /**
@@ -137,6 +78,65 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
      * module:reputation
      */
     function quadraticWeight(uint256 weight) public pure returns (uint256) {
-        return _squareRoot(weight);
+        return squareRoot(weight);
+    }
+
+    /**
+     * @dev a version of _countVote that is compatible with the GovernorWithProposalParams implementation.
+     * @param proposalId the proposal to record the vote for
+     * @param account the account that is voting
+     * @param support the VoteType that the account is voting
+     * @param weight the weight of their vote as of the proposal snapshot
+     * module:reputation
+     */
+    function _countVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory)
+        internal
+        override (GovernorUpgradeable)
+    {
+        bytes memory vote;
+        if (keccak256(getProposalParamsBytes(proposalId)) == keccak256(_defaultParams())) {
+            vote = abi.encode(VoteType(support), weight, weight);
+        } else {
+            (, bytes4 weightingSelector) = getProposalParams(proposalId);
+            vote = abi.encode(VoteType(support), weight, applyWeightStrategy(weight, weightingSelector));
+        }
+        proposalVote[proposalId][account] = vote;
+        proposalVoters[proposalId].push(account);
+        proposalHasVoted[proposalId][account] = true;
+    }
+
+    /**
+     * @dev used by OrigamiGovernor when totaling proposal outcomes. We defer tallying so that individual voters can change their vote during the voting period.
+     * @param proposalId the id of the proposal to retrieve voters for.
+     * @return the list of voters for the proposal.
+     * module:voting
+     */
+    function getProposalVoters(uint256 proposalId) internal view returns (address[] memory) {
+        return proposalVoters[proposalId];
+    }
+
+    /**
+     * @dev decodes the vote for a given proposal and voter.
+     * @param proposalId the id of the proposal.
+     * @param voter the address of the voter.
+     * @return the vote type, the weight of the vote, and the weight of the vote with the weighting strategy applied.
+     * module:voting
+     */
+    function getVote(uint256 proposalId, address voter) internal view returns (VoteType, uint256, uint256) {
+        return abi.decode(proposalVote[proposalId][voter], (VoteType, uint256, uint256));
+    }
+
+    /**
+     * @dev square root algorithm from https://github.com/ethereum/dapp-bin/pull/50#issuecomment-1075267374
+     * @param x the number to derive the square root of.
+     * @return y - the square root of x.
+     */
+    function squareRoot(uint256 x) private pure returns (uint256 y) {
+        uint256 z = (x + 1) / 2;
+        y = x;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
+        }
     }
 }

@@ -635,7 +635,7 @@ contract OrigamiGovernorProposalQuadraticVoteResultsTest is GovHelper {
 contract OrigamiGovernorSimpleCounting is GovHelper {
     function testCannotSpecifyInvalidWeightStrategy() public {
         vm.expectRevert("Governor: weighting strategy not found");
-        governor.applyWeightStrategy(100, bytes4(keccak256("_blahdraticWeight(uint256)")));
+        governor.applyWeightStrategy(100, bytes4(keccak256("blahdraticWeight(uint256)")));
     }
 }
 
