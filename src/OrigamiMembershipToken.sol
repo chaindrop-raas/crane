@@ -49,11 +49,7 @@ contract OrigamiMembershipToken is
     /// @notice monitoring: this is fired when the transferEnabled state is changed.
     event TransferEnabled(address indexed caller, bool value);
     /// @notice monitoring: this is fired when a token is revoked.
-    event TokenRevoked(
-        address indexed caller,
-        address indexed tokenOwner,
-        uint256 indexed tokenId
-    );
+    event TokenRevoked(address indexed caller, address indexed tokenOwner, uint256 indexed tokenId);
     /// @notice monitoring: this is fired when the paused state is changed.
     event Paused(address indexed caller, bool value);
 
@@ -69,12 +65,10 @@ contract OrigamiMembershipToken is
     /// @param _name the name of the token. Typically this is the name of the DAO.
     /// @param _symbol the symbol of the token. Typically this is a short abbreviation of the DAO's name.
     /// @param baseURI_ the base URI of the token. This is used to generate the token's URI.
-    function initialize(
-        address _admin,
-        string memory _name,
-        string memory _symbol,
-        string memory baseURI_
-    ) public initializer {
+    function initialize(address _admin, string memory _name, string memory _symbol, string memory baseURI_)
+        public
+        initializer
+    {
         require(_admin != address(0x0), "Admin address cannot be zero");
 
         __ERC721_init(_name, _symbol);
@@ -101,10 +95,7 @@ contract OrigamiMembershipToken is
     /// @dev this is only callable by the contract admin.
     /// @notice this allows setting the base URI of the token. This is used to generate the token's URI. An event is fired when the base URI is changed.
     /// @param baseURI_ the new value for the base URI of the token. Typically this is either a string representation of JSON metadata or a URI.
-    function setBaseURI(string memory baseURI_)
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function setBaseURI(string memory baseURI_) public onlyRole(DEFAULT_ADMIN_ROLE) {
         emit BaseURIChanged(_msgSender(), baseURI_);
         _metadataBaseURI = baseURI_;
     }
@@ -133,6 +124,21 @@ contract OrigamiMembershipToken is
         emit Mint(to, tokenId);
     }
 
+    /**
+     * @dev this is only callable by an address that has the MINTER_ROLE. The Origami platform airdrops membership tokens to members' wallets. A best effort is made to check the addreses and avoid attempting mints that would fail.
+     * @notice this function mints membership tokens to all wallets in the recipients array.
+     * @param recipients - an array of addresses to mint tokens to.
+     */
+    function safeBatchMint(address[] calldata recipients) public onlyRole(MINTER_ROLE) {
+        require(recipients.length > 0, "Must mint at least one token");
+        require(recipients.length <= 100, "Cannot mint more than 100 tokens at once");
+        for (uint256 i = 0; i < recipients.length; i++) {
+            if (recipients[i] != address(0) && balanceOf(recipients[i]) == 0) {
+                safeMint(recipients[i]);
+            }
+        }
+    }
+
     /// @dev this is only callable by an address that has the REVOKER_ROLE. Membership in a DAO may be revoked by the DAO.
     /// @notice this function revokes a membership token from the recipient's wallet. An event is fired when the token is revoked.
     /// @param from the address of the owner's wallet to revoke the token from.
@@ -151,36 +157,24 @@ contract OrigamiMembershipToken is
 
     /// @dev this emits an event indicating that the transferrable state has been set to enabled.
     /// @notice this function enables transfers of membership tokens. Only the contract admin can call this function.
-    function enableTransfer()
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        whenNontransferrable
-    {
+    function enableTransfer() public onlyRole(DEFAULT_ADMIN_ROLE) whenNontransferrable {
         _transferEnabled = true;
         emit TransferEnabled(_msgSender(), _transferEnabled);
     }
 
     /// @dev this emits an event indicating that the transferrable state has been set to disabled.
     /// @notice this function disables transfers of membership tokens. Only the contract admin can call this function.
-    function disableTransfer()
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        whenTransferrable
-    {
+    function disableTransfer() public onlyRole(DEFAULT_ADMIN_ROLE) whenTransferrable {
         _transferEnabled = false;
         emit TransferEnabled(_msgSender(), _transferEnabled);
     }
 
     /// @dev this is overridden so we can apply the `whenTransferrable` modifier
     /// @notice this allows transfers when the transferrable state is enabled.
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    )
+    function transferFrom(address from, address to, uint256 tokenId)
         public
         virtual
-        override(ERC721Upgradeable, IERC721Upgradeable)
+        override (ERC721Upgradeable, IERC721Upgradeable)
         whenTransferrable
     {
         super.transferFrom(from, to, tokenId);
@@ -188,14 +182,10 @@ contract OrigamiMembershipToken is
 
     /// @dev this is overridden so we can apply the `whenTransferrable` modifier
     /// @notice this allows transfers when the transferrable state is enabled.
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    )
+    function safeTransferFrom(address from, address to, uint256 tokenId)
         public
         virtual
-        override(ERC721Upgradeable, IERC721Upgradeable)
+        override (ERC721Upgradeable, IERC721Upgradeable)
         whenTransferrable
     {
         super.safeTransferFrom(from, to, tokenId);
@@ -203,28 +193,19 @@ contract OrigamiMembershipToken is
 
     /// @dev this is overridden so we can apply the `whenTransferrable` modifier
     /// @notice this allows transfers when the transferrable state is enabled.
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes memory _data
-    )
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data)
         public
         virtual
-        override(ERC721Upgradeable, IERC721Upgradeable)
+        override (ERC721Upgradeable, IERC721Upgradeable)
         whenTransferrable
     {
         super.safeTransferFrom(from, to, tokenId, _data);
     }
 
     /// @dev this is overridden so we can apply the `limitBalance` and `whenNotPaused` modifiers
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    )
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
         internal
-        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
+        override (ERC721Upgradeable, ERC721EnumerableUpgradeable)
         limitBalance(to)
         whenNotPaused
     {
@@ -233,25 +214,19 @@ contract OrigamiMembershipToken is
 
     // The following functions are overrides required by Solidity.
 
-    function _afterTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal override(ERC721Upgradeable, ERC721VotesUpgradeable) {
+    function _afterTokenTransfer(address from, address to, uint256 tokenId)
+        internal
+        override (ERC721Upgradeable, ERC721VotesUpgradeable)
+    {
         super._afterTokenTransfer(from, to, tokenId);
     }
 
-    function _burn(uint256 tokenId) internal override(ERC721Upgradeable) {
+    function _burn(uint256 tokenId) internal override (ERC721Upgradeable) {
         super._burn(tokenId);
     }
 
     /// @inheritdoc ERC721Upgradeable
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721Upgradeable)
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenId) public view override (ERC721Upgradeable) returns (string memory) {
         require(tokenId > 0, "Invalid token ID");
         require(tokenId <= _tokenIdCounter.current(), "Invalid token ID");
         return super.tokenURI(tokenId);
@@ -261,25 +236,16 @@ contract OrigamiMembershipToken is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(
-            ERC721Upgradeable,
-            ERC721EnumerableUpgradeable,
-            AccessControlUpgradeable
-        )
+        override (ERC721Upgradeable, ERC721EnumerableUpgradeable, AccessControlUpgradeable)
         returns (bool)
     {
-        return
-            interfaceId == type(IVotes).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return interfaceId == type(IVotes).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @notice this modifier allows us to ensure that no more than one token is minted to a given wallet.
     modifier limitBalance(address recipient) {
         // allow unlimited transfers to the burn address
-        require(
-            recipient == address(0) || balanceOf(recipient) == 0,
-            "Holders may only have one token"
-        );
+        require(recipient == address(0) || balanceOf(recipient) == 0, "Holders may only have one token");
         _;
     }
 

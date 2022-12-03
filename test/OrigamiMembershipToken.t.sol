@@ -17,7 +17,7 @@ abstract contract OMTAddressHelper {
     address public pauser = address(0x6);
 }
 
-abstract contract OMTHelper is OMTAddressHelper {
+abstract contract OMTHelper is OMTAddressHelper, Test {
     OrigamiMembershipToken public impl;
     TransparentUpgradeableProxy public proxy;
     OrigamiMembershipToken public token;
@@ -106,7 +106,7 @@ contract UpgradeMembershipTokenTest is Test, OMTAddressHelper {
     }
 }
 
-contract MintMembershipTokenTest is OMTHelper, Test {
+contract MintMembershipTokenTest is OMTHelper {
     event Mint(address indexed _to, uint256 indexed _tokenId);
 
     function setUp() public {
@@ -133,7 +133,105 @@ contract MintMembershipTokenTest is OMTHelper, Test {
     }
 }
 
-contract MetadataMembershipTokenTest is OMTHelper, Test {
+contract BatchMintMembershipTokenTest is OMTHelper {
+    event Mint(address indexed _to, uint256 indexed _tokenId);
+
+    function setUp() public {
+        vm.startPrank(owner);
+    }
+
+    // individual mint gas cost: 236672
+    function testMint() public {
+        // this is just for purposes of getting a gas estimate
+        token.safeMint(mintee);
+        assertEq(token.balanceOf(mintee), 1);
+    }
+
+    // batch of 10 mints gas cost: 1618129
+    // avg batch member gas cost: 161813
+    function testBatchMint() public {
+        address[] memory mintees = new address[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            address batchRecipient = address(uint160(i + 42));
+            vm.expectEmit(true, true, true, true, address(token));
+            emit Mint(batchRecipient, i + 1);
+            mintees[i] = batchRecipient;
+        }
+        token.safeBatchMint(mintees);
+        assertEq(token.totalSupply(), 10);
+    }
+
+    function testBatchMintWithInvalidRecipient() public {
+        address[] memory mintees = new address[](10);
+        // set up one of the recipients to already have a token
+        token.safeMint(address(uint160(45)));
+        assertEq(token.balanceOf(address(uint160(45))), 1);
+
+        // batch mint including the prior recipient
+        for (uint256 i = 0; i < 10; i++) {
+            address batchRecipient = address(uint160(i + 42));
+            mintees[i] = batchRecipient;
+        }
+        token.safeBatchMint(mintees);
+
+        // check that the last recipient was minted
+        assertEq(token.balanceOf(address(uint160(51))), 1);
+        // this asserts that all recipients were still minted
+        assertEq(token.totalSupply(), 10);
+    }
+
+
+    function testBatchMintSucceedsWhenAddressZeroIsPresent() public {
+        address[] memory mintees = new address[](10);
+
+        // batch mint including the prior recipient
+        for (uint256 i = 0; i < 10; i++) {
+            address batchRecipient = address(uint160(i + 42));
+            mintees[i] = batchRecipient;
+        }
+
+        mintees[5] = address(0x0);
+
+        token.safeBatchMint(mintees);
+
+        // check that the last recipient was minted
+        assertEq(token.balanceOf(address(uint160(51))), 1);
+        // this asserts that all recipients were still minted
+        assertEq(token.totalSupply(), 9);
+    }
+
+    // single mint gas: 236672
+    // 100 batch mint gas: 12960498
+    // avg batch member gas cost: 129605
+    function testBatchMintWithMaxBatchSize() public {
+        address[] memory mintees = new address[](100);
+        for (uint256 i = 0; i < 100; i++) {
+            mintees[i] = address(uint160(i + 42));
+        }
+        token.safeBatchMint(mintees);
+        assertEq(token.totalSupply(), 100);
+    }
+
+    function testBatchMintWithZeroSize() public {
+        address[] memory mintees = new address[](0);
+        vm.expectRevert("Must mint at least one token");
+        token.safeBatchMint(mintees);
+    }
+
+    // single mint gas: 236672
+    // 1k batch mint gas: 150671846
+    // avg batch member gas cost: 150672
+    function testBatchMintWithRidiculouslyHighBatchSize() public {
+        address[] memory mintees = new address[](1000);
+        for (uint256 i = 0; i < 1000; i++) {
+            mintees[i] = address(uint160(i + 42));
+        }
+        vm.expectRevert("Cannot mint more than 100 tokens at once");
+        token.safeBatchMint(mintees);
+    }
+}
+
+contract MetadataMembershipTokenTest is OMTHelper {
     event BaseURIChanged(address indexed caller, string value);
 
     function setUp() public {
@@ -172,7 +270,7 @@ contract MetadataMembershipTokenTest is OMTHelper, Test {
     }
 }
 
-contract PausingMembershipTokenTest is OMTHelper, Test {
+contract PausingMembershipTokenTest is OMTHelper {
     event Paused(address indexed caller, bool value);
 
     function setUp() public {
@@ -239,7 +337,7 @@ contract PausingMembershipTokenTest is OMTHelper, Test {
     }
 }
 
-contract TransferrabilityMembershipTokenTest is OMTHelper, Test {
+contract TransferrabilityMembershipTokenTest is OMTHelper {
     event TransferEnabled(address indexed caller, bool value);
 
     function setUp() public {
@@ -349,7 +447,7 @@ contract TransferrabilityMembershipTokenTest is OMTHelper, Test {
     }
 }
 
-contract RevokeMembershipTokenTest is OMTHelper, Test {
+contract RevokeMembershipTokenTest is OMTHelper {
     function setUp() public {
         vm.startPrank(owner);
     }
@@ -394,7 +492,7 @@ contract RevokeMembershipTokenTest is OMTHelper, Test {
     }
 }
 
-contract MembershipTokenVotingPowerTest is OMTHelper, Test {
+contract MembershipTokenVotingPowerTest is OMTHelper {
     function setUp() public {
         vm.startPrank(owner);
     }
