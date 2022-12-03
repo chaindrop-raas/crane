@@ -3,6 +3,10 @@ pragma solidity 0.8.16;
 
 import "./GovernorWithProposalParams.sol";
 
+/// @title Simple Counting module
+/// @author Stephen Caudill
+/// @notice Builds upon GovernorWithProposalParams to implement swappable counting strategies at the proposal level.
+/// @custom:security-contact contract-security@joinorigami.com
 abstract contract SimpleCounting is GovernorWithProposalParams {
     enum VoteType {
         Against,
@@ -18,7 +22,12 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     mapping(uint256 => mapping(address => bool)) private _proposalHasVoted;
 
     /**
-     * @notice module:reputation
+     * @notice Applies the indicated weighting strategy to the amount `weight` that is supplied.
+     * @dev the staticcall is only executed against this contract and is checked for success before failing to a revert if the selector isn't found on this contract.
+     * @param weight the token weight to apply the weighting strategy to.
+     * @param weightingSelector an encoded selector to use as a weighting strategy implementation.
+     * @return the weight with the weighting strategy applied to it.
+     * module:reputation
      */
     function applyWeightStrategy(uint256 weight, bytes4 weightingSelector) public view returns (uint256) {
         // We check for success and only issue this as staticcall
@@ -32,18 +41,20 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     }
 
     /**
-     * @dev See {IGovernor-_hasVoted}.
-     * @notice module:voting
-     * we differ from the base implementation in that we don't want to prevent
-     * multiple votes, we instead update their previous vote.
+     * @notice Indicates whether or not an account has voted on a proposal.
+     * @dev See {IGovernor-_hasVoted}. Note that we differ from the base implementation in that we don't want to prevent multiple votes, we instead update their previous vote.
+     * @return true if the account has voted on the proposal, false otherwise.
+     * module:voting
      */
     function hasVoted(uint256 proposalId, address account) public view override returns (bool) {
         return _proposalHasVoted[proposalId][account];
     }
 
     /**
+     * @notice a required function from IGovernor that declares what Governor style we support and how we derive quorum.
      * @dev See {IGovernor-COUNTING_MODE}.
-     * @notice module:voting
+     * @return string indicating the counting mode.
+     * module:voting
      */
     // solhint-disable-next-line func-name-mixedcase
     function COUNTING_MODE() public pure override returns (string memory) {
@@ -51,7 +62,12 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     }
 
     /**
-     * @notice module:reputation
+     * @dev a version of _countVote that is compatible with the GovernorWithProposalParams implementation.
+     * @param proposalId the proposal to record the vote for
+     * @param account the account that is voting
+     * @param support the VoteType that the account is voting
+     * @param weight the weight of their vote as of the proposal snapshot
+     * module:reputation
      */
     function _countVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory)
         internal
@@ -70,19 +86,31 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     }
 
     /**
-     * @notice module:voting
+     * @dev used by OrigamiGovernor when totaling proposal outcomes. We defer tallying so that individual voters can change their vote during the voting period.
+     * @param proposalId the id of the proposal to retrieve voters for.
+     * @return the list of voters for the proposal.
+     * module:voting
      */
     function _getProposalVoters(uint256 proposalId) internal view returns (address[] memory) {
         return _proposalVoters[proposalId];
     }
 
     /**
-     * @notice module:voting
+     * @dev decodes the vote for a given proposal and voter.
+     * @param proposalId the id of the proposal.
+     * @param voter the address of the voter.
+     * @return the vote type, the weight of the vote, and the weight of the vote with the weighting strategy applied.
+     * module:voting
      */
     function _getVote(uint256 proposalId, address voter) internal view returns (VoteType, uint256, uint256) {
         return abi.decode(_proposalVote[proposalId][voter], (VoteType, uint256, uint256));
     }
 
+    /**
+     * @dev square root algorithm from https://github.com/ethereum/dapp-bin/pull/50#issuecomment-1075267374
+     * @param x the number to derive the square root of.
+     * @return y - the square root of x.
+     */
     function _squareRoot(uint256 x) private pure returns (uint256 y) {
         uint256 z = (x + 1) / 2;
         y = x;
@@ -93,17 +121,21 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     }
 
     /**
-     * @notice module:reputation
+     * @notice simple weight calculation does not apply any weighting strategy. It is an integer identity function.
+     * @param weight the weight to apply the weighting strategy to.
+     * @return the weight with the weighting strategy applied to it.
+     * module:reputation
      */
-    //FIXME: if these aren't public, staticcall fails
     function simpleWeight(uint256 weight) public pure returns (uint256) {
         return weight;
     }
 
     /**
-     * @notice module:reputation
+     * @notice quadratic weight calculation returns square root of the weight.
+     * @param weight the weight to apply the weighting strategy to.
+     * @return the weight with the weighting strategy applied to it.
+     * module:reputation
      */
-    //FIXME: if these aren't public, staticcall fails
     function quadraticWeight(uint256 weight) public pure returns (uint256) {
         return _squareRoot(weight);
     }

@@ -111,6 +111,8 @@ contract OrigamiGovernor is
     /**
      * @notice the vote weight needed based on the token holdings snapshot at time of proposal creation.
      * @dev Returns the quorum for the proposal: `supply * numerator / denominator`. This used to take blockNumber as a parameter, but now it takes proposalId, both uint256. Need to make sure this doesn't have any unintended consequences.
+     * @param proposalId the proposalId of the proposal we are deriving quorum for.
+     * @return the amount of tokens necessary to achieve quorum for this proposal.
      * module:core
      */
     function quorum(uint256 proposalId)
@@ -128,6 +130,9 @@ contract OrigamiGovernor is
     /**
      * @notice the state (Pending, Active, Canceled, Defeated, Succeeded, Queued, Expired, Executed) the proposal is in.
      * @return the ProposalState of the proposal.
+     * @param proposalId the proposalId of the proposal we are returning ProposalState for.
+     * @ return the current state of the indicated proposal as a ProposalState.
+     *  ^ natspec has an error with return specs for returns when the return uses a struct. This is a known issue. Adding a space to circumvent the error.
      * module:core
      */
     function state(uint256 proposalId)
@@ -155,6 +160,7 @@ contract OrigamiGovernor is
 
     /**
      * @notice public interface to determine which interfaces this contract supports.
+     * @param interfaceId the interface to check for support.
      * @return boolean - true if the interface is supported.
      * module:core
      */
@@ -179,6 +185,10 @@ contract OrigamiGovernor is
 
     /**
      * @notice public function to cancel a proposal
+     * @param targets the targets of the proposal.
+     * @param values the values of the proposal.
+     * @param calldatas the calldatas of the proposal.
+     * @param descriptionHash the descriptionHash of the proposal.
      * module:core
      */
     function cancel(
@@ -192,6 +202,9 @@ contract OrigamiGovernor is
 
     /**
      * @dev overridden from GovernorVotesUpgradeable to restrict voting to holders of the default token.
+     * @param proposalId the id of the proposal to cast a vote for.
+     * @param account the account doing the voting
+     * @param support the support of the vote (0 = against, 1 = for, 2 = abstain)
      * module:voting
      */
 
@@ -206,6 +219,11 @@ contract OrigamiGovernor is
 
     /**
      * @dev specify the implementation for the overrides.
+     * @param proposalId the id of the proposal to execute.
+     * @param targets the targets of the proposal.
+     * @param values the values of the proposal.
+     * @param calldatas the calldatas of the proposal.
+     * @param descriptionHash the descriptionHash of the proposal.
      * module:core
      */
     function _execute(
@@ -220,6 +238,10 @@ contract OrigamiGovernor is
 
     /**
      * @dev specify the implementation for the overrides.
+     * @param targets the targets of the proposal.
+     * @param values the values of the proposal.
+     * @param calldatas the calldatas of the proposal.
+     * @param descriptionHash the descriptionHash of the proposal.
      * module:core
      */
     function _cancel(
@@ -233,6 +255,9 @@ contract OrigamiGovernor is
 
     /**
      * @dev an override that is compatible with the GovernorWithProposalParams interface.
+     * @param account the account to get the vote weight for.
+     * @param blockNumber the block number the snapshot was taken at.
+     * @param params the params of the proposal.
      * module:reputation
      */
     function _getVotes(address account, uint256 blockNumber, bytes memory params)
@@ -252,7 +277,12 @@ contract OrigamiGovernor is
     }
 
     /**
+     * @notice returns the current votes for, against, or abstaining for a given proposal. Once the voting period has lapsed, this is used to determine the outcome.
      * @dev this delegates weight calculation to the strategy specified in the params
+     * @param proposalId the id of the proposal to get the votes for.
+     * @return againstVotes - the number of votes against the proposal.
+     * @return forVotes - the number of votes for the proposal.
+     * @return abstainVotes - the number of votes abstaining from the vote.
      * module:core
      */
     function proposalVotes(uint256 proposalId)
@@ -277,6 +307,8 @@ contract OrigamiGovernor is
 
     /**
      * @dev implementation of {Governor-_quorumReached} that is compatible with the GovernorWithProposalParams interface.
+     * @param proposalId the id of the proposal to check.
+     * @return boolean - true if the quorum has been reached.
      * module:core
      */
     function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
@@ -287,6 +319,8 @@ contract OrigamiGovernor is
 
     /**
      * @dev implementation of {Governor-_voteSucceeded} that is compatible with the GovernorWithProposalParams interface.
+     * @param proposalId the id of the proposal to check.
+     * @return boolean - true if the vote has succeeded.
      * module:core
      */
     function _voteSucceeded(uint256 proposalId) internal view virtual override returns (bool) {
@@ -296,6 +330,7 @@ contract OrigamiGovernor is
 
     /**
      * @dev specify the implementation for the overrides.
+     * @return the address of the designator executor for proposals on this governor.
      * module:core
      */
     function _executor()
