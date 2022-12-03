@@ -737,10 +737,15 @@ contract OrigamiGovernorLifeCycleTest is GovHelper {
 
         // advance block timestamp so that it's just before the proposal's required queuing time
         vm.warp(7200);
-        vm.prank(govAdmin);
+
+        // grant the govAdmin the CANCELLER_ROLE
+        vm.startPrank(govAdmin);
+        governor.grantRole(governor.CANCELLER_ROLE(), govAdmin);
+
         vm.expectEmit(true, true, true, true, address(governor));
         emit ProposalCanceled(proposalId);
         governor.cancel(targets, values, calldatas, proposalHash);
+        vm.stopPrank();
 
         // advance to the the next block
         vm.roll(184012);
