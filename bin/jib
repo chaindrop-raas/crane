@@ -103,7 +103,7 @@ cloneGovToken() {
 # @option -a --admin! the address entitled to call admin functions on the clone
 # @option -n --name! the name of the token
 # @option -s --symbol! the symbol for the token
-# @option -u --base-uri! the maximum supply of the token
+# @option -u --base-uri! the base uri for the token metadata
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 cloneMemToken() {
   forge script script/Clone.s.sol:Clone \
