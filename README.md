@@ -15,13 +15,27 @@ We power our solidity development with `foundry`. The [book](https://book.getfou
 
 ### Pre Requisites
 
-1. Ensure you've created a `.env` file (`cp {example,}.env`), populated its values and exported them to your shell (`direnv` is a convenient way of managing this).
-2. Install `cargo`: `curl https://sh.rustup.rs -sSf | sh`
-3. Install `foundry` ([instructions and details](https://book.getfoundry.sh/getting-started/installation)):
+1. Install `cargo`: `curl https://sh.rustup.rs -sSf | sh`
+2. Install `foundry` ([instructions and details](https://book.getfoundry.sh/getting-started/installation)):
    - `curl -L https://foundry.paradigm.xyz | bash`
    - `foundryup`
-4. Install `argc`: `cargo install argc`
-5. Install `solhint`: `npm install -g solhint`
+3. Install `argc`: `cargo install argc`
+4. Install `solhint`: `npm install -g solhint`
+
+
+NB: if you intend to run the scripts in `./script` directly or via `./bin/jib`, ensure you've created a `.envrc` file (`cp {example,}.envrc`), populated its values and exported them to your shell (`direnv` is a convenient way of managing this).
+
+### Documentation
+
+All documentation is in `NatSpec` format and available alongside the code. You can also generate the documentation for the project as HTML using the [`go-natspec`](https://github.com/sambacha/go-natspec) project. Here's a brief overview of usage on macOS:
+
+```sh
+$ brew install pygments
+$ curl -O https://github.com/sambacha/go-natspec/releases/download/v0.0.1/dappspec
+$ chmod +x dappspec
+$ ./dappspec src/OrigamiGovernanceToken.sol
+$ open docs/OrigamiGovernanceToken.sol
+```
 
 ### Testing
 
