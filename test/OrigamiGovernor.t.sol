@@ -32,6 +32,7 @@ abstract contract GovAddressHelper {
     address public anon = address(0xa);
     address public executor = address(0xc);
     address public govAdmin = address(0xd);
+    address public signingVoter = address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
 }
 
 // solhint-disable-next-line max-states-count
@@ -55,6 +56,10 @@ abstract contract GovHelper is GovAddressHelper, Test {
     TransparentUpgradeableProxy public proxy;
     OrigamiGovernor public governor;
     ProxyAdmin public admin;
+
+    uint8 public constant FOR = uint8(SimpleCounting.VoteType.For);
+    uint8 public constant AGAINST = uint8(SimpleCounting.VoteType.Against);
+    uint8 public constant ABSTAIN = uint8(SimpleCounting.VoteType.Abstain);
 
     constructor() {
         vm.startPrank(deployer);
@@ -114,18 +119,21 @@ abstract contract GovHelper is GovAddressHelper, Test {
 
         vm.startPrank(owner);
 
-
-        // issue the voter some tokens
+        // issue the voters membership tokens
         memToken.safeMint(voter);
         memToken.safeMint(voter2);
         memToken.safeMint(voter3);
         memToken.safeMint(voter4);
         memToken.safeMint(newVoter);
+        memToken.safeMint(signingVoter);
+
+        // issue the voters gov tokens
         govToken.mint(voter, 100000000); // 10000^2
         govToken.mint(voter2, 225000000); // 15000^2
         govToken.mint(voter3, 56250000); // 7500^2
         govToken.mint(voter4, 306250000); // 17500^2
         govToken.mint(nonMember, 56250000);
+        govToken.mint(signingVoter, 100000000);
 
         // let's travel an arbitrary and small amount of time forward so
         // proposals snapshot after these mints.
@@ -398,6 +406,28 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
         governor.castVoteWithReasonAndParams(proposalId, 0, "I vote with their weight!", params);
     }
 
+    function testRedelegatingDoesNotAffectCurrentProposals() public {
+        // voter delegates voting power to voter2
+        vm.prank(voter);
+        govToken.delegate(voter2);
+
+        // voter2 votes with delegated power
+        vm.roll(92027);
+        vm.prank(voter2);
+        governor.castVoteWithReasonAndParams(proposalId, 1, "I like it", params);
+
+        // voter Redelegates to self
+        vm.roll(92028);
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // voter attempts to vote with their own power
+        vm.roll(92029);
+        vm.prank(voter);
+        vm.expectRevert("Governor: only accounts with delegated voting power can vote");
+        governor.castVoteWithReasonAndParams(proposalId, 0, "I don't like it", params);
+    }
+
     function testCanLimitVotingByWeight() public {
         // self-delegate to get voting power
         vm.prank(newVoter);
@@ -444,6 +474,63 @@ contract OrigamiGovernorProposalVoteTest is GovHelper {
     }
 }
 
+contract OrigamiGovernorProposalVoteWithSignatureTest is GovHelper {
+    event VoteCast(address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason);
+
+    event VoteCastWithParams(
+        address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason, bytes params
+    );
+
+    event ProposalExecuted(uint256 proposalId);
+
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+    bytes32 public proposalHash;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0x0);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
+        proposalHash = keccak256(bytes("New proposal"));
+
+        proposalId = governor.proposeWithParams(targets, values, calldatas, "New proposal", params);
+    }
+
+    function testCanVoteOnProposalWithParamsBySignature() public {
+        // self-delegate to get voting power
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
+
+        // These values were derived by using this signing scheme:
+        // https://gist.github.com/mrmemes-eth/c308260a72563b8f3c568d131c272033
+        // the signer is anvil address 0: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+        uint8 v = 28;
+        bytes32 r = 0x9055c974932cde052e1f569bc39662be5207733cfe2956af76a6b7f9aec11e71;
+        bytes32 s = 0x38cabd65d49e8b14cdedefa16cea6ae92a59ad87e79b93abcfeacdfd5798892b;
+
+        // roll the block number forward to voting period
+        vm.roll(92027);
+        // anyone can submit a signed vote
+        vm.prank(anon);
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCastWithParams(signingVoter, proposalId, 1, 100000000, "I like it", params);
+        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, v, r, s);
+    }
+
+}
+
 contract OrigamiGovernorProposalQuorumTest is GovHelper {
     address[] public targets;
     uint256[] public values;
@@ -471,7 +558,7 @@ contract OrigamiGovernorProposalQuorumTest is GovHelper {
     function testUnreachedQuorumDefeatsProposal() public {
         // travel to proposal voting period completion
         vm.roll(92027 + 91984);
-        assertEq(governor.quorum(proposalId), 74375000);
+        assertEq(governor.quorum(proposalId), 84375000);
         // there have been no votes, so quorum will not be reached and state will be Defeated
         assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
     }
@@ -486,9 +573,7 @@ contract OrigamiGovernorProposalQuorumTest is GovHelper {
 
         // vote against the proposal - voter weight exceeds quorum
         vm.prank(voter);
-        governor.castVoteWithReasonAndParams(
-            proposalId, uint8(SimpleCounting.VoteType.Against), "I don't like it.", params
-        );
+        governor.castVoteWithReasonAndParams(proposalId, AGAINST, "I don't like it.", params);
 
         // travel to proposal voting period completion
         vm.roll(92027 + 91984);
@@ -511,9 +596,7 @@ contract OrigamiGovernorProposalQuorumTest is GovHelper {
 
         // vote against the proposal - voter weight exceeds quorum
         vm.prank(voter);
-        governor.castVoteWithReasonAndParams(
-            proposalId, uint8(SimpleCounting.VoteType.For), "I like it.", params
-        );
+        governor.castVoteWithReasonAndParams(proposalId, FOR, "I like it.", params);
 
         // travel to proposal voting period completion
         vm.roll(92027 + 91984);
@@ -604,22 +687,16 @@ contract OrigamiGovernorProposalQuadraticVoteResultsTest is GovHelper {
         // more powerful together than voter3 alone
 
         vm.prank(voter);
-        governor.castVoteWithReasonAndParams(proposalId, uint8(SimpleCounting.VoteType.For), "I like it!", params);
+        governor.castVoteWithReasonAndParams(proposalId, FOR, "I like it!", params);
 
         vm.prank(voter2);
-        governor.castVoteWithReasonAndParams(
-            proposalId, uint8(SimpleCounting.VoteType.Against), "This is rubbish!", params
-        );
+        governor.castVoteWithReasonAndParams(proposalId, AGAINST, "This is rubbish!", params);
 
         vm.prank(voter3);
-        governor.castVoteWithReasonAndParams(
-            proposalId, uint8(SimpleCounting.VoteType.For), "I like it too! It's not rubbish at all!", params
-        );
+        governor.castVoteWithReasonAndParams(proposalId, FOR, "I like it too! It's not rubbish at all!", params);
 
         vm.prank(voter4);
-        governor.castVoteWithReasonAndParams(
-            proposalId, uint8(SimpleCounting.VoteType.Abstain), "I have no opinion.", params
-        );
+        governor.castVoteWithReasonAndParams(proposalId, ABSTAIN, "I have no opinion.", params);
 
         vm.roll(92027 + 91984);
         assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
