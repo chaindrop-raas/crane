@@ -8,6 +8,7 @@ import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
+import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
 
 /// @title Origami Governor
@@ -17,6 +18,7 @@ import "@oz-upgradeable/proxy/utils/Initializable.sol";
 contract OrigamiGovernor is
     Initializable,
     AccessControlUpgradeable,
+    GovernorUpgradeable,
     GovernorSettingsUpgradeable,
     GovernorTimelockControlUpgradeable,
     GovernorVotesQuorumFractionUpgradeable,
@@ -25,6 +27,9 @@ contract OrigamiGovernor is
 {
     /// @notice the role hash for granting the ability to cancel a timelocked proposal. This role is not granted as part of deployment. It should be granted only in the event of an emergency.
     bytes32 public constant CANCELLER_ROLE = keccak256("CANCELLER_ROLE");
+    /// @notice the role hash for granting the ability to proxy a vote. This role is typically granted to the Origami Platform so that it can pay for gas on behalf of users.
+    /// @dev Only addresses with this role my use the `BySig` functions. This allows us to prevent replay attacks, since we permit voters to update their vote.
+    bytes32 public constant VOTER_PROXY_ROLE = keccak256("VOTER_PROXY_ROLE");
 
     /// @notice default token is initialized to the DAOs membership token and is used when no token is specified via proposal params
     IVotesUpgradeable public defaultToken;
@@ -215,6 +220,54 @@ contract OrigamiGovernor is
         returns (uint256)
     {
         return super._castVote(proposalId, account, support, reason, params);
+    }
+
+    function castVoteBySig(uint256 proposalId, uint8 support, uint8 v, bytes32 r, bytes32 s)
+        public
+        virtual
+        override (GovernorUpgradeable, IGovernorUpgradeable)
+        returns (uint256)
+    {
+        address voter = ECDSAUpgradeable.recover(
+            _hashTypedDataV4(keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support))), v, r, s
+        );
+
+        require(
+            _msgSender() == voter || hasRole(VOTER_PROXY_ROLE, _msgSender()),
+            "OrigamiGovernor: must be voter or have voter proxy role"
+        );
+
+        return _castVote(proposalId, voter, support, "");
+    }
+
+    function castVoteWithReasonAndParamsBySig(
+        uint256 proposalId,
+        uint8 support,
+        string calldata reason,
+        bytes memory params,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public virtual override (GovernorUpgradeable, IGovernorUpgradeable) returns (uint256) {
+        address voter = ECDSAUpgradeable.recover(
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        EXTENDED_BALLOT_TYPEHASH, proposalId, support, keccak256(bytes(reason)), keccak256(params)
+                    )
+                )
+            ),
+            v,
+            r,
+            s
+        );
+
+        require(
+            _msgSender() == voter || hasRole(VOTER_PROXY_ROLE, _msgSender()),
+            "OrigamiGovernor: must be voter or have voter proxy role"
+        );
+
+        return _castVote(proposalId, voter, support, reason, params);
     }
 
     /**
