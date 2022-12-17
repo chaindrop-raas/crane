@@ -494,6 +494,7 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovHelper {
     uint8 public v;
     bytes32 public r;
     bytes32 public s;
+    uint256 public nonce;
 
     function setUp() public {
         targets = new address[](1);
@@ -509,48 +510,49 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovHelper {
         params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
         proposalHash = keccak256(bytes("New proposal"));
 
-        // grant voter proxy role to voter proxy
-        // nb: we have to startPrank and stopPrank here for some reason. Just prank doesn't work.
-        vm.startPrank(govAdmin);
-        governor.grantRole(governor.VOTER_PROXY_ROLE(), voterProxy);
-        vm.stopPrank();
-
         proposalId = governor.proposeWithParams(targets, values, calldatas, "New proposal", params);
 
         // These values were derived by using this signing scheme:
         // https://gist.github.com/mrmemes-eth/c308260a72563b8f3c568d131c272033
         // the signer is anvil address 0: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
         v = 28;
-        r = 0x9055c974932cde052e1f569bc39662be5207733cfe2956af76a6b7f9aec11e71;
-        s = 0x38cabd65d49e8b14cdedefa16cea6ae92a59ad87e79b93abcfeacdfd5798892b;
+        r = 0x23580b20482b4084366b64ace94950ea649caa644f41ea8672152e5b5b64705a;
+        s = 0x05d3c6ab353de0173d3bbf3e9082b157ea95cd8dc91b4a9a840f406ab69c33de;
+        nonce = 0;
     }
 
-    function testCanVoteOnProposalWithParamsBySignatureAsVoter() public {
+    function testCanVoteOnProposalWithParamsBySignature() public {
         // self-delegate to get voting power
         vm.prank(signingVoter);
         govToken.delegate(signingVoter);
 
         // roll the block number forward to voting period
         vm.roll(92027);
-        // only the proxy can submit votes by signature
-        vm.prank(signingVoter);
         vm.expectEmit(true, true, true, true, address(governor));
         emit VoteCastWithParams(signingVoter, proposalId, 1, 100000000, "I like it", params);
-        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, v, r, s);
+        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, nonce, v, r, s);
     }
 
-    function testCanVoteOnProposalWithParamsBySignatureAsVoterProxy() public {
+    function testCanUpdateVoteOnProposalWithParamsBySignature() public {
         // self-delegate to get voting power
         vm.prank(signingVoter);
         govToken.delegate(signingVoter);
 
         // roll the block number forward to voting period
         vm.roll(92027);
-        // only the proxy can submit votes by signature
-        vm.prank(voterProxy);
         vm.expectEmit(true, true, true, true, address(governor));
         emit VoteCastWithParams(signingVoter, proposalId, 1, 100000000, "I like it", params);
-        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, v, r, s);
+        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, nonce, v, r, s);
+
+        // roll forward to the next block
+        vm.roll(92028);
+        // signature updated to reflect new nonce and changed vote/reason
+        uint8 newV = 27;
+        bytes32 newR = 0x06fc5fe3d9599fd80945cf6c8ea2a83cd3bdc872ae52451e47cdaabcbdc6bbfa;
+        bytes32 newS = 0x54bb88a82e435c8aded6f0ce7cb0e41f9ecd8b93f5b9d1bcd4fdd5ff87b2a6a6;
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCastWithParams(signingVoter, proposalId, 0, 100000000, "I no longer like it", params);
+        governor.castVoteWithReasonAndParamsBySig(proposalId, 0, "I no longer like it", params, 1, newV, newR, newS);
     }
 
     function testCannotVoteBySigWithBadR() public {
@@ -564,7 +566,7 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovHelper {
         // only the proxy can submit votes by signature
         vm.prank(voterProxy);
         vm.expectRevert("ECDSA: invalid signature");
-        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, v, newR, s);
+        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, nonce, v, newR, s);
     }
 
     function testCannotVoteBySigWithBadS() public {
@@ -578,7 +580,7 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovHelper {
         // only the proxy can submit votes by signature
         vm.prank(voterProxy);
         vm.expectRevert("ECDSA: invalid signature");
-        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, v, r, newS);
+        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, nonce, v, r, newS);
     }
 
     function testCannotVoteBySigWithBadV() public {
@@ -591,22 +593,22 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovHelper {
         // only the proxy can submit votes by signature
         vm.prank(voterProxy);
         vm.expectRevert("OrigamiGovernor: only members may vote");
-        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, 27, r, s);
+        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, nonce, 27, r, s);
     }
 
-    function testCannotVoteOnProposalWithParamsBySignatureUnlessVoterOrProxy(address replayer) public {
-        vm.assume(replayer != signingVoter && replayer != voterProxy && replayer != owner && replayer != address(admin));
-
+    function testCannotReplayVote() public {
         // self-delegate to get voting power
         vm.prank(signingVoter);
         govToken.delegate(signingVoter);
 
         // roll the block number forward to voting period
         vm.roll(92027);
-        // replayer cannot submit votes by signature
-        vm.prank(replayer);
-        vm.expectRevert("OrigamiGovernor: must be voter or have voter proxy role");
-        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, v, r, s);
+        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, nonce, v, r, s);
+
+        // cannot re-submit votes by signature
+        vm.roll(92028);
+        vm.expectRevert("OrigamiGovernor: invalid nonce");
+        governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, nonce, v, r, s);
     }
 }
 

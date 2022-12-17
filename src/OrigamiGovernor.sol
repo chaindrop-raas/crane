@@ -5,11 +5,12 @@ import "src/OrigamiMembershipToken.sol";
 import "src/governor/GovernorWithProposalParams.sol";
 import "src/governor/SimpleCounting.sol";
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
-import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
-import "@oz-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
-import "@oz-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
 import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
+import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
+import "@oz-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
+import "@oz-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
+import "@oz-upgradeable/utils/CountersUpgradeable.sol";
 
 /// @title Origami Governor
 /// @author Stephen Caudill
@@ -25,11 +26,15 @@ contract OrigamiGovernor is
     GovernorWithProposalParams,
     SimpleCounting
 {
+    using CountersUpgradeable for CountersUpgradeable.Counter;
+
     /// @notice the role hash for granting the ability to cancel a timelocked proposal. This role is not granted as part of deployment. It should be granted only in the event of an emergency.
     bytes32 public constant CANCELLER_ROLE = keccak256("CANCELLER_ROLE");
-    /// @notice the role hash for granting the ability to proxy a vote. This role is typically granted to the Origami Platform so that it can pay for gas on behalf of users.
-    /// @dev Only addresses with this role my use the `BySig` functions. This allows us to prevent replay attacks, since we permit voters to update their vote.
-    bytes32 public constant VOTER_PROXY_ROLE = keccak256("VOTER_PROXY_ROLE");
+
+    bytes32 public constant EXTENDED_IDEMPOTENT_BALLOT_TYPEHASH =
+        keccak256("ExtendedIdempotentBallot(uint256 proposalId,uint8 support,string reason,uint256 nonce,bytes params)");
+
+    mapping(address => CountersUpgradeable.Counter) private _nonces;
 
     /// @notice default token is initialized to the DAOs membership token and is used when no token is specified via proposal params
     IVotesUpgradeable public defaultToken;
@@ -51,7 +56,7 @@ contract OrigamiGovernor is
      */
     function initialize(
         string calldata governorName,
-        TimelockControllerUpgradeable timelock,
+        TimelockControllerUpgradeable timelock_,
         IVotesUpgradeable token_,
         uint24 delay,
         uint24 period,
@@ -62,7 +67,7 @@ contract OrigamiGovernor is
         __Governor_init(governorName);
         __GovernorSettings_init(delay, period, threshold);
         __GovernorVotesQuorumFraction_init(quorumPercentage_);
-        __GovernorTimelockControl_init(timelock);
+        __GovernorTimelockControl_init(timelock_);
         defaultToken = token_;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
@@ -222,38 +227,72 @@ contract OrigamiGovernor is
         return super._castVote(proposalId, account, support, reason, params);
     }
 
-    function castVoteBySig(uint256 proposalId, uint8 support, uint8 v, bytes32 r, bytes32 s)
+    /**
+     * @notice voting by sig without nonce is not supported.
+     */
+    function castVoteBySig(uint256, uint8, uint8, bytes32, bytes32)
         public
         virtual
         override (GovernorUpgradeable, IGovernorUpgradeable)
         returns (uint256)
     {
-        address voter = ECDSAUpgradeable.recover(
-            _hashTypedDataV4(keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support))), v, r, s
-        );
-
-        require(
-            _msgSender() == voter || hasRole(VOTER_PROXY_ROLE, _msgSender()),
-            "OrigamiGovernor: must be voter or have voter proxy role"
-        );
-
-        return _castVote(proposalId, voter, support, "");
+        revert("OrigamiGovernor: not implemented");
     }
 
+    /**
+     * @notice voting by sig without nonce is not supported.
+     */
+    function castVoteWithReasonAndParamsBySig(uint256, uint8, string calldata, bytes memory, uint8, bytes32, bytes32)
+        public
+        virtual
+        override (GovernorUpgradeable, IGovernorUpgradeable)
+        returns (uint256)
+    {
+        revert("OrigamiGovernor: not implemented");
+    }
+
+    /**
+     * @notice retrieve the next voting nonce for a given voter.
+     * @param voter the address of the voter.
+     * @return the next nonce for the voter.
+     */
+    function nonces(address voter) public view returns (uint256) {
+        return _nonces[voter].current();
+    }
+
+    /**
+     * @notice cast vote wtih reason and params by signature. Requires a nonce and uses the ExtendedImmutableBallot typehash.
+     * @dev the nonce is used to prevent replay attacks. It is incremented after each successful vote.
+     * @param proposalId the id of the proposal to vote on.
+     * @param support the support of the vote (0 = against, 1 = for, 2 = abstain)
+     * @param reason the reason for the vote.
+     * @param params the params for the vote.
+     * @param nonce the nonce of the voter.
+     * @param v the recovery byte of the signature.
+     * @param r half of the ECDSA signature pair.
+     * @param s half of the ECDSA signature pair.
+     * @return weight - the weight of the vote.
+     */
     function castVoteWithReasonAndParamsBySig(
         uint256 proposalId,
         uint8 support,
         string calldata reason,
         bytes memory params,
+        uint256 nonce,
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public virtual override (GovernorUpgradeable, IGovernorUpgradeable) returns (uint256) {
+    ) public returns (uint256 weight) {
         address voter = ECDSAUpgradeable.recover(
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
-                        EXTENDED_BALLOT_TYPEHASH, proposalId, support, keccak256(bytes(reason)), keccak256(params)
+                        EXTENDED_IDEMPOTENT_BALLOT_TYPEHASH,
+                        proposalId,
+                        support,
+                        keccak256(bytes(reason)),
+                        nonce,
+                        keccak256(params)
                     )
                 )
             ),
@@ -262,12 +301,12 @@ contract OrigamiGovernor is
             s
         );
 
-        require(
-            _msgSender() == voter || hasRole(VOTER_PROXY_ROLE, _msgSender()),
-            "OrigamiGovernor: must be voter or have voter proxy role"
-        );
+        CountersUpgradeable.Counter storage _nonce = _nonces[voter];
+        uint256 current = _nonce.current();
+        require(current == nonce, "OrigamiGovernor: invalid nonce");
 
-        return _castVote(proposalId, voter, support, reason, params);
+        weight = _castVote(proposalId, voter, support, reason, params);
+        _nonce.increment();
     }
 
     /**
