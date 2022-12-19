@@ -521,7 +521,7 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovHelper {
         nonce = 0;
     }
 
-    function testCanVoteOnProposalWithParamsBySignature() public {
+    function testCanVoteOnProposalWithReasonAndParamsBySig() public {
         // self-delegate to get voting power
         vm.prank(signingVoter);
         govToken.delegate(signingVoter);
@@ -531,6 +531,35 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovHelper {
         vm.expectEmit(true, true, true, true, address(governor));
         emit VoteCastWithParams(signingVoter, proposalId, 1, 100000000, "I like it", params);
         governor.castVoteWithReasonAndParamsBySig(proposalId, 1, "I like it", params, nonce, v, r, s);
+    }
+
+    function testCanVoteOnProposalWithReasonBySig() public {
+        // self-delegate to get voting power
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
+
+        // roll the block number forward to voting period
+        vm.roll(92027);
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCastWithParams(signingVoter, proposalId, 1, 100000000, "I like it", params);
+        governor.castVoteWithReasonBySig(proposalId, 1, "I like it", nonce, v, r, s);
+    }
+
+    function testCanVoteOnProposalBySig() public {
+        // self-delegate to get voting power
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
+
+        // signature updated to reflect empty reason
+        uint8 newV = 27;
+        bytes32 newR = 0xf53d4943c6d86236332ca009766c64fb0330238db53b6a454c8ffb2c707af516;
+        bytes32 newS = 0x47caa4c3e77c4a87e3b8debb4608fc2a551afdf4474f7590678ec187630209db;
+
+        // roll the block number forward to voting period
+        vm.roll(92027);
+        vm.expectEmit(true, true, true, true, address(governor));
+        emit VoteCastWithParams(signingVoter, proposalId, 1, 100000000, "", params);
+        governor.castVoteBySig(proposalId, 1, nonce, newV, newR, newS);
     }
 
     function testCanUpdateVoteOnProposalWithParamsBySignature() public {

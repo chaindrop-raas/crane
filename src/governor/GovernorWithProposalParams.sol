@@ -29,7 +29,7 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
         bytes[] memory calldatas,
         string memory description,
         bytes memory params
-    ) public returns (uint256) {
+    ) public returns (uint256 proposalId) {
         if (keccak256(params) == keccak256(_defaultProposalParams())) {
             return super.propose(targets, values, calldatas, description);
         }
@@ -39,11 +39,9 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
             "Governor: proposal token must support IVotes"
         );
 
-        uint256 proposalId = super.propose(targets, values, calldatas, description);
+        proposalId = super.propose(targets, values, calldatas, description);
 
         proposalParams[proposalId] = params;
-
-        return proposalId;
     }
 
     /**

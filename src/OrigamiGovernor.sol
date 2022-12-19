@@ -82,7 +82,17 @@ contract OrigamiGovernor is
     }
 
     /**
-     * @notice The base proposal creation function. Since we extend GovernorWithProposalParams, this function calls into it and uses _defaultProposalParams.
+     * @notice retrieve the next voting nonce for a given voter.
+     * @param owner the address of the nonce owner.
+     * @return the next nonce for the owner.
+     */
+    function nonces(address owner) public view returns (uint256) {
+        return _nonces[owner].current();
+    }
+
+    /**
+     * @notice The base proposal creation function.
+     * @dev Since we extend GovernorWithProposalParams, this function calls into it and uses _defaultProposalParams.
      * @return proposalId the id of the newly created proposal.
      * module:core
      */
@@ -252,16 +262,51 @@ contract OrigamiGovernor is
     }
 
     /**
-     * @notice retrieve the next voting nonce for a given voter.
-     * @param voter the address of the voter.
-     * @return the next nonce for the voter.
+     * @notice cast vote by signature. Requires a nonce and uses the ExtendedImmutableBallot typehash.
+     * @dev the nonce is used to prevent replay attacks. It is incremented after each successful vote.
+     * @param proposalId the id of the proposal to vote on.
+     * @param support the support of the vote (0 = against, 1 = for, 2 = abstain)
+     * @param nonce the nonce of the voter.
+     * @param v the recovery byte of the signature.
+     * @param r half of the ECDSA signature pair.
+     * @param s half of the ECDSA signature pair.
+     * @return weight - the weight of the vote.
      */
-    function nonces(address voter) public view returns (uint256) {
-        return _nonces[voter].current();
+    function castVoteBySig(uint256 proposalId, uint8 support, uint256 nonce, uint8 v, bytes32 r, bytes32 s)
+        public
+        returns (uint256)
+    {
+        bytes memory params = getProposalParamsBytes(proposalId);
+        return castVoteWithReasonAndParamsBySig(proposalId, support, "", params, nonce, v, r, s);
     }
 
     /**
-     * @notice cast vote wtih reason and params by signature. Requires a nonce and uses the ExtendedImmutableBallot typehash.
+     * @notice cast vote with reason by signature. Requires a nonce and uses the ExtendedImmutableBallot typehash.
+     * @dev the nonce is used to prevent replay attacks. It is incremented after each successful vote.
+     * @param proposalId the id of the proposal to vote on.
+     * @param support the support of the vote (0 = against, 1 = for, 2 = abstain)
+     * @param reason the reason for the vote.
+     * @param nonce the nonce of the voter.
+     * @param v the recovery byte of the signature.
+     * @param r half of the ECDSA signature pair.
+     * @param s half of the ECDSA signature pair.
+     * @return weight - the weight of the vote.
+     */
+    function castVoteWithReasonBySig(
+        uint256 proposalId,
+        uint8 support,
+        string memory reason,
+        uint256 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public returns (uint256) {
+        bytes memory params = getProposalParamsBytes(proposalId);
+        return castVoteWithReasonAndParamsBySig(proposalId, support, reason, params, nonce, v, r, s);
+    }
+
+    /**
+     * @notice cast vote with reason and params by signature. Requires a nonce and uses the ExtendedImmutableBallot typehash.
      * @dev the nonce is used to prevent replay attacks. It is incremented after each successful vote.
      * @param proposalId the id of the proposal to vote on.
      * @param support the support of the vote (0 = against, 1 = for, 2 = abstain)
@@ -276,7 +321,7 @@ contract OrigamiGovernor is
     function castVoteWithReasonAndParamsBySig(
         uint256 proposalId,
         uint8 support,
-        string calldata reason,
+        string memory reason,
         bytes memory params,
         uint256 nonce,
         uint8 v,
