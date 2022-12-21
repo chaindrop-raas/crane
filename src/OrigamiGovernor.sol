@@ -4,6 +4,7 @@ pragma solidity 0.8.16;
 import "src/OrigamiMembershipToken.sol";
 import "src/governor/GovernorWithProposalParams.sol";
 import "src/governor/SimpleCounting.sol";
+import "src/governor/GovernorStorage.sol";
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
 import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
@@ -34,11 +35,6 @@ contract OrigamiGovernor is
     bytes32 public constant EXTENDED_IDEMPOTENT_BALLOT_TYPEHASH =
         keccak256("ExtendedIdempotentBallot(uint256 proposalId,uint8 support,string reason,uint256 nonce,bytes params)");
 
-    mapping(address => CountersUpgradeable.Counter) private _nonces;
-
-    /// @notice default token is initialized to the DAOs membership token and is used when no token is specified via proposal params
-    IVotesUpgradeable public defaultToken;
-
     /// @notice the constructor is not used since the contract is upgradeable except to disable initializers in the implementations that are deployed.
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -64,11 +60,21 @@ contract OrigamiGovernor is
         uint16 threshold,
         address admin
     ) public initializer {
+        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
+
+        config.name = governorName;
+        config.admin = admin;
+        config.timelock = address(timelock_);
+        config.membershipToken = address(token_);
+        config.votingDelay = delay;
+        config.votingPeriod = period;
+        config.quorumNumerator = quorumPercentage_;
+        config.proposalThreshold = threshold;
+
         __Governor_init(governorName);
         __GovernorSettings_init(delay, period, threshold);
         __GovernorVotesQuorumFraction_init(quorumPercentage_);
         __GovernorTimelockControl_init(timelock_);
-        defaultToken = token_;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
@@ -82,12 +88,13 @@ contract OrigamiGovernor is
     }
 
     /**
-     * @notice retrieve the next voting nonce for a given voter.
+     * @notice retrieve the current voting nonce for a given voter.
      * @param owner the address of the nonce owner.
      * @return the next nonce for the owner.
      */
     function nonces(address owner) public view returns (uint256) {
-        return _nonces[owner].current();
+        GovernorStorage.ProposalStorage storage ps = GovernorStorage.proposalStorage();
+        return ps.nonces[owner];
     }
 
     /**
@@ -111,7 +118,8 @@ contract OrigamiGovernor is
      * module:core
      */
     function votingDelay() public view override (IGovernorUpgradeable, GovernorSettingsUpgradeable) returns (uint256) {
-        return super.votingDelay();
+        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
+        return config.votingDelay;
     }
 
     /**
@@ -125,7 +133,8 @@ contract OrigamiGovernor is
         override (IGovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
-        return super.votingPeriod();
+        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
+        return config.votingPeriod;
     }
 
     /**
@@ -175,7 +184,8 @@ contract OrigamiGovernor is
         override (GovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
-        return super.proposalThreshold();
+        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
+        return config.proposalThreshold;
     }
 
     /**
@@ -346,12 +356,15 @@ contract OrigamiGovernor is
             s
         );
 
-        CountersUpgradeable.Counter storage _nonce = _nonces[voter];
-        uint256 current = _nonce.current();
-        require(current == nonce, "OrigamiGovernor: invalid nonce");
+        require(nonces(voter) == nonce, "OrigamiGovernor: invalid nonce");
 
         weight = _castVote(proposalId, voter, support, reason, params);
-        _nonce.increment();
+
+        // since voter nonce is capped by the total number of proposals ever, it
+        // is extraordinarily unlikely that we can overflow it.
+        unchecked {
+            GovernorStorage.proposalStorage().nonces[voter]++;
+        }
     }
 
     /**
@@ -390,6 +403,11 @@ contract OrigamiGovernor is
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
+    function membershipToken () public view returns (IVotes) {
+        GovernorStorage.GovernorConfig storage cs = GovernorStorage.configStorage();
+        return IVotes(cs.membershipToken);
+    }
+
     /**
      * @dev an override that is compatible with the GovernorWithProposalParams interface.
      * @param account the account to get the vote weight for.
@@ -403,8 +421,8 @@ contract OrigamiGovernor is
         override (GovernorUpgradeable, GovernorVotesUpgradeable)
         returns (uint256)
     {
-        if (keccak256(params) == keccak256(_defaultParams())) {
-            return defaultToken.getPastVotes(account, blockNumber);
+        if (keccak256(params) == keccak256("")) {
+            return membershipToken().getPastVotes(account, blockNumber);
         } else {
             (address proposalToken,) = hydrateParams(params);
             uint256 pastVotes = IVotes(proposalToken).getPastVotes(account, blockNumber);
@@ -485,7 +503,7 @@ contract OrigamiGovernor is
      */
     modifier onlyMember(address account) {
         require(
-            OrigamiMembershipToken(address(defaultToken)).balanceOf(account) > 0,
+            OrigamiMembershipToken(address(membershipToken())).balanceOf(account) > 0,
             "OrigamiGovernor: only members may vote"
         );
         _;

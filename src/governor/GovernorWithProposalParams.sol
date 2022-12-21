@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "./GovernorStorage.sol";
 import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
 import "@oz/governance/utils/IVotes.sol";
@@ -11,7 +12,6 @@ import "@oz/utils/introspection/ERC165.sol";
 /// @notice This contract extends the Governor interface to support changing the counting strategy on a per-proposal basis.
 /// @custom:security-contact contract-security@joinorigami.com
 abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeable {
-    mapping(uint256 => bytes) private proposalParams;
 
     /**
      * @notice Propose a new action to be performed by the governor, specifying the proposal's counting strategy.
@@ -41,7 +41,7 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
 
         proposalId = super.propose(targets, values, calldatas, description);
 
-        proposalParams[proposalId] = params;
+        GovernorStorage.proposal(proposalId).params = params;
     }
 
     /**
@@ -52,7 +52,7 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
      * module:proposal-params
      */
     function getProposalParamsBytes(uint256 proposalId) internal view returns (bytes memory) {
-        return proposalParams[proposalId];
+        return GovernorStorage.proposal(proposalId).params;
     }
 
     /**
@@ -63,7 +63,7 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
      * module:proposal-params
      */
     function getProposalParams(uint256 proposalId) internal view returns (address token, bytes4 weightingSelector) {
-        return hydrateParams(proposalParams[proposalId]);
+        return hydrateParams(GovernorStorage.proposal(proposalId).params);
     }
 
     /**

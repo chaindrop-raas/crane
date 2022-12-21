@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "./GovernorStorage.sol";
 import "./GovernorWithProposalParams.sol";
 
 /// @title Simple Counting module
@@ -13,13 +14,6 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
         For,
         Abstain
     }
-
-    // proposalId => voter address => voteBytes
-    mapping(uint256 => mapping(address => bytes)) private proposalVote;
-    // proposalId => voter addresses (provides index)
-    mapping(uint256 => address[]) private proposalVoters;
-    // proposalId => voter address => true if voted
-    mapping(uint256 => mapping(address => bool)) private proposalHasVoted;
 
     /**
      * @notice Applies the indicated weighting strategy to the amount `weight` that is supplied.
@@ -47,7 +41,7 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
      * module:voting
      */
     function hasVoted(uint256 proposalId, address account) public view override returns (bool) {
-        return proposalHasVoted[proposalId][account];
+        return GovernorStorage.proposalHasVoted(proposalId, account);
     }
 
     /**
@@ -100,9 +94,9 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
             (, bytes4 weightingSelector) = getProposalParams(proposalId);
             vote = abi.encode(VoteType(support), weight, applyWeightStrategy(weight, weightingSelector));
         }
-        proposalVote[proposalId][account] = vote;
-        proposalVoters[proposalId].push(account);
-        proposalHasVoted[proposalId][account] = true;
+        GovernorStorage.setProposalVote(proposalId, account, vote);
+        GovernorStorage.proposalVoters(proposalId).push(account);
+        GovernorStorage.setProposalHasVoted(proposalId, account, true);
     }
 
     /**
@@ -112,7 +106,7 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
      * module:voting
      */
     function getProposalVoters(uint256 proposalId) internal view returns (address[] memory) {
-        return proposalVoters[proposalId];
+        return GovernorStorage.proposalVoters(proposalId);
     }
 
     /**
@@ -123,7 +117,7 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
      * module:voting
      */
     function getVote(uint256 proposalId, address voter) internal view returns (VoteType, uint256, uint256) {
-        return abi.decode(proposalVote[proposalId][voter], (VoteType, uint256, uint256));
+        return abi.decode(GovernorStorage.proposalVote(proposalId, voter), (VoteType, uint256, uint256));
     }
 
     /**
