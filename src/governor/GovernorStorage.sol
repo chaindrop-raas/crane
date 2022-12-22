@@ -8,8 +8,9 @@ library GovernorStorage {
     bytes32 public constant PROPOSAL_STORAGE_POSITION = keccak256("com.origami.governor.proposalStorage");
 
     struct ProposalCore {
-        uint256 voteStart;
-        uint256 voteEnd;
+        uint16 quorumNumerator;
+        uint64 snapshot;
+        uint64 deadline;
         bytes params;
         bool canceled;
         bool executed;

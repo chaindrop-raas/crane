@@ -5,11 +5,11 @@ import "src/OrigamiMembershipToken.sol";
 import "src/governor/GovernorWithProposalParams.sol";
 import "src/governor/SimpleCounting.sol";
 import "src/governor/GovernorStorage.sol";
+import "src/governor/GovernorQuorumFacet.sol";
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
 import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
-import "@oz-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
 import "@oz-upgradeable/utils/CountersUpgradeable.sol";
 
@@ -23,8 +23,8 @@ contract OrigamiGovernor is
     GovernorUpgradeable,
     GovernorSettingsUpgradeable,
     GovernorTimelockControlUpgradeable,
-    GovernorVotesQuorumFractionUpgradeable,
     GovernorWithProposalParams,
+    GovernorQuorumFacet,
     SimpleCounting
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
@@ -73,7 +73,6 @@ contract OrigamiGovernor is
 
         __Governor_init(governorName);
         __GovernorSettings_init(delay, period, threshold);
-        __GovernorVotesQuorumFraction_init(quorumPercentage_);
         __GovernorTimelockControl_init(timelock_);
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
@@ -135,25 +134,6 @@ contract OrigamiGovernor is
     {
         GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
         return config.votingPeriod;
-    }
-
-    /**
-     * @notice the vote weight needed based on the token holdings snapshot at time of proposal creation.
-     * @dev Returns the quorum for the proposal: `supply * numerator / denominator`. This used to take blockNumber as a parameter, but now it takes proposalId, both uint256. Need to make sure this doesn't have any unintended consequences.
-     * @param proposalId the proposalId of the proposal we are deriving quorum for.
-     * @return the amount of tokens necessary to achieve quorum for this proposal.
-     * module:core
-     */
-    function quorum(uint256 proposalId)
-        public
-        view
-        override (GovernorVotesQuorumFractionUpgradeable, IGovernorUpgradeable)
-        returns (uint256)
-    {
-        (address proposalToken,) = getProposalParams(proposalId);
-        uint256 snapshot = proposalSnapshot(proposalId);
-        uint256 snapshotTotalSupply = VotesUpgradeable(proposalToken).getPastTotalSupply(snapshot);
-        return (snapshotTotalSupply * quorumNumerator(snapshot)) / quorumDenominator();
     }
 
     /**
@@ -403,7 +383,7 @@ contract OrigamiGovernor is
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
-    function membershipToken () public view returns (IVotes) {
+    function membershipToken() public view returns (IVotes) {
         GovernorStorage.GovernorConfig storage cs = GovernorStorage.configStorage();
         return IVotes(cs.membershipToken);
     }
@@ -418,7 +398,7 @@ contract OrigamiGovernor is
     function _getVotes(address account, uint256 blockNumber, bytes memory params)
         internal
         view
-        override (GovernorUpgradeable, GovernorVotesUpgradeable)
+        override (GovernorUpgradeable)
         returns (uint256)
     {
         if (keccak256(params) == keccak256("")) {
@@ -460,11 +440,20 @@ contract OrigamiGovernor is
         }
     }
 
+    function quorum(uint256 proposalId)
+        public
+        view
+        override (GovernorQuorumFacet, IGovernorUpgradeable)
+        returns (uint256)
+    {
+        return super.quorum(proposalId);
+    }
+
     /**
      * @dev implementation of {Governor-_quorumReached} that is compatible with the GovernorWithProposalParams interface.
      * @param proposalId the id of the proposal to check.
      * @return boolean - true if the quorum has been reached.
-     * module:core
+     * module:counting
      */
     function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
         (, uint256 forVotes, uint256 abstainVotes) = proposalVotes(proposalId);

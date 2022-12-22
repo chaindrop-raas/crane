@@ -41,7 +41,17 @@ abstract contract GovernorWithProposalParams is Initializable, GovernorUpgradeab
 
         proposalId = super.propose(targets, values, calldatas, description);
 
-        GovernorStorage.proposal(proposalId).params = params;
+        // start populating the new ProposalCore struct
+        GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
+        ps.params = params;
+        ps.quorumNumerator = GovernorStorage.configStorage().quorumNumerator;
+        // TODO: circle back and factor away from block.number and to
+        // block.timestamp so we can deploy to chains like Optimism.
+        // --
+        // An epoch exceeding max UINT64 is 584,942,417,355 years from now. I
+        // feel pretty safe casting this.
+        ps.snapshot = uint64(block.number) + GovernorStorage.configStorage().votingDelay;
+        ps.deadline = ps.snapshot + GovernorStorage.configStorage().votingPeriod;
     }
 
     /**
