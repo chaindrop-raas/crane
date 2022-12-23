@@ -70,6 +70,7 @@ contract OrigamiGovernor is
         config.votingPeriod = period;
         config.quorumNumerator = quorumPercentage_;
         config.proposalThreshold = threshold;
+        config.proposalThresholdToken = address(token_);
 
         __Governor_init(governorName);
         __GovernorSettings_init(delay, period, threshold);

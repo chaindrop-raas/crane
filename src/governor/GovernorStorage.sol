@@ -21,6 +21,7 @@ library GovernorStorage {
         address admin;
         address timelock;
         address membershipToken;
+        address proposalThresholdToken;
         uint24 votingDelay;
         uint24 votingPeriod;
         uint16 quorumNumerator;
