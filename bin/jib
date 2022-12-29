@@ -136,6 +136,23 @@ upgradeMemToken() {
     --optimize --optimizer-runs 17500
 }
 
+# @cmd grant permissions to wallets in the specified file (one address per line) on the specified contract necessary to mint and revoke tokens
+# @alias grant-permissions
+# @arg contract! the address of the token contract
+# @arg file! the path to the file containing the addresses to grant permissions to
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+grantPermissions() {
+  REVOKER_ROLE="0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30"
+  MINTER_ROLE="0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6"
+
+  while read -r address; do
+    cast send --rpc-url $argc_rpc_url --private-key $ADMIN_PRIVATE_KEY \
+      $argc_contract "grantRole(bytes32,address)" $REVOKER_ROLE $address
+    cast send --rpc-url $argc_rpc_url --private-key $ADMIN_PRIVATE_KEY \
+      $argc_contract "grantRole(bytes32,address)" $MINTER_ROLE $address
+  done <$argc_file
+}
+
 # @cmd output test coverage data for the contracts
 # @alias cov
 # @flag --no-open do not open the coverage report in the browser
