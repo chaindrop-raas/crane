@@ -3,9 +3,9 @@ pragma solidity 0.8.16;
 
 import "src/OrigamiMembershipToken.sol";
 import "src/governor/GovernorWithProposalParams.sol";
-import "src/governor/SimpleCounting.sol";
 import "src/governor/GovernorStorage.sol";
-import "src/governor/GovernorQuorumFacet.sol";
+import "src/governor/libGovernorQuorum.sol";
+import "src/governor/libSimpleCounting.sol";
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
 import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
@@ -21,11 +21,9 @@ contract OrigamiGovernor is
     Initializable,
     AccessControlUpgradeable,
     GovernorUpgradeable,
-    GovernorSettingsUpgradeable,
+    GovernorSettingsUpgradeable, // can be removed after GovernorUpgradeable is removed
     GovernorTimelockControlUpgradeable,
-    GovernorWithProposalParams,
-    GovernorQuorumFacet,
-    SimpleCounting
+    GovernorWithProposalParams
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
@@ -113,11 +111,16 @@ contract OrigamiGovernor is
         internal
         override
     {
-        setVote(proposalId, account, support, weight, params);
+        SimpleCounting.setVote(proposalId, account, support, weight, params);
     }
 
-    function COUNTING_MODE() public pure override(IGovernorUpgradeable, SimpleCounting) returns (string memory) {
+    // solhint-disable-next-line func-name-mixedcase
+    function COUNTING_MODE() public pure override(IGovernorUpgradeable) returns (string memory) {
         return SimpleCounting.COUNTING_MODE();
+    }
+
+    function quorumNumerator() public view returns (uint256) {
+        return GovernorQuorum.quorumNumerator();
     }
 
     /// END SHIM FUNCTIONS FOR GovernorUpgradeable COMPATIBILITY
@@ -446,33 +449,24 @@ contract OrigamiGovernor is
      * @return abstainVotes - the number of votes abstaining from the vote.
      * module:core
      */
+     // TODO: this return type is specific to SimpleCounting, which probably
+     // means it's not generic enough to be in the public interface
     function proposalVotes(uint256 proposalId)
         public
         view
         virtual
-        returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
+        returns (uint256, uint256, uint256)
     {
-        address[] memory voters = getProposalVoters(proposalId);
-        for (uint256 i = 0; i < voters.length; i++) {
-            address voter = voters[i];
-            (VoteType support,, uint256 calculatedWeight) = getVote(proposalId, voter);
-            if (support == VoteType.Abstain) {
-                abstainVotes += calculatedWeight;
-            } else if (support == VoteType.For) {
-                forVotes += calculatedWeight;
-            } else if (support == VoteType.Against) {
-                againstVotes += calculatedWeight;
-            }
-        }
+        return SimpleCounting.simpleProposalVotes(proposalId);
     }
 
     function quorum(uint256 proposalId)
         public
         view
-        override (GovernorQuorumFacet, IGovernorUpgradeable)
+        override (IGovernorUpgradeable)
         returns (uint256)
     {
-        return super.quorum(proposalId);
+        return GovernorQuorum.quorum(proposalId);
     }
 
     /**
@@ -481,10 +475,11 @@ contract OrigamiGovernor is
      * @return boolean - true if the quorum has been reached.
      * module:counting
      */
+     // TODO: make this function able to delegate to whatever the counting
+     // strategy is. Here we always delegate to SimpleCounting, but want
+     // flexibility to pick the strategy in the future.
     function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
-        (, uint256 forVotes, uint256 abstainVotes) = proposalVotes(proposalId);
-        (, bytes4 weightingSelector) = getProposalParams(proposalId);
-        return applyWeightStrategy(quorum(proposalId), weightingSelector) <= forVotes + abstainVotes;
+        return SimpleCounting.quorumReached(proposalId);
     }
 
     /**

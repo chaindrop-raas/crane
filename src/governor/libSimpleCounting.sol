@@ -3,17 +3,21 @@ pragma solidity 0.8.16;
 
 import "./GovernorStorage.sol";
 import "./libProposalParams.sol";
+import "./libGovernorQuorum.sol";
 
 /// @title Simple Counting module
 /// @author Stephen Caudill
 /// @notice Builds upon GovernorWithProposalParams to implement swappable counting strategies at the proposal level.
 /// @custom:security-contact contract-security@joinorigami.com
-abstract contract SimpleCounting {
+library SimpleCounting {
     enum VoteType {
         Against,
         For,
         Abstain
     }
+
+    bytes4 public constant simpleWeightSelector = bytes4(keccak256("simpleWeight(uint256)"));
+    bytes4 public constant quadraticWeightSelector = bytes4(keccak256("quadraticWeight(uint256)"));
 
     /**
      * @notice Applies the indicated weighting strategy to the amount `weight` that is supplied.
@@ -23,12 +27,13 @@ abstract contract SimpleCounting {
      * @return the weight with the weighting strategy applied to it.
      * module:reputation
      */
-    function applyWeightStrategy(uint256 weight, bytes4 weightingSelector) public view returns (uint256) {
+    function applyWeightStrategy(uint256 weight, bytes4 weightingSelector) public pure returns (uint256) {
         // We check for success and only issue this as staticcall
-        // slither-disable-next-line low-level-calls
-        (bool success, bytes memory data) = address(this).staticcall(abi.encodeWithSelector(weightingSelector, weight));
-        if (success) {
-            return abi.decode(data, (uint256));
+
+        if(weightingSelector == simpleWeightSelector) {
+            return simpleWeight(weight);
+        } else if(weightingSelector == quadraticWeightSelector) {
+            return quadraticWeight(weight);
         } else {
             revert("Governor: weighting strategy not found");
         }
@@ -41,7 +46,7 @@ abstract contract SimpleCounting {
      * module:voting
      */
     // solhint-disable-next-line func-name-mixedcase
-    function COUNTING_MODE() public pure virtual returns (string memory) {
+    function COUNTING_MODE() external pure returns (string memory) {
         return "support=bravo&quorum=for,abstain";
     }
 
@@ -97,7 +102,7 @@ abstract contract SimpleCounting {
      * @return the list of voters for the proposal.
      * module:voting
      */
-    function getProposalVoters(uint256 proposalId) internal view returns (address[] memory) {
+    function getProposalVoters(uint256 proposalId) external view returns (address[] memory) {
         return GovernorStorage.proposalVoters(proposalId);
     }
 
@@ -108,8 +113,48 @@ abstract contract SimpleCounting {
      * @return the vote type, the weight of the vote, and the weight of the vote with the weighting strategy applied.
      * module:voting
      */
-    function getVote(uint256 proposalId, address voter) internal view returns (VoteType, uint256, uint256) {
+    function getVote(uint256 proposalId, address voter) public view returns (VoteType, uint256, uint256) {
         return abi.decode(GovernorStorage.proposalVote(proposalId, voter), (VoteType, uint256, uint256));
+    }
+
+    /**
+     * @notice returns the current votes for, against, or abstaining for a given proposal. Once the voting period has lapsed, this is used to determine the outcome.
+     * @dev this delegates weight calculation to the strategy specified in the params
+     * @param proposalId the id of the proposal to get the votes for.
+     * @return againstVotes - the number of votes against the proposal.
+     * @return forVotes - the number of votes for the proposal.
+     * @return abstainVotes - the number of votes abstaining from the vote.
+     * module:core
+     */
+    function simpleProposalVotes(uint256 proposalId)
+        public
+        view
+        returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
+    {
+        address[] memory voters = GovernorStorage.proposalVoters(proposalId);
+        for (uint256 i = 0; i < voters.length; i++) {
+            address voter = voters[i];
+            (VoteType support,, uint256 calculatedWeight) = getVote(proposalId, voter);
+            if (support == VoteType.Abstain) {
+                abstainVotes += calculatedWeight;
+            } else if (support == VoteType.For) {
+                forVotes += calculatedWeight;
+            } else if (support == VoteType.Against) {
+                againstVotes += calculatedWeight;
+            }
+        }
+    }
+
+    /**
+     * @dev implementation of {Governor-quorumReached} that is compatible with the GovernorWithProposalParams interface.
+     * @param proposalId the id of the proposal to check.
+     * @return boolean - true if the quorum has been reached.
+     * module:counting
+     */
+    function quorumReached(uint256 proposalId) external view returns (bool) {
+        (, uint256 forVotes, uint256 abstainVotes) = simpleProposalVotes(proposalId);
+        (, bytes4 weightingSelector) = GovernorProposalParams.getDecodedProposalParams(proposalId);
+        return applyWeightStrategy(GovernorQuorum.quorum(proposalId), weightingSelector) <= forVotes + abstainVotes;
     }
 
     /**

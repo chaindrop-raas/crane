@@ -6,7 +6,7 @@ import "src/OrigamiGovernor.sol";
 import "src/OrigamiMembershipToken.sol";
 import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiTimelock.sol";
-import "src/governor/SimpleCounting.sol";
+import "src/governor/libSimpleCounting.sol";
 
 // libs
 import "@std/Test.sol";
@@ -822,7 +822,7 @@ contract OrigamiGovernorProposalQuadraticVoteResultsTest is GovHelper {
 contract OrigamiGovernorSimpleCounting is GovHelper {
     function testCannotSpecifyInvalidWeightStrategy() public {
         vm.expectRevert("Governor: weighting strategy not found");
-        governor.applyWeightStrategy(100, bytes4(keccak256("blahdraticWeight(uint256)")));
+        SimpleCounting.applyWeightStrategy(100, bytes4(keccak256("blahdraticWeight(uint256)")));
     }
 }
 
