@@ -112,6 +112,30 @@ cloneMemToken() {
     -- $argc_factory $argc_admin "$argc_name" $argc_symbol $argc_base_uri
 }
 
+# @cmd upgrade a governance token
+# @alias ugt
+# @arg admin! the address of the proxy admin contract for the token
+# @arg token! the address of the token to upgrade
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+upgradeGovToken() {
+  forge script script/Upgrade.s.sol:UpgradeScript $argc_admin $argc_token \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
+    --sig "upgradeGovernanceToken(address,address)" \
+    --optimize --optimizer-runs 1000000
+}
+
+# @cmd upgrade a membership token
+# @alias umt
+# @arg admin! the address of the proxy admin contract for the token
+# @arg token! the address of the token to upgrade
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+upgradeMemToken() {
+  forge script script/Upgrade.s.sol:UpgradeScript $argc_admin $argc_token \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
+    --sig "upgradeMembershipToken(address,address)" \
+    --optimize --optimizer-runs 17500
+}
+
 # @cmd output test coverage data for the contracts
 # @alias cov
 # @flag --no-open do not open the coverage report in the browser
