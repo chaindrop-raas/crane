@@ -2,13 +2,13 @@
 pragma solidity 0.8.16;
 
 import "./GovernorStorage.sol";
-import "./GovernorWithProposalParams.sol";
+import "./libProposalParams.sol";
 
 /// @title Simple Counting module
 /// @author Stephen Caudill
 /// @notice Builds upon GovernorWithProposalParams to implement swappable counting strategies at the proposal level.
 /// @custom:security-contact contract-security@joinorigami.com
-abstract contract SimpleCounting is GovernorWithProposalParams {
+abstract contract SimpleCounting {
     enum VoteType {
         Against,
         For,
@@ -35,23 +35,13 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
     }
 
     /**
-     * @notice Indicates whether or not an account has voted on a proposal.
-     * @dev See {IGovernor-_hasVoted}. Note that we differ from the base implementation in that we don't want to prevent multiple votes, we instead update their previous vote.
-     * @return true if the account has voted on the proposal, false otherwise.
-     * module:voting
-     */
-    function hasVoted(uint256 proposalId, address account) public view override returns (bool) {
-        return GovernorStorage.proposalHasVoted(proposalId, account);
-    }
-
-    /**
      * @notice a required function from IGovernor that declares what Governor style we support and how we derive quorum.
      * @dev See {IGovernor-COUNTING_MODE}.
      * @return string indicating the counting mode.
      * module:voting
      */
     // solhint-disable-next-line func-name-mixedcase
-    function COUNTING_MODE() public pure override returns (string memory) {
+    function COUNTING_MODE() public pure virtual returns (string memory) {
         return "support=bravo&quorum=for,abstain";
     }
 
@@ -83,15 +73,17 @@ abstract contract SimpleCounting is GovernorWithProposalParams {
      * @param weight the weight of their vote as of the proposal snapshot
      * module:reputation
      */
-    function _countVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory)
+    function setVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory)
         internal
-        override (GovernorUpgradeable)
     {
         bytes memory vote;
-        if (keccak256(getProposalParamsBytes(proposalId)) == keccak256(_defaultParams())) {
+        bytes storage proposalParams = GovernorProposalParams.getProposalParams(proposalId);
+        // _defaultParams() from the OZ lib uses "" as the default value, so we
+        // check for that here and encode without a weighting strategy if so.
+        if (keccak256(proposalParams) == keccak256("")) {
             vote = abi.encode(VoteType(support), weight, weight);
         } else {
-            (, bytes4 weightingSelector) = getProposalParams(proposalId);
+            (, bytes4 weightingSelector) = GovernorProposalParams.decodeProposalParams(proposalParams);
             vote = abi.encode(VoteType(support), weight, applyWeightStrategy(weight, weightingSelector));
         }
         GovernorStorage.setProposalVote(proposalId, account, vote);

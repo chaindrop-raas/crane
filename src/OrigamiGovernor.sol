@@ -98,6 +98,31 @@ contract OrigamiGovernor is
     }
 
     /**
+     * @notice Indicates whether or not an account has voted on a proposal.
+     * @dev See {IGovernor-_hasVoted}. Note that we differ from the base implementation in that we don't want to prevent multiple votes, we instead update their previous vote.
+     * @return true if the account has voted on the proposal, false otherwise.
+     * module:voting
+     */
+    function hasVoted(uint256 proposalId, address account) public view override virtual returns (bool) {
+        return GovernorStorage.proposalHasVoted(proposalId, account);
+    }
+
+    /// START SHIM FUNCTIONS FOR GovernorUpgradeable COMPATIBILITY
+
+    function _countVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory params)
+        internal
+        override
+    {
+        setVote(proposalId, account, support, weight, params);
+    }
+
+    function COUNTING_MODE() public pure override(IGovernorUpgradeable, SimpleCounting) returns (string memory) {
+        return SimpleCounting.COUNTING_MODE();
+    }
+
+    /// END SHIM FUNCTIONS FOR GovernorUpgradeable COMPATIBILITY
+
+    /**
      * @notice The base proposal creation function.
      * @dev Since we extend GovernorWithProposalParams, this function calls into it and uses _defaultProposalParams.
      * @return proposalId the id of the newly created proposal.
