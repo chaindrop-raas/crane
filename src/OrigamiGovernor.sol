@@ -489,8 +489,7 @@ contract OrigamiGovernor is
      * module:core
      */
     function _voteSucceeded(uint256 proposalId) internal view virtual override returns (bool) {
-        (uint256 againstVotes, uint256 forVotes,) = proposalVotes(proposalId);
-        return forVotes > againstVotes;
+        return SimpleCounting.voteSucceeded(proposalId);
     }
 
     /**

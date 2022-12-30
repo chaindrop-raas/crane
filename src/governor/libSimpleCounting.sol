@@ -157,6 +157,11 @@ library SimpleCounting {
         return applyWeightStrategy(GovernorQuorum.quorum(proposalId), weightingSelector) <= forVotes + abstainVotes;
     }
 
+    function voteSucceeded(uint256 proposalId) external view returns (bool) {
+        (uint256 againstVotes, uint256 forVotes,) = simpleProposalVotes(proposalId);
+        return forVotes > againstVotes;
+    }
+
     /**
      * @dev square root algorithm from https://github.com/ethereum/dapp-bin/pull/50#issuecomment-1075267374
      * @param x the number to derive the square root of.
