@@ -28,6 +28,10 @@ library GovernorStorage {
         uint64 proposalThreshold;
     }
 
+    struct TimelockQueue {
+        uint256 timestamp;
+    }
+
     struct ProposalStorage {
         // proposalId => ProposalCore
         mapping(uint256 => ProposalCore) proposals;
@@ -37,6 +41,8 @@ library GovernorStorage {
         mapping(uint256 => address[]) proposalVoters;
         // proposalId => voter address => true if voted
         mapping(uint256 => mapping(address => bool)) proposalHasVoted;
+        // proposalId => TimelockQueue
+        mapping(uint256 => TimelockQueue) timelockQueue;
         // voter address => nonce
         mapping(address => uint256) nonces;
     }
