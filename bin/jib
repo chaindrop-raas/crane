@@ -65,7 +65,7 @@ deployGovToken() {
 deployMemToken() {
   if [ $argc_ignore_deploy_warning ]; then
     forge script script/Deploy.s.sol:DeployScript \
-      --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
+      --rpc-url $argc_rpc_url --broadcast -vvvv \
       --optimize --optimizer-runs 1000000 \
       --sig "deployMembershipToken(address,string,string,string)" \
       -- $argc_admin "$argc_name" $argc_symbol $argc_base_uri
@@ -80,6 +80,31 @@ deployMemToken() {
     echo " command with the --ignore-deploy-warning flag."
     echo
   fi
+}
+
+jqSelector() {
+  echo "(.transactions[]|select(.contractName == \"$1\")|select(.transactionType == \"CREATE\")).contractAddress"
+}
+
+# @cmd verify the last membership token broadcast transaction
+# @alias vmt
+# @arg block-explorer-api-key! the api key for the block explorer
+verifyLastMemToken() {
+  BROADCAST_FILE=$(find broadcast -type f -print0 | xargs -0 stat --format '%Y :%y %n' | sort -nr | cut -d ' ' -f 5 | head -1)
+  PROXY_ADMIN=$(jq -r "$(jqSelector ProxyAdmin)" $BROADCAST_FILE)
+  TRANSPARENT_PROXY=$(jq -r "$(jqSelector TransparentUpgradeableProxy)" $BROADCAST_FILE)
+  MEM_TOKEN=$(jq -r "$(jqSelector OrigamiMembershipToken)" $BROADCAST_FILE)
+  CHAIN_ID=$(jq -r ".chain" $BROADCAST_FILE)
+  forge verify-contract --chain-id $CHAIN_ID --num-of-optimizations 1000000 \
+    --compiler-version v0.8.16+commit.07a7930e --watch \
+    $PROXY_ADMIN ProxyAdmin $argc_block_explorer_api_key
+  forge verify-contract --chain-id $CHAIN_ID --num-of-optimizations 1000000 \
+    --compiler-version v0.8.16+commit.07a7930e --watch \
+    $MEM_TOKEN OrigamiMembershipToken $argc_block_explorer_api_key
+  forge verify-contract --chain-id $CHAIN_ID --num-of-optimizations 1000000 \
+    --compiler-version v0.8.16+commit.07a7930e --watch \
+    --constructor-args $(cast abi-encode "constructor(address,address,bytes)" $MEM_TOKEN $PROXY_ADMIN 0x) \
+    $TRANSPARENT_PROXY TransparentUpgradeableProxy $argc_block_explorer_api_key
 }
 
 # @cmd deploy a clone of the governance token
