@@ -22,9 +22,11 @@ library GovernorStorage {
         address timelock;
         address membershipToken;
         address proposalThresholdToken;
+        // TODO: consider these uint sizes carefully
         uint24 votingDelay;
         uint24 votingPeriod;
         uint16 quorumNumerator;
+        // specifically, this seems like it might be too small to denote quantity in wei
         uint64 proposalThreshold;
     }
 
