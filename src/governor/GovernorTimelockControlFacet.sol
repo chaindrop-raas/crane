@@ -49,9 +49,11 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
         uint256[] calldata values,
         bytes[] calldata calldatas,
         bytes32 descriptionHash
-    ) external payable {
+    ) external payable returns(uint256) {
         require(GovernorCommon.state(proposalId) == IGovernor.ProposalState.Queued, "Governor: proposal not queued");
         timelock().executeBatch{value: msg.value}(targets, values, calldatas, 0, descriptionHash);
+
+        return proposalId;
     }
 
     function cancel(
