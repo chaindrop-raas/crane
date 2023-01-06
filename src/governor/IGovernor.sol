@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "@oz/utils/introspection/ERC165.sol";
-
 /**
  * @dev Interface of the {Governor} core.
  */

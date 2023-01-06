@@ -9,7 +9,7 @@ import "@oz/governance/TimelockController.sol";
 
 contract GovernorTimelockControlFacet is IGovernorTimelockControl {
 
-    function timelock() public view returns (TimelockController) {
+    function timelock() internal view returns (TimelockController) {
         return TimelockController(payable(GovernorStorage.configStorage().timelock));
     }
 
