@@ -60,18 +60,18 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
 
         OrigamiTimelock origamiTimelock = new OrigamiTimelock();
 
-        GovernorCoreFacet coreGovernanceFacet = new GovernorCoreFacet();
+        GovernorCoreFacet governorCoreFacet = new GovernorCoreFacet();
 
         // initialize the timelock after we have an address for the governor
         address[] memory proposers = new address[](1);
-        proposers[0] = address(coreGovernanceFacet);
+        proposers[0] = address(governorCoreFacet);
         address[] memory executors = new address[](1);
-        executors[0] = address(coreGovernanceFacet);
+        executors[0] = address(governorCoreFacet);
 
         // FIXME: contract is already initialized
         // origamiTimelock.initialize(1 days, proposers, executors);
 
-        cuts[2] = coreGovernanceFacetCut(coreGovernanceFacet);
+        cuts[2] = governorCoreFacetCut(governorCoreFacet);
 
         GovernorSettingsFacet governorSettingsFacet = new GovernorSettingsFacet();
         cuts[3] = governorSettingsFacetCut(governorSettingsFacet);
@@ -132,10 +132,10 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         });
     }
 
-    function coreGovernanceFacetCut(GovernorCoreFacet facet)
+    function governorCoreFacetCut(GovernorCoreFacet facet)
         internal
         pure
-        returns (IDiamondCut.FacetCut memory coreGovernanceCut)
+        returns (IDiamondCut.FacetCut memory governorCoreCut)
     {
         bytes4[] memory selectors = new bytes4[](28);
         selectors[0] = facet.CANCELLER_ROLE.selector;
@@ -167,7 +167,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         selectors[26] = facet.supportsInterface.selector;
         selectors[27] = facet.version.selector;
 
-        coreGovernanceCut = IDiamondCut.FacetCut({
+        governorCoreCut = IDiamondCut.FacetCut({
             facetAddress: address(facet),
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: selectors
@@ -179,15 +179,17 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         pure
         returns (IDiamondCut.FacetCut memory governorSettingsCut)
     {
-        bytes4[] memory selectors = new bytes4[](8);
+        bytes4[] memory selectors = new bytes4[](10);
         selectors[0] = facet.proposalThreshold.selector;
         selectors[1] = facet.proposalThresholdToken.selector;
-        selectors[2] = facet.setProposalThreshold.selector;
-        selectors[3] = facet.setProposalThresholdToken.selector;
-        selectors[4] = facet.setVotingDelay.selector;
-        selectors[5] = facet.setVotingPeriod.selector;
-        selectors[6] = facet.votingDelay.selector;
-        selectors[7] = facet.votingPeriod.selector;
+        selectors[2] = facet.quorumNumerator.selector;
+        selectors[3] = facet.setProposalThreshold.selector;
+        selectors[4] = facet.setProposalThresholdToken.selector;
+        selectors[5] = facet.setQuorumNumerator.selector;
+        selectors[6] = facet.setVotingDelay.selector;
+        selectors[7] = facet.setVotingPeriod.selector;
+        selectors[8] = facet.votingDelay.selector;
+        selectors[9] = facet.votingPeriod.selector;
 
         governorSettingsCut = IDiamondCut.FacetCut({
             facetAddress: address(facet),
