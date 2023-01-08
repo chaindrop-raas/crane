@@ -3,6 +3,7 @@
 
 pragma solidity 0.8.16;
 
+import "./AccessControlStorage.sol";
 import "src/interfaces/utils/IAccessControl.sol";
 import "@oz/utils/Context.sol";
 import "@oz/utils/Strings.sol";
@@ -48,25 +49,7 @@ import "@diamond/interfaces/IERC165.sol";
  * to conform to and use Diamond Storage and minimize certain viral OZ dependencies.
  */
 contract AccessControlFacet is Context, IAccessControl, IERC165 {
-    bytes32 public constant ADMIN_STORAGE_POSITION = keccak256("com.origami.accesscontrol.admin");
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-
-    struct RoleData {
-        mapping(address => bool) members;
-        bytes32 adminRole;
-    }
-
-    struct RoleStorage {
-        mapping(bytes32 => RoleData) roles;
-    }
-
-    function roleStorage() internal pure returns (RoleStorage storage rs) {
-        bytes32 position = ADMIN_STORAGE_POSITION;
-        //solhint-disable-next-line no-inline-assembly
-        assembly {
-            rs.slot := position
-        }
-    }
 
     /**
      * @dev Modifier that checks that an account has a specific role. Reverts
@@ -94,7 +77,7 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      * @dev Returns `true` if `account` has been granted `role`.
      */
     function hasRole(bytes32 role, address account) public view virtual override returns (bool) {
-        return roleStorage().roles[role].members[account];
+        return AccessControlStorage.roleStorage().roles[role].members[account];
     }
 
     /**
@@ -138,7 +121,7 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      * To change a role's admin, use {_setRoleAdmin}.
      */
     function getRoleAdmin(bytes32 role) public view virtual override returns (bytes32) {
-        return roleStorage().roles[role].adminRole;
+        return AccessControlStorage.roleStorage().roles[role].adminRole;
     }
 
     /**
@@ -201,7 +184,7 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      */
     function _setRoleAdmin(bytes32 role, bytes32 adminRole) internal virtual {
         bytes32 previousAdminRole = getRoleAdmin(role);
-        roleStorage().roles[role].adminRole = adminRole;
+        AccessControlStorage.roleStorage().roles[role].adminRole = adminRole;
         emit RoleAdminChanged(role, previousAdminRole, adminRole);
     }
 
@@ -223,7 +206,7 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      */
     function _grantRole(bytes32 role, address account) internal virtual {
         if (!hasRole(role, account)) {
-            roleStorage().roles[role].members[account] = true;
+            AccessControlStorage.roleStorage().roles[role].members[account] = true;
             emit RoleGranted(role, account, _msgSender());
         }
     }
@@ -237,7 +220,7 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      */
     function _revokeRole(bytes32 role, address account) internal virtual {
         if (hasRole(role, account)) {
-            roleStorage().roles[role].members[account] = false;
+            AccessControlStorage.roleStorage().roles[role].members[account] = false;
             emit RoleRevoked(role, account, _msgSender());
         }
     }
