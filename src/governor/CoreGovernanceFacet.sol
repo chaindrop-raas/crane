@@ -24,31 +24,6 @@ contract CoreGovernanceFacet is IEIP712, IGovernor {
     bytes32 public constant EIP712_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
-    constructor(
-        string memory governorName,
-        OrigamiTimelock timelock_,
-        IVotes token_,
-        uint24 delay,
-        uint24 period,
-        uint8 quorumPercentage_,
-        uint16 threshold,
-        address admin
-    ) EIP712(governorName, version()) {
-        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
-
-        config.name = governorName;
-        config.admin = admin;
-        config.timelock = address(timelock_);
-        config.membershipToken = address(token_);
-        config.votingDelay = delay;
-        config.votingPeriod = period;
-        config.quorumNumerator = quorumPercentage_;
-        config.proposalThreshold = threshold;
-        config.proposalThresholdToken = address(token_);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-    }
-
     modifier onlyGovernance() {
         require(msg.sender == GovernorStorage.configStorage().timelock, "Governor: onlyGovernance");
         // TODO: the OZ contracts include a mechanism to ensure the hash of msg.data matches a stored has of queued governance calls. We should evaluate if we need this.
