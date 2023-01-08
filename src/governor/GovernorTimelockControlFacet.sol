@@ -7,6 +7,13 @@ import "src/interfaces/IGovernorTimelockControl.sol";
 import "src/interfaces/ITimelockController.sol";
 import "src/utils/GovernorStorage.sol";
 
+/**
+ * @title Origami Governor Timelock Control Facet
+ * @author Origami
+ * @notice Logic for controlling the timelock queue and execution of proposals.
+ * @dev This facet is not intended to be used directly, but rather through the OrigamiGovernorDiamond interface.
+ * @custom:security-contact contract-security@joinorigami.com
+ */
 contract GovernorTimelockControlFacet is IGovernorTimelockControl {
     function timelock() internal view returns (ITimelockController) {
         return ITimelockController(payable(GovernorStorage.configStorage().timelock));

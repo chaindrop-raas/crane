@@ -7,11 +7,13 @@ import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
 import "@oz/governance/utils/IVotes.sol";
 import "@oz/utils/introspection/ERC165.sol";
 
-/// @title Governor With Proposal Params
-/// @author Stephen Caudill
-/// @notice This contract extends the Governor interface to support changing the counting strategy on a per-proposal basis.
-/// @dev we use OZ GovernorUpgradeable as the base contract solely so we can super.propose() in our custom propose function.
-/// @custom:security-contact contract-security@joinorigami.com
+/**
+  * @title Governor With Proposal Params
+  * @author Origami
+  * @notice This contract extends the Governor interface to support changing the counting strategy on a per-proposal basis.
+  * @dev we use OZ GovernorUpgradeable as the base contract solely so we can super.propose() in our custom propose function.
+  * @custom:security-contact contract-security@joinorigami.com
+  */
 abstract contract GovernorWithProposalParams is GovernorUpgradeable {
     /**
      * @notice Propose a new action to be performed by the governor, specifying the proposal's counting strategy.

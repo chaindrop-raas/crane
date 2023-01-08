@@ -5,10 +5,12 @@ import "../GovernorQuorum.sol";
 import "../ProposalParams.sol";
 import "src/utils/GovernorStorage.sol";
 
-/// @title Simple Counting module
-/// @author Stephen Caudill
-/// @notice Builds upon GovernorWithProposalParams to implement swappable counting strategies at the proposal level.
-/// @custom:security-contact contract-security@joinorigami.com
+/**
+ * @title Simple Counting strategy
+ * @author Origami
+ * @notice Builds upon GovernorWithProposalParams to implement swappable counting strategies at the proposal level.
+ * @custom:security-contact contract-security@joinorigami.com
+ */
 library SimpleCounting {
     enum VoteType {
         Against,
@@ -25,7 +27,6 @@ library SimpleCounting {
      * @param weight the token weight to apply the weighting strategy to.
      * @param weightingSelector an encoded selector to use as a weighting strategy implementation.
      * @return the weight with the weighting strategy applied to it.
-     * module:reputation
      */
     function applyWeightStrategy(uint256 weight, bytes4 weightingSelector) public pure returns (uint256) {
         // We check for success and only issue this as staticcall
@@ -43,7 +44,6 @@ library SimpleCounting {
      * @notice a required function from IGovernor that declares what Governor style we support and how we derive quorum.
      * @dev See {IGovernor-COUNTING_MODE}.
      * @return string indicating the counting mode.
-     * module:voting
      */
     // solhint-disable-next-line func-name-mixedcase
     function COUNTING_MODE() external pure returns (string memory) {
@@ -54,7 +54,6 @@ library SimpleCounting {
      * @notice simple weight calculation does not apply any weighting strategy. It is an integer identity function.
      * @param weight the weight to apply the weighting strategy to.
      * @return the weight with the weighting strategy applied to it.
-     * module:reputation
      */
     function simpleWeight(uint256 weight) public pure returns (uint256) {
         return weight;
@@ -64,7 +63,6 @@ library SimpleCounting {
      * @notice quadratic weight calculation returns square root of the weight.
      * @param weight the weight to apply the weighting strategy to.
      * @return the weight with the weighting strategy applied to it.
-     * module:reputation
      */
     function quadraticWeight(uint256 weight) public pure returns (uint256) {
         return squareRoot(weight);
@@ -76,7 +74,6 @@ library SimpleCounting {
      * @param account the account that is voting
      * @param support the VoteType that the account is voting
      * @param weight the weight of their vote as of the proposal snapshot
-     * module:reputation
      */
     function setVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory) internal {
         bytes memory vote;
@@ -98,7 +95,6 @@ library SimpleCounting {
      * @dev used by OrigamiGovernor when totaling proposal outcomes. We defer tallying so that individual voters can change their vote during the voting period.
      * @param proposalId the id of the proposal to retrieve voters for.
      * @return the list of voters for the proposal.
-     * module:voting
      */
     function getProposalVoters(uint256 proposalId) external view returns (address[] memory) {
         return GovernorStorage.proposalVoters(proposalId);
@@ -109,7 +105,6 @@ library SimpleCounting {
      * @param proposalId the id of the proposal.
      * @param voter the address of the voter.
      * @return the vote type, the weight of the vote, and the weight of the vote with the weighting strategy applied.
-     * module:voting
      */
     function getVote(uint256 proposalId, address voter) public view returns (VoteType, uint256, uint256) {
         return abi.decode(GovernorStorage.proposalVote(proposalId, voter), (VoteType, uint256, uint256));
@@ -122,7 +117,6 @@ library SimpleCounting {
      * @return againstVotes - the number of votes against the proposal.
      * @return forVotes - the number of votes for the proposal.
      * @return abstainVotes - the number of votes abstaining from the vote.
-     * module:core
      */
     function simpleProposalVotes(uint256 proposalId)
         public
@@ -147,7 +141,6 @@ library SimpleCounting {
      * @dev implementation of {Governor-quorumReached} that is compatible with the GovernorWithProposalParams interface.
      * @param proposalId the id of the proposal to check.
      * @return boolean - true if the quorum has been reached.
-     * module:counting
      */
     function quorumReached(uint256 proposalId) external view returns (bool) {
         (, uint256 forVotes, uint256 abstainVotes) = simpleProposalVotes(proposalId);

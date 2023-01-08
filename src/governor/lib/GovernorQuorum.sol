@@ -6,6 +6,11 @@ import "src/utils/GovernorStorage.sol";
 
 import "@oz/governance/utils/IVotes.sol";
 
+/**
+ * @title Origami Governor Quorum shared functions
+ * @author Origami
+ * @custom:security-contact contract-security@joinorigami.com
+ */
 library GovernorQuorum {
     event QuorumNumeratorUpdated(uint16 quorumNumerator);
 

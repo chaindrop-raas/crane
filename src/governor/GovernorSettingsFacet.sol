@@ -5,9 +5,11 @@ import "src/interfaces/IGovernorSettings.sol";
 import "src/utils/GovernorStorage.sol";
 
 /**
- * @dev Extension of {Governor} for settings updatable through governance.
- *
- * _Available since v4.4._
+ * @title Origami Governor Settings Facet
+ * @author Origami
+ * @notice Logic for interacting with the Origami Governor configuration settings.
+ * @dev This facet is not intended to be used directly, but rather through the OrigamiGovernorDiamond interface.
+ * @custom:security-contact contract-security@joinorigami.com
  */
 contract GovernorSettingsFacet is IGovernorSettings {
     /**

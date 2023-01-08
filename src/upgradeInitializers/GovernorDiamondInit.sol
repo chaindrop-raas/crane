@@ -21,6 +21,13 @@ import "@diamond/interfaces/IERC165.sol";
 // in order to set state variables in the diamond during deployment or an upgrade
 // More info here: https://eips.ethereum.org/EIPS/eip-2535#diamond-interface
 
+/**
+ * @title Governor Diamond Initializer
+ * @author Origami
+ * @notice this contract is used to initialize the Governor Diamond.
+ * @dev all state that's required at initialization must be set here.
+ * @custom:security-contact contract-security@joinorigami.com
+ */
 contract GovernorDiamondInit {
     function init(
         string memory governorName,

@@ -6,7 +6,13 @@ import "./counting/Simple.sol";
 import "src/interfaces/IGovernor.sol";
 import "src/utils/GovernorStorage.sol";
 
+/**
+ * @author Origami
+ * @dev Common functions for the Governor modules.
+ * @custom:security-contact contract-security@joinorigami.com
+ */
 library GovernorCommon {
+
     /**
      * @notice generates the hash of a proposal
      * @param targets the targets of the proposal
@@ -15,7 +21,6 @@ library GovernorCommon {
      * @param descriptionHash the hash of the description of the proposal
      * @return the hash of the proposal, used as an id
      */
-
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,

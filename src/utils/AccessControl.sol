@@ -45,8 +45,8 @@ import "@oz/utils/Strings.sol";
  * accounts that have been granted it.
  *
  * @author Origami
- * @author Modified from OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol)
- * to conform to and use Diamond Storage and minimize certain viral OZ dependencies.
+ * @author Modified from OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol) to conform to and use Diamond Storage and minimize certain viral OZ dependencies.
+ * @custom:security-contact contract-security@joinorigami.com
  */
 contract AccessControl is IAccessControl, IERC165 {
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;

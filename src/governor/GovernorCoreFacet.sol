@@ -15,6 +15,13 @@ import "@oz/utils/cryptography/ECDSA.sol";
 import "@oz/governance/utils/IVotes.sol";
 import "@oz/utils/Address.sol";
 
+/**
+ * @title Origami Governor Core Facet
+ * @author Origami
+ * @notice Core facet of the Origami Governor. All logic that is not specific to Counting or Voting strategies is here.
+ * @dev This facet is not intended to be used directly, but rather through the OrigamiGovernorDiamond interface.
+ * @custom:security-contact contract-security@joinorigami.com
+ */
 contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     bytes32 public constant EXTENDED_BALLOT_TYPEHASH =
         keccak256("ExtendedBallot(uint256 proposalId,uint8 support,string reason,bytes params)");
