@@ -128,18 +128,44 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         returns (IDiamondCut.FacetCut memory coreGovernanceCut)
     {
         CoreGovernanceFacet facet = CoreGovernanceFacet(coreGovernanceFacet);
-        bytes4[] memory coreGovernanceSelectors = new bytes4[](7);
-        coreGovernanceSelectors[0] = facet.name.selector;
-        coreGovernanceSelectors[1] = facet.hashProposal.selector;
-        coreGovernanceSelectors[2] = facet.state.selector;
-        coreGovernanceSelectors[3] = facet.proposalSnapshot.selector;
-        coreGovernanceSelectors[4] = facet.proposalDeadline.selector;
-        coreGovernanceSelectors[5] = facet.hasRole.selector;
-        coreGovernanceSelectors[6] = facet.grantRole.selector;
+
+        bytes4[] memory selectors = new bytes4[](31);
+        selectors[0] = facet.CANCELLER_ROLE.selector;
+        selectors[1] = facet.DEFAULT_ADMIN_ROLE.selector;
+        selectors[2] = facet.EIP712_TYPEHASH.selector;
+        selectors[3] = facet.EXTENDED_BALLOT_TYPEHASH.selector;
+        selectors[4] = facet.EXTENDED_IDEMPOTENT_BALLOT_TYPEHASH.selector;
+        selectors[5] = facet.castVote.selector;
+        selectors[6] = facet.castVoteBySig.selector;
+        selectors[7] = facet.castVoteWithReason.selector;
+        selectors[8] = facet.castVoteWithReasonBySig.selector;
+        selectors[9] = facet.domainSeparatorV4.selector;
+        selectors[10] = facet.getRoleAdmin.selector;
+        selectors[11] = facet.getVotes.selector;
+        selectors[12] = facet.grantRole.selector;
+        selectors[13] = facet.hasRole.selector;
+        selectors[14] = facet.hasVoted.selector;
+        selectors[15] = facet.hashProposal.selector;
+        selectors[16] = facet.name.selector;
+        selectors[17] = facet.nonces.selector;
+        selectors[18] = facet.proposalDeadline.selector;
+        selectors[19] = facet.proposalSnapshot.selector;
+        selectors[20] = facet.proposalThreshold.selector;
+        selectors[21] = facet.propose.selector;
+        selectors[22] = facet.proposeWithParams.selector;
+        selectors[23] = facet.quorum.selector;
+        selectors[24] = facet.renounceRole.selector;
+        selectors[25] = facet.revokeRole.selector;
+        selectors[26] = facet.state.selector;
+        selectors[27] = facet.supportsInterface.selector;
+        selectors[28] = facet.version.selector;
+        selectors[29] = facet.votingDelay.selector;
+        selectors[30] = facet.votingPeriod.selector;
+
         coreGovernanceCut = IDiamondCut.FacetCut({
             facetAddress: coreGovernanceFacet,
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: coreGovernanceSelectors
+            functionSelectors: selectors
         });
     }
 
