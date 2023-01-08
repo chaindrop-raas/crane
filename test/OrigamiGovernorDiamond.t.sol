@@ -5,7 +5,6 @@ import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiGovernorDiamond.sol";
 import "src/upgradeInitializers/GovernorDiamondInit.sol";
 import "src/governor/CoreGovernanceFacet.sol";
-import "src/utils/AccessControlFacet.sol";
 
 import "@std/Test.sol";
 
@@ -46,7 +45,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
 
         GovernorDiamondInit diamondInit = new GovernorDiamondInit();
 
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](4);
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](3);
 
         DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
 
@@ -70,17 +69,6 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
 
         cuts[2] = coreGovernanceFacetCut(address(coreGovernanceFacet));
 
-        AccessControlFacet accessControlFacet = new AccessControlFacet();
-
-        bytes4[] memory accessControlSelectors = new bytes4[](2);
-        accessControlSelectors[0] = AccessControlFacet.hasRole.selector;
-        accessControlSelectors[1] = AccessControlFacet.grantRole.selector;
-        cuts[3] = IDiamondCut.FacetCut({
-            facetAddress: address(accessControlFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: accessControlSelectors
-        });
-
         origamiGovernorDiamond = new OrigamiGovernorDiamond(owner, address(diamondCutFacet));
         vm.stopPrank();
         vm.startPrank(owner);
@@ -100,10 +88,6 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
             )
         );
         vm.stopPrank();
-        // // we apparently don't have permission to grant permissions
-        // vm.prank(deployer);
-
-        // AccessControlFacet(address(origamiGovernorDiamond)).grantRole(0x0, admin);
     }
 
     function diamondLoupeFacetCut(address diamondLoupeFacet)
@@ -143,12 +127,15 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         pure
         returns (IDiamondCut.FacetCut memory coreGovernanceCut)
     {
-        bytes4[] memory coreGovernanceSelectors = new bytes4[](5);
-        coreGovernanceSelectors[0] = CoreGovernanceFacet.name.selector;
-        coreGovernanceSelectors[1] = CoreGovernanceFacet.hashProposal.selector;
-        coreGovernanceSelectors[2] = CoreGovernanceFacet.state.selector;
-        coreGovernanceSelectors[3] = CoreGovernanceFacet.proposalSnapshot.selector;
-        coreGovernanceSelectors[4] = CoreGovernanceFacet.proposalDeadline.selector;
+        CoreGovernanceFacet facet = CoreGovernanceFacet(coreGovernanceFacet);
+        bytes4[] memory coreGovernanceSelectors = new bytes4[](7);
+        coreGovernanceSelectors[0] = facet.name.selector;
+        coreGovernanceSelectors[1] = facet.hashProposal.selector;
+        coreGovernanceSelectors[2] = facet.state.selector;
+        coreGovernanceSelectors[3] = facet.proposalSnapshot.selector;
+        coreGovernanceSelectors[4] = facet.proposalDeadline.selector;
+        coreGovernanceSelectors[5] = facet.hasRole.selector;
+        coreGovernanceSelectors[6] = facet.grantRole.selector;
         coreGovernanceCut = IDiamondCut.FacetCut({
             facetAddress: coreGovernanceFacet,
             action: IDiamondCut.FacetCutAction.Add,
@@ -158,10 +145,9 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
 
     function testRetrieveGovernorName() public {
         assertEq(CoreGovernanceFacet(address(origamiGovernorDiamond)).name(), "TestGovernor");
-        // assertEq(origamiGovernorDiamond.facetAddresses(), address(0x1));
     }
 
     function testAdminHasDefaultAdminRole() public {
-        assertTrue(AccessControlFacet(address(origamiGovernorDiamond)).hasRole(0x00, admin));
+        assertTrue(CoreGovernanceFacet(address(origamiGovernorDiamond)).hasRole(0x00, admin));
     }
 }

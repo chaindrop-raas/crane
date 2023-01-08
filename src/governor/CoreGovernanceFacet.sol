@@ -5,16 +5,17 @@ import "src/OrigamiTimelock.sol";
 import "src/governor/GovernorStorage.sol";
 import "src/governor/IGovernor.sol";
 import "src/governor/libGovernorCommon.sol";
-import "src/governor/libProposalParams.sol";
 import "src/governor/libGovernorQuorum.sol";
+import "src/governor/libProposalParams.sol";
 import "src/interfaces/utils/IEIP712.sol";
+import "src/utils/AccessControl.sol";
 
 import "@diamond/interfaces/IERC165.sol";
 import "@oz/utils/cryptography/ECDSA.sol";
 import "@oz/governance/utils/IVotes.sol";
 import "@oz/utils/Address.sol";
 
-contract CoreGovernanceFacet is IEIP712, IGovernor {
+contract CoreGovernanceFacet is AccessControl, IEIP712, IGovernor {
     bytes32 public constant EXTENDED_BALLOT_TYPEHASH =
         keccak256("ExtendedBallot(uint256 proposalId,uint8 support,string reason,bytes params)");
     /// @notice the role hash for granting the ability to cancel a timelocked proposal. This role is not granted as part of deployment. It should be granted only in the event of an emergency.
@@ -23,6 +24,11 @@ contract CoreGovernanceFacet is IEIP712, IGovernor {
         keccak256("ExtendedIdempotentBallot(uint256 proposalId,uint8 support,string reason,uint256 nonce,bytes params)");
     bytes32 public constant EIP712_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+
+    function initialize(address admin) external {
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+    }
+
 
     modifier onlyGovernance() {
         require(msg.sender == GovernorStorage.configStorage().timelock, "Governor: onlyGovernance");

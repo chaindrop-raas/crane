@@ -2,7 +2,6 @@
 pragma solidity 0.8.16;
 
 import "src/governor/IGovernor.sol";
-import "src/utils/AccessControlFacet.sol";
 import "@diamond/Diamond.sol";
 import "@diamond/interfaces/IDiamondCut.sol";
 

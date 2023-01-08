@@ -5,7 +5,6 @@ pragma solidity 0.8.16;
 
 import "./AccessControlStorage.sol";
 import "src/interfaces/utils/IAccessControl.sol";
-import "@oz/utils/Context.sol";
 import "@oz/utils/Strings.sol";
 import "@diamond/interfaces/IERC165.sol";
 
@@ -48,7 +47,7 @@ import "@diamond/interfaces/IERC165.sol";
  * @author Modified from OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol)
  * to conform to and use Diamond Storage and minimize certain viral OZ dependencies.
  */
-contract AccessControlFacet is Context, IAccessControl, IERC165 {
+contract AccessControl is IAccessControl, IERC165 {
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
 
     /**
@@ -69,27 +68,27 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
         return interfaceId == type(IAccessControl).interfaceId || interfaceId == type(IERC165).interfaceId;
     }
 
     /**
      * @dev Returns `true` if `account` has been granted `role`.
      */
-    function hasRole(bytes32 role, address account) public view virtual override returns (bool) {
+    function hasRole(bytes32 role, address account) public view returns (bool) {
         return AccessControlStorage.roleStorage().roles[role].members[account];
     }
 
     /**
-     * @dev Revert with a standard message if `_msgSender()` is missing `role`.
+     * @dev Revert with a standard message if `msg.sender` is missing `role`.
      * Overriding this function changes the behavior of the {onlyRole} modifier.
      *
      * Format of the revert message is described in {_checkRole}.
      *
      * _Available since v4.6._
      */
-    function _checkRole(bytes32 role) internal view virtual {
-        _checkRole(role, _msgSender());
+    function _checkRole(bytes32 role) internal view {
+        _checkRole(role, msg.sender);
     }
 
     /**
@@ -99,7 +98,7 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      *
      *  /^AccessControl: account (0x[0-9a-f]{40}) is missing role (0x[0-9a-f]{64})$/
      */
-    function _checkRole(bytes32 role, address account) internal view virtual {
+    function _checkRole(bytes32 role, address account) internal view {
         if (!hasRole(role, account)) {
             revert(
                 string(
@@ -120,7 +119,7 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      *
      * To change a role's admin, use {_setRoleAdmin}.
      */
-    function getRoleAdmin(bytes32 role) public view virtual override returns (bytes32) {
+    function getRoleAdmin(bytes32 role) public view returns (bytes32) {
         return AccessControlStorage.roleStorage().roles[role].adminRole;
     }
 
@@ -136,7 +135,7 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      *
      * May emit a {RoleGranted} event.
      */
-    function grantRole(bytes32 role, address account) public virtual override onlyRole(getRoleAdmin(role)) {
+    function grantRole(bytes32 role, address account) public onlyRole(getRoleAdmin(role)) {
         _grantRole(role, account);
     }
 
@@ -151,7 +150,7 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      *
      * May emit a {RoleRevoked} event.
      */
-    function revokeRole(bytes32 role, address account) public virtual override onlyRole(getRoleAdmin(role)) {
+    function revokeRole(bytes32 role, address account) public onlyRole(getRoleAdmin(role)) {
         _revokeRole(role, account);
     }
 
@@ -171,8 +170,8 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      *
      * May emit a {RoleRevoked} event.
      */
-    function renounceRole(bytes32 role, address account) public virtual override {
-        require(account == _msgSender(), "AccessControl: can only renounce roles for self");
+    function renounceRole(bytes32 role, address account) public {
+        require(account == msg.sender, "AccessControl: can only renounce roles for self");
 
         _revokeRole(role, account);
     }
@@ -182,7 +181,7 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      *
      * Emits a {RoleAdminChanged} event.
      */
-    function _setRoleAdmin(bytes32 role, bytes32 adminRole) internal virtual {
+    function _setRoleAdmin(bytes32 role, bytes32 adminRole) internal {
         bytes32 previousAdminRole = getRoleAdmin(role);
         AccessControlStorage.roleStorage().roles[role].adminRole = adminRole;
         emit RoleAdminChanged(role, previousAdminRole, adminRole);
@@ -204,10 +203,10 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      * system imposed by {AccessControl}.
      * ====
      */
-    function _grantRole(bytes32 role, address account) internal virtual {
+    function _grantRole(bytes32 role, address account) internal {
         if (!hasRole(role, account)) {
             AccessControlStorage.roleStorage().roles[role].members[account] = true;
-            emit RoleGranted(role, account, _msgSender());
+            emit RoleGranted(role, account, msg.sender);
         }
     }
 
@@ -218,10 +217,10 @@ contract AccessControlFacet is Context, IAccessControl, IERC165 {
      *
      * May emit a {RoleRevoked} event.
      */
-    function _revokeRole(bytes32 role, address account) internal virtual {
+    function _revokeRole(bytes32 role, address account) internal {
         if (hasRole(role, account)) {
             AccessControlStorage.roleStorage().roles[role].members[account] = false;
-            emit RoleRevoked(role, account, _msgSender());
+            emit RoleRevoked(role, account, msg.sender);
         }
     }
 }
