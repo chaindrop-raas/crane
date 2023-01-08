@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/governor/IGovernor.sol";
+import "src/interfaces/IGovernor.sol";
+
 import "@diamond/Diamond.sol";
 import "@diamond/interfaces/IDiamondCut.sol";
 

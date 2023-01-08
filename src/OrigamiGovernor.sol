@@ -3,9 +3,10 @@ pragma solidity 0.8.16;
 
 import "src/OrigamiMembershipToken.sol";
 import "src/governor/GovernorWithProposalParams.sol";
-import "src/governor/GovernorStorage.sol";
 import "src/governor/lib/GovernorQuorum.sol";
-import "src/governor/lib/SimpleCounting.sol";
+import "src/governor/lib/counting/Simple.sol";
+import "src/utils/GovernorStorage.sol";
+
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
 import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
 import "@oz-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
@@ -101,7 +102,7 @@ contract OrigamiGovernor is
      * @return true if the account has voted on the proposal, false otherwise.
      * module:voting
      */
-    function hasVoted(uint256 proposalId, address account) public view override virtual returns (bool) {
+    function hasVoted(uint256 proposalId, address account) public view virtual override returns (bool) {
         return GovernorStorage.proposalHasVoted(proposalId, account);
     }
 
@@ -115,7 +116,7 @@ contract OrigamiGovernor is
     }
 
     // solhint-disable-next-line func-name-mixedcase
-    function COUNTING_MODE() public pure override(IGovernorUpgradeable) returns (string memory) {
+    function COUNTING_MODE() public pure override (IGovernorUpgradeable) returns (string memory) {
         return SimpleCounting.COUNTING_MODE();
     }
 
@@ -449,23 +450,13 @@ contract OrigamiGovernor is
      * @return abstainVotes - the number of votes abstaining from the vote.
      * module:core
      */
-     // TODO: this return type is specific to SimpleCounting, which probably
-     // means it's not generic enough to be in the public interface
-    function proposalVotes(uint256 proposalId)
-        public
-        view
-        virtual
-        returns (uint256, uint256, uint256)
-    {
+    // TODO: this return type is specific to SimpleCounting, which probably
+    // means it's not generic enough to be in the public interface
+    function proposalVotes(uint256 proposalId) public view virtual returns (uint256, uint256, uint256) {
         return SimpleCounting.simpleProposalVotes(proposalId);
     }
 
-    function quorum(uint256 proposalId)
-        public
-        view
-        override (IGovernorUpgradeable)
-        returns (uint256)
-    {
+    function quorum(uint256 proposalId) public view override (IGovernorUpgradeable) returns (uint256) {
         return GovernorQuorum.quorum(proposalId);
     }
 
@@ -475,9 +466,9 @@ contract OrigamiGovernor is
      * @return boolean - true if the quorum has been reached.
      * module:counting
      */
-     // TODO: make this function able to delegate to whatever the counting
-     // strategy is. Here we always delegate to SimpleCounting, but want
-     // flexibility to pick the strategy in the future.
+    // TODO: make this function able to delegate to whatever the counting
+    // strategy is. Here we always delegate to SimpleCounting, but want
+    // flexibility to pick the strategy in the future.
     function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
         return SimpleCounting.quorumReached(proposalId);
     }

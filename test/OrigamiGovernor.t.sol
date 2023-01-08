@@ -6,7 +6,7 @@ import "src/OrigamiGovernor.sol";
 import "src/OrigamiMembershipToken.sol";
 import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiTimelock.sol";
-import "src/governor/lib/SimpleCounting.sol";
+import "src/governor/lib/counting/Simple.sol";
 
 // libs
 import "@std/Test.sol";

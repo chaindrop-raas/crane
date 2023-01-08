@@ -2,12 +2,13 @@
 pragma solidity 0.8.16;
 
 import "src/OrigamiTimelock.sol";
-import "src/governor/GovernorStorage.sol";
-import "src/governor/IGovernor.sol";
-import "src/governor/IGovernorQuorum.sol";
-import "src/governor/IGovernorTimelockControl.sol";
-import "src/governor/IGovernorSettings.sol";
+import "src/interfaces/IGovernor.sol";
+import "src/interfaces/IGovernorQuorum.sol";
+import "src/interfaces/IGovernorSettings.sol";
+import "src/interfaces/IGovernorTimelockControl.sol";
 import "src/utils/AccessControlStorage.sol";
+import "src/utils/GovernorStorage.sol";
+
 import "@diamond/libraries/LibDiamond.sol";
 import "@diamond/interfaces/IDiamondLoupe.sol";
 import "@diamond/interfaces/IDiamondCut.sol";
@@ -21,7 +22,6 @@ import "@diamond/interfaces/IERC165.sol";
 // More info here: https://eips.ethereum.org/EIPS/eip-2535#diamond-interface
 
 contract GovernorDiamondInit {
-
     function init(
         string memory governorName,
         address admin,
@@ -60,6 +60,4 @@ contract GovernorDiamondInit {
         AccessControlStorage.RoleStorage storage rs = AccessControlStorage.roleStorage();
         rs.roles[0x0].members[config.admin] = true;
     }
-
-
 }

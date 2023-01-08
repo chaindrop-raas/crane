@@ -2,13 +2,13 @@
 pragma solidity 0.8.16;
 
 import "src/OrigamiTimelock.sol";
-import "src/governor/GovernorStorage.sol";
-import "src/governor/IGovernor.sol";
 import "src/governor/lib/GovernorCommon.sol";
 import "src/governor/lib/GovernorQuorum.sol";
 import "src/governor/lib/ProposalParams.sol";
+import "src/interfaces/IGovernor.sol";
 import "src/interfaces/utils/IEIP712.sol";
 import "src/utils/AccessControl.sol";
+import "src/utils/GovernorStorage.sol";
 
 import "@diamond/interfaces/IERC165.sol";
 import "@oz/utils/cryptography/ECDSA.sol";

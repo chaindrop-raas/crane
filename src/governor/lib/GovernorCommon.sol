@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/governor/GovernorStorage.sol";
 import "./ProposalParams.sol";
-import "./SimpleCounting.sol";
-import "src/governor/IGovernor.sol";
+import "./counting/Simple.sol";
+import "src/interfaces/IGovernor.sol";
+import "src/utils/GovernorStorage.sol";
 
 library GovernorCommon {
     function hashProposal(
@@ -16,7 +16,11 @@ library GovernorCommon {
         return uint256(keccak256(abi.encode(targets, values, calldatas, descriptionHash)));
     }
 
-    function succededState(uint256 proposalId, IGovernor.ProposalState status) internal view returns (IGovernor.ProposalState) {
+    function succededState(uint256 proposalId, IGovernor.ProposalState status)
+        internal
+        view
+        returns (IGovernor.ProposalState)
+    {
         if (status != IGovernor.ProposalState.Succeeded) {
             return status;
         }

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "./GovernorStorage.sol";
+import "src/utils/GovernorStorage.sol";
+
 import "@oz-upgradeable/governance/GovernorUpgradeable.sol";
 import "@oz/governance/utils/IVotes.sol";
 import "@oz/utils/introspection/ERC165.sol";

@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/governor/GovernorStorage.sol";
-import "./ProposalParams.sol";
-import "./GovernorQuorum.sol";
+import "../GovernorQuorum.sol";
+import "../ProposalParams.sol";
+import "src/utils/GovernorStorage.sol";
 
 /// @title Simple Counting module
 /// @author Stephen Caudill
@@ -30,9 +30,9 @@ library SimpleCounting {
     function applyWeightStrategy(uint256 weight, bytes4 weightingSelector) public pure returns (uint256) {
         // We check for success and only issue this as staticcall
 
-        if(weightingSelector == simpleWeightSelector) {
+        if (weightingSelector == simpleWeightSelector) {
             return simpleWeight(weight);
-        } else if(weightingSelector == quadraticWeightSelector) {
+        } else if (weightingSelector == quadraticWeightSelector) {
             return quadraticWeight(weight);
         } else {
             revert("Governor: weighting strategy not found");
@@ -78,9 +78,7 @@ library SimpleCounting {
      * @param weight the weight of their vote as of the proposal snapshot
      * module:reputation
      */
-    function setVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory)
-        internal
-    {
+    function setVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory) internal {
         bytes memory vote;
         bytes storage proposalParams = GovernorProposalParams.getProposalParams(proposalId);
         // _defaultParams() from the OZ lib uses "" as the default value, so we

@@ -3,6 +3,7 @@ pragma solidity 0.8.16;
 
 library AccessControlStorage {
     bytes32 public constant ROLE_STORAGE_POSITION = keccak256("com.origami.accesscontrol.role");
+
     struct RoleData {
         mapping(address => bool) members;
         bytes32 adminRole;
@@ -24,5 +25,4 @@ library AccessControlStorage {
         RoleStorage storage rs = roleStorage();
         rd = rs.roles[role];
     }
-
 }

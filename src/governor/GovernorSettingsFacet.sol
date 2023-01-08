@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "./IGovernorSettings.sol";
-import "./GovernorStorage.sol";
+import "src/interfaces/IGovernorSettings.sol";
+import "src/utils/GovernorStorage.sol";
 
 /**
  * @dev Extension of {Governor} for settings updatable through governance.
