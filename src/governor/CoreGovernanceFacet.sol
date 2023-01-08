@@ -7,18 +7,22 @@ import "src/governor/IGovernor.sol";
 import "src/governor/libGovernorCommon.sol";
 import "src/governor/libProposalParams.sol";
 import "src/governor/libGovernorQuorum.sol";
-import "@oz/utils/cryptography/draft-EIP712.sol";
+import "src/interfaces/utils/IEIP712.sol";
+
+import "@diamond/interfaces/IERC165.sol";
 import "@oz/utils/cryptography/ECDSA.sol";
 import "@oz/governance/utils/IVotes.sol";
 import "@oz/utils/Address.sol";
 
-contract CoreGovernanceFacet is EIP712, IGovernor {
+contract CoreGovernanceFacet is IEIP712, IGovernor {
     bytes32 public constant EXTENDED_BALLOT_TYPEHASH =
         keccak256("ExtendedBallot(uint256 proposalId,uint8 support,string reason,bytes params)");
     /// @notice the role hash for granting the ability to cancel a timelocked proposal. This role is not granted as part of deployment. It should be granted only in the event of an emergency.
     bytes32 public constant CANCELLER_ROLE = keccak256("CANCELLER_ROLE");
     bytes32 public constant EXTENDED_IDEMPOTENT_BALLOT_TYPEHASH =
         keccak256("ExtendedIdempotentBallot(uint256 proposalId,uint8 support,string reason,uint256 nonce,bytes params)");
+    bytes32 public constant EIP712_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
     constructor(
         string memory governorName,
@@ -65,6 +69,14 @@ contract CoreGovernanceFacet is EIP712, IGovernor {
         return "1.1.0";
     }
 
+    function domainSeparatorV4() public view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                EIP712_TYPEHASH, keccak256(bytes(name())), keccak256(bytes(version())), block.chainid, address(this)
+            )
+        );
+    }
+
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
@@ -106,11 +118,7 @@ contract CoreGovernanceFacet is EIP712, IGovernor {
      * @return period the duration of the voting period.
      * module:core
      */
-    function votingPeriod()
-        public
-        view
-        returns (uint256)
-    {
+    function votingPeriod() public view returns (uint256) {
         GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
         return config.votingPeriod;
     }
@@ -144,7 +152,7 @@ contract CoreGovernanceFacet is EIP712, IGovernor {
      * @return true if the account has voted on the proposal, false otherwise.
      * module:voting
      */
-    function hasVoted(uint256 proposalId, address account) public view override virtual returns (bool) {
+    function hasVoted(uint256 proposalId, address account) public view virtual override returns (bool) {
         return GovernorStorage.proposalHasVoted(proposalId, account);
     }
 
@@ -174,7 +182,7 @@ contract CoreGovernanceFacet is EIP712, IGovernor {
 
         (address proposalToken,) = abi.decode(params, (address, bytes4));
         require(
-            ERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
+            IERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
             "Governor: proposal token must support IVotes"
         );
 
@@ -211,14 +219,9 @@ contract CoreGovernanceFacet is EIP712, IGovernor {
             );
     }
 
-    function quorum(uint256 proposalId)
-        public
-        view
-        returns (uint256)
-    {
+    function quorum(uint256 proposalId) public view returns (uint256) {
         return GovernorQuorum.quorum(proposalId);
     }
-
 
     function propose(
         address[] memory targets,
@@ -274,7 +277,8 @@ contract CoreGovernanceFacet is EIP712, IGovernor {
     ) public returns (uint256 weight) {
         GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
         address voter = ECDSA.recover(
-            _hashTypedDataV4(
+            ECDSA.toTypedDataHash(
+                domainSeparatorV4(),
                 keccak256(
                     abi.encode(
                         EXTENDED_IDEMPOTENT_BALLOT_TYPEHASH,
@@ -302,14 +306,10 @@ contract CoreGovernanceFacet is EIP712, IGovernor {
         }
     }
 
-    function castVoteBySig(
-        uint256 proposalId,
-        uint8 support,
-        uint256 nonce,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external returns (uint256 weight) {
+    function castVoteBySig(uint256 proposalId, uint8 support, uint256 nonce, uint8 v, bytes32 r, bytes32 s)
+        external
+        returns (uint256 weight)
+    {
         return castVoteWithReasonBySig(proposalId, support, "", nonce, v, r, s);
     }
 }

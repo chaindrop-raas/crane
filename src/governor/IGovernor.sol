@@ -50,18 +50,6 @@ interface IGovernor {
 
     /**
      * @notice module:core
-     * @dev Name of the governor instance (used in building the ERC712 domain separator).
-     */
-    function name() external view returns (string memory);
-
-    /**
-     * @notice module:core
-     * @dev Version of the governor instance (used in building the ERC712 domain separator). Default: "1"
-     */
-    function version() external view returns (string memory);
-
-    /**
-     * @notice module:core
      * @dev Hashing function used to (re)build the proposal id from the proposal details..
      */
     function hashProposal(
