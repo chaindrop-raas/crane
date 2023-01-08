@@ -53,6 +53,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
 
         DiamondLoupeFacet diamondLoupeFacet = new DiamondLoupeFacet();
         cuts[0] = diamondLoupeFacetCut(address(diamondLoupeFacet));
+
         OwnershipFacet ownershipFacet = new OwnershipFacet();
         cuts[1] = ownershipFacetCut(address(ownershipFacet));
 
@@ -69,7 +70,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         // FIXME: contract is already initialized
         // origamiTimelock.initialize(1 days, proposers, executors);
 
-        cuts[2] = coreGovernanceFacetCut(address(coreGovernanceFacet));
+        cuts[2] = coreGovernanceFacetCut(coreGovernanceFacet);
 
         GovernorSettingsFacet governorSettingsFacet = new GovernorSettingsFacet();
         cuts[3] = governorSettingsFacetCut(governorSettingsFacet);
@@ -127,13 +128,11 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         });
     }
 
-    function coreGovernanceFacetCut(address coreGovernanceFacet)
+    function coreGovernanceFacetCut(CoreGovernanceFacet facet)
         internal
         pure
         returns (IDiamondCut.FacetCut memory coreGovernanceCut)
     {
-        CoreGovernanceFacet facet = CoreGovernanceFacet(coreGovernanceFacet);
-
         bytes4[] memory selectors = new bytes4[](28);
         selectors[0] = facet.CANCELLER_ROLE.selector;
         selectors[1] = facet.DEFAULT_ADMIN_ROLE.selector;
@@ -165,7 +164,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         selectors[27] = facet.version.selector;
 
         coreGovernanceCut = IDiamondCut.FacetCut({
-            facetAddress: coreGovernanceFacet,
+            facetAddress: address(facet),
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: selectors
         });
