@@ -5,12 +5,12 @@ import "./GovernorStorage.sol";
 import "./IGovernor.sol";
 import "./IGovernorTimelockControl.sol";
 import "./libGovernorCommon.sol";
-import "@oz/governance/TimelockController.sol";
+import "src/interfaces/ITimelockController.sol";
 
 contract GovernorTimelockControlFacet is IGovernorTimelockControl {
 
-    function timelock() internal view returns (TimelockController) {
-        return TimelockController(payable(GovernorStorage.configStorage().timelock));
+    function timelock() internal view returns (ITimelockController) {
+        return ITimelockController(payable(GovernorStorage.configStorage().timelock));
     }
 
     // this function has overloaded behavior in the OZ contracts, acting as a

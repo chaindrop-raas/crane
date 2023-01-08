@@ -7,6 +7,7 @@ import "src/upgradeInitializers/GovernorDiamondInit.sol";
 
 import "src/governor/CoreGovernanceFacet.sol";
 import "src/governor/GovernorSettingsFacet.sol";
+import "src/governor/GovernorTimelockControlFacet.sol";
 
 import "@std/Test.sol";
 
@@ -47,7 +48,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
 
         GovernorDiamondInit diamondInit = new GovernorDiamondInit();
 
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](4);
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](5);
 
         DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
 
@@ -74,6 +75,9 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
 
         GovernorSettingsFacet governorSettingsFacet = new GovernorSettingsFacet();
         cuts[3] = governorSettingsFacetCut(governorSettingsFacet);
+
+        GovernorTimelockControlFacet governorTimelockControlFacet = new GovernorTimelockControlFacet();
+        cuts[4] = governorTimelockControlFacetCut(governorTimelockControlFacet);
 
         origamiGovernorDiamond = new OrigamiGovernorDiamond(owner, address(diamondCutFacet));
         vm.stopPrank();
@@ -186,6 +190,21 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         selectors[7] = facet.votingPeriod.selector;
 
         governorSettingsCut = IDiamondCut.FacetCut({
+            facetAddress: address(facet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: selectors
+        });
+    }
+
+    function governorTimelockControlFacetCut(GovernorTimelockControlFacet facet) internal pure returns (IDiamondCut.FacetCut memory governorTimelockControlCut) {
+        bytes4[] memory selectors = new bytes4[](5);
+        selectors[0] = facet.cancel.selector;
+        selectors[1] = facet.execute.selector;
+        selectors[2] = facet.proposalEta.selector;
+        selectors[3] = facet.queue.selector;
+        selectors[4] = facet.updateTimelock.selector;
+
+        governorTimelockControlCut = IDiamondCut.FacetCut({
             facetAddress: address(facet),
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: selectors
