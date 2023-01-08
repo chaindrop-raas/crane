@@ -33,7 +33,6 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      * @notice Version of the governor instance (used in building the ERC712 domain separator).
      * @dev Indicate v1.1.0 so it's understood we have diverged from strict Governor Bravo compliance.
      * @return The semantic version.
-     * module:core
      */
     function version() public pure returns (string memory) {
         return "1.1.0";
@@ -70,11 +69,10 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
-     * @dev an override that is compatible with the GovernorWithProposalParams interface.
+     * @dev Get votes for the given account at the given block number using proposal params.
      * @param account the account to get the vote weight for.
      * @param blockNumber the block number the snapshot was taken at.
      * @param params the params of the proposal.
-     * module:reputation
      */
     function getVotes(address account, uint256 blockNumber, bytes storage params) internal view returns (uint256) {
         address tokenForProposal;
@@ -86,6 +84,12 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return getVotes(account, blockNumber, tokenForProposal);
     }
 
+    /**
+     * @dev Get votes for the given account at the given block number using proposal token.
+     * @param account the account to get the vote weight for.
+     * @param blockNumber the block number the snapshot was taken at.
+     * @param proposalToken the token to use for counting votes.
+     */
     function getVotes(address account, uint256 blockNumber, address proposalToken) public view returns (uint256) {
         uint256 pastVotes = IVotes(proposalToken).getPastVotes(account, blockNumber);
         require(pastVotes > 0, "Governor: only accounts with delegated voting power can vote");
@@ -96,9 +100,8 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      * @notice Indicates whether or not an account has voted on a proposal.
      * @dev See {IGovernor-_hasVoted}. Note that we differ from the base implementation in that we don't want to prevent multiple votes, we instead update their previous vote.
      * @return true if the account has voted on the proposal, false otherwise.
-     * module:voting
      */
-    function hasVoted(uint256 proposalId, address account) public view virtual override returns (bool) {
+    function hasVoted(uint256 proposalId, address account) public view virtual returns (bool) {
         return GovernorStorage.proposalHasVoted(proposalId, account);
     }
 
@@ -110,7 +113,6 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made.
      * @param params the encoded bytes that specify the proposal's counting strategy and the token to use for counting.
      * @return proposalId The id of the newly created proposal.
-     * module:proposal-params
      */
     function proposeWithParams(
         address[] memory targets,
@@ -165,10 +167,23 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             );
     }
 
+    /**
+     * @notice Get the configured quorum for a proposal.
+     * @param proposalId The id of the proposal to get the quorum for.
+     * @return The quorum for the given proposal.
+     */
     function quorum(uint256 proposalId) public view returns (uint256) {
         return GovernorQuorum.quorum(proposalId);
     }
 
+    /**
+     * @notice propose a new action to be performed by the governor.
+     * @param targets The ordered list of target addresses for calls to be made on.
+     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
+     * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made.
+     * @param description The description of the proposal.
+     * @return proposalId The id of the newly created proposal.
+     */
     function propose(
         address[] memory targets,
         uint256[] memory values,
@@ -178,9 +193,9 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return proposeWithParams(targets, values, calldatas, description, "");
     }
 
-    // NB: queue, execute and cancel are implemented in GovernorTimelockControlFacet.sol
-
     // TODO: the cast vote functions really should be part of the counting strategy, since they couple to the support type
+
+    // @dev internal function to cast a vote on a proposal
     function _castVote(uint256 proposalId, address voter, uint8 support, string memory reason)
         internal
         returns (uint256 weight)
@@ -194,10 +209,23 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         emit VoteCast(voter, proposalId, support, weight, reason);
     }
 
+    /**
+     * @notice Cast a vote on a proposal.
+     * @param proposalId The id of the proposal to cast a vote on.
+     * @param support The support value for the vote.
+     * @return weight The weight of the vote.
+     */
     function castVote(uint256 proposalId, uint8 support) external returns (uint256) {
         return _castVote(proposalId, msg.sender, support, "");
     }
 
+    /**
+     * @notice Cast a vote on a proposal with a reason.
+     * @param proposalId The id of the proposal to cast a vote on.
+     * @param support The support value for the vote.
+     * @param reason The reason for the vote.
+     * @return weight The weight of the vote.
+     */
     function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason) external returns (uint256) {
         return _castVote(proposalId, msg.sender, support, reason);
     }
@@ -212,6 +240,17 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return ps.nonces[owner];
     }
 
+    /**
+     * @notice Cast a vote on a proposal with a reason by signature. This is useful in allowing another address to pay for gas.
+     * @param proposalId The id of the proposal to cast a vote on.
+     * @param support The support value for the vote.
+     * @param reason The reason for the vote.
+     * @param nonce The nonce to use for this vote.
+     * @param v The recovery byte of the signature.
+     * @param r Half of the ECDSA signature pair.
+     * @param s Half of the ECDSA signature pair.
+     * @return weight The weight of the vote.
+     */
     function castVoteWithReasonBySig(
         uint256 proposalId,
         uint8 support,
@@ -252,10 +291,21 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         }
     }
 
+    /**
+     * @notice Cast a vote on a proposal by signature. This is useful in allowing another address to pay for gas.
+     * @param proposalId The id of the proposal to cast a vote on.
+     * @param support The support value for the vote.
+     * @param nonce The nonce to use for this vote.
+     * @param v The recovery byte of the signature.
+     * @param r Half of the ECDSA signature pair.
+     * @param s Half of the ECDSA signature pair.
+     * @return weight The weight of the vote.
+     */
     function castVoteBySig(uint256 proposalId, uint8 support, uint256 nonce, uint8 v, bytes32 r, bytes32 s)
         external
         returns (uint256 weight)
     {
         return castVoteWithReasonBySig(proposalId, support, "", nonce, v, r, s);
     }
+
 }
