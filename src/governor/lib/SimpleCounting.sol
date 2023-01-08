@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "./GovernorStorage.sol";
-import "./libProposalParams.sol";
-import "./libGovernorQuorum.sol";
+import "src/governor/GovernorStorage.sol";
+import "./ProposalParams.sol";
+import "./GovernorQuorum.sol";
 
 /// @title Simple Counting module
 /// @author Stephen Caudill

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "./GovernorStorage.sol";
+import "src/governor/GovernorStorage.sol";
 
 library GovernorProposalParams {
     /**

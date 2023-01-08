@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "./GovernorStorage.sol";
-import "./libProposalParams.sol";
-import "./libSimpleCounting.sol";
-import "./IGovernor.sol";
+import "src/governor/GovernorStorage.sol";
+import "./ProposalParams.sol";
+import "./SimpleCounting.sol";
+import "src/governor/IGovernor.sol";
 
 library GovernorCommon {
     function hashProposal(

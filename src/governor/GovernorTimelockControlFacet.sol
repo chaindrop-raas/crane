@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 import "./GovernorStorage.sol";
 import "./IGovernor.sol";
 import "./IGovernorTimelockControl.sol";
-import "./libGovernorCommon.sol";
+import "./lib/GovernorCommon.sol";
 import "src/interfaces/ITimelockController.sol";
 
 contract GovernorTimelockControlFacet is IGovernorTimelockControl {
