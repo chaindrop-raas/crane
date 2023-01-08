@@ -4,7 +4,9 @@ pragma solidity 0.8.16;
 import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiGovernorDiamond.sol";
 import "src/upgradeInitializers/GovernorDiamondInit.sol";
+
 import "src/governor/CoreGovernanceFacet.sol";
+import "src/governor/GovernorSettingsFacet.sol";
 
 import "@std/Test.sol";
 
@@ -45,7 +47,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
 
         GovernorDiamondInit diamondInit = new GovernorDiamondInit();
 
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](3);
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](4);
 
         DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
 
@@ -68,6 +70,9 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         // origamiTimelock.initialize(1 days, proposers, executors);
 
         cuts[2] = coreGovernanceFacetCut(address(coreGovernanceFacet));
+
+        GovernorSettingsFacet governorSettingsFacet = new GovernorSettingsFacet();
+        cuts[3] = governorSettingsFacetCut(governorSettingsFacet);
 
         origamiGovernorDiamond = new OrigamiGovernorDiamond(owner, address(diamondCutFacet));
         vm.stopPrank();
@@ -166,11 +171,37 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         });
     }
 
+    function governorSettingsFacetCut(GovernorSettingsFacet facet)
+        internal
+        pure
+        returns (IDiamondCut.FacetCut memory governorSettingsCut)
+    {
+        bytes4[] memory selectors = new bytes4[](8);
+        selectors[0] = facet.proposalThreshold.selector;
+        selectors[1] = facet.proposalThresholdToken.selector;
+        selectors[2] = facet.setProposalThreshold.selector;
+        selectors[3] = facet.setProposalThresholdToken.selector;
+        selectors[4] = facet.setVotingDelay.selector;
+        selectors[5] = facet.setVotingPeriod.selector;
+        selectors[6] = facet.votingDelay.selector;
+        selectors[7] = facet.votingPeriod.selector;
+
+        governorSettingsCut = IDiamondCut.FacetCut({
+            facetAddress: address(facet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: selectors
+        });
+    }
+
     function testRetrieveGovernorName() public {
         assertEq(CoreGovernanceFacet(address(origamiGovernorDiamond)).name(), "TestGovernor");
     }
 
     function testAdminHasDefaultAdminRole() public {
         assertTrue(CoreGovernanceFacet(address(origamiGovernorDiamond)).hasRole(0x00, admin));
+    }
+
+    function testRetrieveProposalThreshold() public {
+        assertEq(GovernorSettingsFacet(address(origamiGovernorDiamond)).proposalThreshold(), 1);
     }
 }
