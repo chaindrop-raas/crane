@@ -10,10 +10,9 @@ import "src/governor/libGovernorQuorum.sol";
 import "@oz/utils/cryptography/draft-EIP712.sol";
 import "@oz/utils/cryptography/ECDSA.sol";
 import "@oz/governance/utils/IVotes.sol";
-import "@oz/access/AccessControl.sol";
 import "@oz/utils/Address.sol";
 
-contract CoreGovernanceFacet is EIP712, AccessControl, IGovernor {
+contract CoreGovernanceFacet is EIP712, IGovernor {
     bytes32 public constant EXTENDED_BALLOT_TYPEHASH =
         keccak256("ExtendedBallot(uint256 proposalId,uint8 support,string reason,bytes params)");
     /// @notice the role hash for granting the ability to cancel a timelocked proposal. This role is not granted as part of deployment. It should be granted only in the event of an emergency.

@@ -47,7 +47,7 @@ import "@diamond/interfaces/IERC165.sol";
  * @author Modified from OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol)
  * to conform to and use Diamond Storage and minimize certain viral OZ dependencies.
  */
-abstract contract AccessControl is Context, IAccessControl, IERC165 {
+contract AccessControlFacet is Context, IAccessControl, IERC165 {
     bytes32 public constant ADMIN_STORAGE_POSITION = keccak256("com.origami.accesscontrol.admin");
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
 

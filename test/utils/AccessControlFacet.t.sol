@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.16;
 
-import "src/utils/AccessControl.sol";
+import "src/utils/AccessControlFacet.sol";
 
 import "@std/Test.sol";
 import "@oz/utils/Strings.sol";
@@ -32,7 +32,7 @@ abstract contract AccessControlHelper {
     }
 }
 
-contract ACContract is AccessControl, AccessControlHelper {
+contract ACContract is AccessControlFacet, AccessControlHelper {
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
