@@ -82,22 +82,6 @@ interface IGovernor {
 
     /**
      * @notice module:user-config
-     * @dev Delay, in number of block, between the proposal is created and the vote starts. This can be increassed to
-     * leave time for users to buy voting power, or delegate it, before the voting of a proposal starts.
-     */
-    function votingDelay() external view returns (uint256);
-
-    /**
-     * @notice module:user-config
-     * @dev Delay, in number of blocks, between the vote start and vote ends.
-     *
-     * NOTE: The {votingDelay} can delay the start of the vote. This must be considered when setting the voting
-     * duration compared to the voting delay.
-     */
-    function votingPeriod() external view returns (uint256);
-
-    /**
-     * @notice module:user-config
      * @dev Minimum number of cast voted required for a proposal to be successful.
      *
      * Note: The `blockNumber` parameter corresponds to the snapshot used for counting vote. This allows to scale the

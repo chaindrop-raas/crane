@@ -75,30 +75,6 @@ contract CoreGovernanceFacet is AccessControl, IEIP712, IGovernor {
         return GovernorStorage.proposalStorage().proposals[proposalId].deadline;
     }
 
-    function proposalThreshold() public view returns (uint64) {
-        return GovernorStorage.configStorage().proposalThreshold;
-    }
-
-    /**
-     * @notice Enumerates the delay in blocks between proposal creation and voting start.
-     * @return delay the delay between proposal creation and voting start.
-     * module:core
-     */
-    function votingDelay() public view returns (uint256) {
-        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
-        return config.votingDelay;
-    }
-
-    /**
-     * @notice Enumerates the duration in blocks of the voting period.
-     * @return period the duration of the voting period.
-     * module:core
-     */
-    function votingPeriod() public view returns (uint256) {
-        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
-        return config.votingPeriod;
-    }
-
     /**
      * @dev an override that is compatible with the GovernorWithProposalParams interface.
      * @param account the account to get the vote weight for.

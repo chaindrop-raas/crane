@@ -129,7 +129,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
     {
         CoreGovernanceFacet facet = CoreGovernanceFacet(coreGovernanceFacet);
 
-        bytes4[] memory selectors = new bytes4[](31);
+        bytes4[] memory selectors = new bytes4[](28);
         selectors[0] = facet.CANCELLER_ROLE.selector;
         selectors[1] = facet.DEFAULT_ADMIN_ROLE.selector;
         selectors[2] = facet.EIP712_TYPEHASH.selector;
@@ -150,17 +150,14 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         selectors[17] = facet.nonces.selector;
         selectors[18] = facet.proposalDeadline.selector;
         selectors[19] = facet.proposalSnapshot.selector;
-        selectors[20] = facet.proposalThreshold.selector;
-        selectors[21] = facet.propose.selector;
-        selectors[22] = facet.proposeWithParams.selector;
-        selectors[23] = facet.quorum.selector;
-        selectors[24] = facet.renounceRole.selector;
-        selectors[25] = facet.revokeRole.selector;
-        selectors[26] = facet.state.selector;
-        selectors[27] = facet.supportsInterface.selector;
-        selectors[28] = facet.version.selector;
-        selectors[29] = facet.votingDelay.selector;
-        selectors[30] = facet.votingPeriod.selector;
+        selectors[20] = facet.propose.selector;
+        selectors[21] = facet.proposeWithParams.selector;
+        selectors[22] = facet.quorum.selector;
+        selectors[23] = facet.renounceRole.selector;
+        selectors[24] = facet.revokeRole.selector;
+        selectors[25] = facet.state.selector;
+        selectors[26] = facet.supportsInterface.selector;
+        selectors[27] = facet.version.selector;
 
         coreGovernanceCut = IDiamondCut.FacetCut({
             facetAddress: coreGovernanceFacet,
