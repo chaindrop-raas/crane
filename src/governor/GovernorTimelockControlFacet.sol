@@ -16,7 +16,7 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
     // way to count down to execution as well as indicating if it was executed
     // or canceled. We don't need this overloaded functionality since we track
     // execution and cancellation globally in the GovernorStorage contract.
-    function proposalEta(uint256 proposalId) external view override returns (uint256) {
+    function proposalEta(uint256 proposalId) external view returns (uint256) {
         return GovernorStorage.proposalStorage().timelockQueue[proposalId].timestamp;
     }
 
@@ -25,7 +25,7 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
         uint256[] calldata values,
         bytes[] calldata calldatas,
         bytes32 descriptionHash
-    ) external override returns (uint256) {
+    ) external returns (uint256) {
         uint256 proposalId = GovernorCommon.hashProposal(targets, values, calldatas, descriptionHash);
 
         require(
@@ -82,9 +82,14 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
         return proposalId;
     }
 
-    function updateTimelock(address newTimelock) external override {
+    function updateTimelock(address newTimelock) external onlyGovernance {
         address oldTimelock = GovernorStorage.configStorage().timelock;
         emit TimelockChange(oldTimelock, newTimelock);
         GovernorStorage.configStorage().timelock = newTimelock;
+    }
+
+    modifier onlyGovernance() {
+        require(msg.sender == GovernorStorage.configStorage().timelock, "Governor: onlyGovernance");
+        _;
     }
 }

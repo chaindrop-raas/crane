@@ -31,6 +31,13 @@ interface IGovernorSettings {
     event ProposalThresholdTokenSet(address oldProposalThresholdToken, address newProposalThresholdToken);
 
     /**
+     * @dev Emitted when the quorum numerator is set.
+     * @param oldQuorumNumerator The previous quorum numerator.
+     * @param newQuorumNumerator The new quorum numerator.
+     */
+    event QuorumNumeratorSet(uint16 oldQuorumNumerator, uint16 newQuorumNumerator);
+
+    /**
      * @dev Returns the delay before voting on a proposal may take place, once proposed.
      */
     // TODO: change to seconds instead of blocks
@@ -51,6 +58,11 @@ interface IGovernorSettings {
      * @dev Returns the token to use for proposal threshold.
      */
     function proposalThresholdToken() external view returns (address);
+
+    /**
+     * @dev Returns the quorum numerator for the proposal.
+     */
+    function quorumNumerator() external view returns (uint16);
 
     /**
      * @dev Sets the voting delay.
@@ -78,4 +90,11 @@ interface IGovernorSettings {
      * Emits a {ProposalThresholdTokenSet} event.
      */
     function setProposalThresholdToken(address newProposalThresholdToken) external;
+
+    /**
+     * @dev Sets the quorum numerator.
+     * @param newQuorumNumerator The new quorum numerator.
+     * Emits a {QuorumNumeratorSet} event.
+     */
+     function setQuorumNumerator(uint16 newQuorumNumerator) external;
 }

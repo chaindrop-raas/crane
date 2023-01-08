@@ -25,12 +25,6 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     bytes32 public constant EIP712_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
-    modifier onlyGovernance() {
-        require(msg.sender == GovernorStorage.configStorage().timelock, "Governor: onlyGovernance");
-        // TODO: the OZ contracts include a mechanism to ensure the hash of msg.data matches a stored has of queued governance calls. We should evaluate if we need this.
-        _;
-    }
-
     function name() public view returns (string memory) {
         return GovernorStorage.configStorage().name;
     }
