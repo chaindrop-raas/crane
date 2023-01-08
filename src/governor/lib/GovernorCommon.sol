@@ -7,6 +7,15 @@ import "src/interfaces/IGovernor.sol";
 import "src/utils/GovernorStorage.sol";
 
 library GovernorCommon {
+    /**
+     * @notice generates the hash of a proposal
+     * @param targets the targets of the proposal
+     * @param values the values of the proposal
+     * @param calldatas the calldatas of the proposal
+     * @param descriptionHash the hash of the description of the proposal
+     * @return the hash of the proposal, used as an id
+     */
+
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
@@ -16,6 +25,12 @@ library GovernorCommon {
         return uint256(keccak256(abi.encode(targets, values, calldatas, descriptionHash)));
     }
 
+    /**
+     * @notice execution state for a proposal, intended for use on successful proposals
+     * @param proposalId the id of the proposal
+     * @param status the current status of the proposal
+     * @return the execution state of the proposal else the current status
+     */
     function succededState(uint256 proposalId, IGovernor.ProposalState status)
         internal
         view
@@ -26,7 +41,7 @@ library GovernorCommon {
         }
 
         GovernorStorage.TimelockQueue storage queue = GovernorStorage.proposalStorage().timelockQueue[proposalId];
-        GovernorStorage.ProposalCore storage proposal = GovernorStorage.proposalStorage().proposals[proposalId];
+        GovernorStorage.ProposalCore storage proposal = GovernorStorage.proposal(proposalId);
         if (queue.timestamp == 0) {
             return IGovernor.ProposalState.Succeeded;
         } else if (proposal.executed) {
@@ -39,7 +54,7 @@ library GovernorCommon {
     }
 
     function state(uint256 proposalId) internal view returns (IGovernor.ProposalState) {
-        GovernorStorage.ProposalCore storage proposal = GovernorStorage.proposalStorage().proposals[proposalId];
+        GovernorStorage.ProposalCore storage proposal = GovernorStorage.proposal(proposalId);
 
         if (proposal.executed) {
             return IGovernor.ProposalState.Executed;
