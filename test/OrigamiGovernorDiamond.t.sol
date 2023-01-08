@@ -5,7 +5,7 @@ import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiGovernorDiamond.sol";
 import "src/upgradeInitializers/GovernorDiamondInit.sol";
 
-import "src/governor/CoreGovernanceFacet.sol";
+import "src/governor/GovernorCoreFacet.sol";
 import "src/governor/GovernorSettingsFacet.sol";
 import "src/governor/GovernorTimelockControlFacet.sol";
 
@@ -60,7 +60,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
 
         OrigamiTimelock origamiTimelock = new OrigamiTimelock();
 
-        CoreGovernanceFacet coreGovernanceFacet = new CoreGovernanceFacet();
+        GovernorCoreFacet coreGovernanceFacet = new GovernorCoreFacet();
 
         // initialize the timelock after we have an address for the governor
         address[] memory proposers = new address[](1);
@@ -132,7 +132,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         });
     }
 
-    function coreGovernanceFacetCut(CoreGovernanceFacet facet)
+    function coreGovernanceFacetCut(GovernorCoreFacet facet)
         internal
         pure
         returns (IDiamondCut.FacetCut memory coreGovernanceCut)
@@ -212,11 +212,11 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
     }
 
     function testRetrieveGovernorName() public {
-        assertEq(CoreGovernanceFacet(address(origamiGovernorDiamond)).name(), "TestGovernor");
+        assertEq(GovernorCoreFacet(address(origamiGovernorDiamond)).name(), "TestGovernor");
     }
 
     function testAdminHasDefaultAdminRole() public {
-        assertTrue(CoreGovernanceFacet(address(origamiGovernorDiamond)).hasRole(0x00, admin));
+        assertTrue(GovernorCoreFacet(address(origamiGovernorDiamond)).hasRole(0x00, admin));
     }
 
     function testRetrieveProposalThreshold() public {
