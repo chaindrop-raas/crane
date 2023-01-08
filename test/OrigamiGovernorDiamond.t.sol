@@ -31,6 +31,11 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
     OrigamiGovernanceToken public govToken;
     ProxyAdmin public govTokenAdmin;
 
+    OrigamiTimelock public timelockImpl;
+    TransparentUpgradeableProxy public timelockProxy;
+    OrigamiTimelock public timelock;
+    ProxyAdmin public timelockAdmin;
+
     OrigamiGovernorDiamond public origamiGovernorDiamond;
 
     constructor() {
@@ -59,9 +64,17 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         OwnershipFacet ownershipFacet = new OwnershipFacet();
         cuts[1] = DiamondDeployHelper.ownershipFacetCut(address(ownershipFacet));
 
-        OrigamiTimelock origamiTimelock = new OrigamiTimelock();
-
         GovernorCoreFacet governorCoreFacet = new GovernorCoreFacet();
+
+        // deploy timelock via proxy
+        timelockAdmin = new ProxyAdmin();
+        timelockImpl = new OrigamiTimelock();
+        timelockProxy = new TransparentUpgradeableProxy(
+            address(timelockImpl),
+            address(timelockAdmin),
+            ""
+        );
+        timelock = OrigamiTimelock(payable(timelockProxy));
 
         // initialize the timelock after we have an address for the governor
         address[] memory proposers = new address[](1);
@@ -69,8 +82,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         address[] memory executors = new address[](1);
         executors[0] = address(governorCoreFacet);
 
-        // FIXME: contract is already initialized
-        // origamiTimelock.initialize(1 days, proposers, executors);
+        timelock.initialize(1 days, proposers, executors);
 
         cuts[2] = DiamondDeployHelper.governorCoreFacetCut(governorCoreFacet);
 
@@ -81,8 +93,10 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
         cuts[4] = DiamondDeployHelper.governorTimelockControlFacetCut(governorTimelockControlFacet);
 
         origamiGovernorDiamond = new OrigamiGovernorDiamond(owner, address(diamondCutFacet));
+
         vm.stopPrank();
-        vm.startPrank(owner);
+
+        vm.prank(owner);
         DiamondCutFacet(address(origamiGovernorDiamond)).diamondCut(
             cuts,
             address(diamondInit),
@@ -90,7 +104,7 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
                 "init(string,address,address,address,uint24,uint24,uint8,uint16)",
                 "TestGovernor",
                 admin,
-                address(origamiTimelock),
+                address(timelock),
                 address(govToken),
                 7 days,
                 7 days,
@@ -98,7 +112,6 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
                 1
             )
         );
-        vm.stopPrank();
     }
 
     function testRetrieveGovernorName() public {
