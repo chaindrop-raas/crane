@@ -16,10 +16,23 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
     // way to count down to execution as well as indicating if it was executed
     // or canceled. We don't need this overloaded functionality since we track
     // execution and cancellation globally in the GovernorStorage contract.
+    /**
+     * @dev Public accessor to check the eta of a queued proposal
+     * @param proposalId the id of the proposal
+     * @return the eta of the proposal
+     */
     function proposalEta(uint256 proposalId) external view returns (uint256) {
         return GovernorStorage.proposalStorage().timelockQueue[proposalId].timestamp;
     }
 
+    /**
+     * @notice queue a set of transactions to be executed after a delay
+     * @param targets the targets of the proposal
+     * @param values the values of the proposal
+     * @param calldatas the calldatas of the proposal
+     * @param descriptionHash the hash of the description of the proposal
+     * @return proposalId the id of the proposal
+     */
     function queue(
         address[] calldata targets,
         uint256[] calldata values,
@@ -42,6 +55,15 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
         return proposalId;
     }
 
+    /**
+     * @notice execute a queued proposal after the delay has passed
+     * @param proposalId the id of the proposal
+     * @param targets the targets of the proposal
+     * @param values the values of the proposal
+     * @param calldatas the calldatas of the proposal
+     * @param descriptionHash the hash of the description of the proposal
+     * @return the id of the proposal
+     */
     function execute(
         uint256 proposalId,
         address[] calldata targets,
@@ -51,10 +73,19 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
     ) external payable returns (uint256) {
         require(GovernorCommon.state(proposalId) == IGovernor.ProposalState.Queued, "Governor: proposal not queued");
         timelock().executeBatch{value: msg.value}(targets, values, calldatas, 0, descriptionHash);
-
+        GovernorStorage.proposal(proposalId).executed = true;
+        emit ProposalExecuted(proposalId);
         return proposalId;
     }
 
+    /**
+     * @notice cancel a proposal queued for timelock execution
+     * @param targets the targets of the proposal
+     * @param values the values of the proposal
+     * @param calldatas the calldatas of the proposal
+     * @param descriptionHash the hash of the description of the proposal
+     * @return the id of the proposal
+     */
     function cancel(
         address[] calldata targets,
         uint256[] calldata values,
@@ -70,7 +101,7 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
             "Governor: proposal not queued"
         );
 
-        GovernorStorage.proposalStorage().proposals[proposalId].canceled = true;
+        GovernorStorage.proposal(proposalId).canceled = true;
         emit ProposalCanceled(proposalId);
 
         if (GovernorStorage.proposalStorage().timelockQueue[proposalId].timestamp != 0) {
@@ -82,6 +113,10 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
         return proposalId;
     }
 
+    /**
+     * @notice update the timelock address
+     * @param newTimelock the new timelock address
+     */
     function updateTimelock(address newTimelock) external onlyGovernance {
         address oldTimelock = GovernorStorage.configStorage().timelock;
         emit TimelockChange(oldTimelock, newTimelock);

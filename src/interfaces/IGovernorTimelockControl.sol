@@ -5,9 +5,18 @@ interface IGovernorTimelockControl {
     event TimelockChange(address oldTimelock, address newTimelock);
     event ProposalQueued(uint256 proposalId, uint256 eta);
     event ProposalCanceled(uint256 proposalId);
+    event ProposalExecuted(uint256 proposalId);
 
+    /**
+     * @dev Public accessor to check the eta of a queued proposal
+     */
     function proposalEta(uint256 proposalId) external view returns (uint256);
 
+    /**
+     * @dev Queue a proposal to be executed after a delay.
+     *
+     * Emits a {ProposalQueued} event.
+     */
     function queue(
         address[] calldata targets,
         uint256[] calldata values,
@@ -31,6 +40,12 @@ interface IGovernorTimelockControl {
         bytes32 descriptionHash
     ) external payable returns (uint256);
 
+    /**
+     * @dev Cancel a proposal. This can only be done if the proposal is still pending or queued, or if the module that
+     * implements the {IGovernor} interface has a different implementation for this function.
+     *
+     * Emits a {ProposalCanceled} event.
+     */
     function cancel(
         address[] calldata targets,
         uint256[] calldata values,
@@ -38,5 +53,10 @@ interface IGovernorTimelockControl {
         bytes32 descriptionHash
     ) external returns (uint256);
 
+    /**
+     * @dev Update the timelock.
+     *
+     * Emits a {TimelockChange} event.
+     */
     function updateTimelock(address newTimelock) external;
 }
