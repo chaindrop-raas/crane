@@ -15,6 +15,10 @@ import "@oz/utils/cryptography/ECDSA.sol";
 import "@oz/governance/utils/IVotes.sol";
 import "@oz/utils/Address.sol";
 
+interface BalanceToken {
+    function balanceOf(address account) external view returns (uint256);
+}
+
 /**
  * @title Origami Governor Core Facet
  * @author Origami
@@ -206,20 +210,21 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
 
     // TODO: the cast vote functions really should be part of the counting strategy, since they couple to the support type
 
-    // @dev internal function to cast a vote on a proposal
-    function _castVote(uint256 proposalId, address voter, uint8 support, string memory reason)
+    // @dev internal function to cast a vote on a proposal; restricts voting to members
+    function _castVote(uint256 proposalId, address account, uint8 support, string memory reason)
         internal
+        onlyMember(account)
         returns (uint256 weight)
     {
         GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
         require(state(proposalId) == IGovernor.ProposalState.Active, "Governor: proposal not active");
 
-        weight = getVotes(voter, ps.snapshot, ps.params);
+        weight = getVotes(account, ps.snapshot, ps.params);
         require(weight > 0, "Governor: only accounts with delegated voting power can vote");
 
-        SimpleCounting.setVote(proposalId, voter, support, weight, ps.params);
+        SimpleCounting.setVote(proposalId, account, support, weight, ps.params);
 
-        emit VoteCast(voter, proposalId, support, weight, reason);
+        emit VoteCast(account, proposalId, support, weight, reason);
     }
 
     /**
@@ -321,4 +326,15 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return castVoteWithReasonBySig(proposalId, support, "", nonce, v, r, s);
     }
 
+    /**
+     * @notice restricts calling functions with this modifier to holders of the default token.
+     * module:voting
+     */
+    modifier onlyMember(address account) {
+        require(
+            BalanceToken(GovernorStorage.configStorage().membershipToken).balanceOf(account) > 0,
+            "OrigamiGovernor: only members may vote"
+        );
+        _;
+    }
 }

@@ -197,7 +197,6 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
 }
 
 contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
-
     function testRetrieveGovernorName() public {
         assertEq(coreFacet.name(), "TestGovernor");
     }
@@ -244,7 +243,6 @@ contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
         assertTrue(loupeFacet.supportsInterface(type(IGovernorSettings).interfaceId));
         assertTrue(loupeFacet.supportsInterface(type(IGovernorTimelockControl).interfaceId));
     }
-
 }
 
 contract OrigamiGovernorProposalTest is GovernorDiamondHelper {
@@ -344,5 +342,139 @@ contract OrigamiGovernorProposalTest is GovernorDiamondHelper {
             "New proposal",
             abi.encode(address(timelock), bytes4(keccak256("simpleWeight(uint256)")))
         );
+    }
+}
+
+contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {
+    event VoteCast(address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason);
+    event ProposalExecuted(uint256 proposalId);
+
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+    bytes32 public proposalHash;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0x0);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
+        proposalHash = keccak256(bytes("New proposal"));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.proposeWithParams(targets, values, calldatas, "New proposal", params);
+    }
+
+    function testCanVoteOnProposalWithDefaultParams() public {
+        vm.startPrank(voter);
+        proposalId = coreFacet.propose(targets, values, calldatas, "Simple Voting Proposal");
+        vm.roll(604_843);
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        // our voting weight is 1 here, since this vote uses the membership token
+        emit VoteCast(voter, proposalId, 0, 1, "");
+        coreFacet.castVote(proposalId, 0);
+    }
+
+    function testCanVoteOnProposalWithParams() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        vm.roll(604_843);
+        vm.prank(voter);
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit VoteCast(voter, proposalId, 1, 100000000, "I like it");
+        coreFacet.castVoteWithReason(proposalId, 1, "I like it");
+    }
+
+    function testAddressWithoutMembershipTokenCanDelegateToMember() public {
+        // self-delegate to get voting power
+        vm.prank(nonMember);
+        govToken.delegate(newVoter);
+
+        vm.roll(604_843);
+        vm.prank(newVoter);
+
+        // newVoter has the weight of nonMember's delegated tokens
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit VoteCast(newVoter, proposalId, 0, 56250000, "I vote with their weight!");
+        coreFacet.castVoteWithReason(proposalId, 0, "I vote with their weight!");
+    }
+
+    function testRedelegatingDoesNotAffectCurrentProposals() public {
+        // voter delegates voting power to voter2
+        vm.prank(voter);
+        govToken.delegate(voter2);
+
+        // voter2 votes with delegated power
+        vm.roll(604_843);
+        vm.prank(voter2);
+        coreFacet.castVoteWithReason(proposalId, 1, "I like it");
+
+        // voter Redelegates to self
+        vm.roll(604_844);
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // voter attempts to vote with their own power
+        vm.roll(604_845);
+        vm.prank(voter);
+        vm.expectRevert("Governor: only accounts with delegated voting power can vote");
+        coreFacet.castVoteWithReason(proposalId, 0, "I don't like it");
+    }
+
+    function testCanLimitVotingByWeight() public {
+        // self-delegate to get voting power
+        vm.prank(newVoter);
+        govToken.delegate(newVoter);
+
+        vm.roll(604_843);
+        vm.prank(newVoter);
+
+        // newVoter has correctly self-delegated, but their weight is zero
+        vm.expectRevert("Governor: only accounts with delegated voting power can vote");
+        coreFacet.castVoteWithReason(proposalId, 0, "I don't like it.");
+    }
+
+    function testCanLimitVotingToMembershipTokenHolders() public {
+        vm.roll(604_843);
+        vm.prank(address(0x2a23));
+
+        vm.expectRevert("OrigamiGovernor: only members may vote");
+        coreFacet.castVoteWithReason(proposalId, 0, "I don't like it.");
+    }
+
+    function testCanReviseVote() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        vm.roll(604_843);
+        vm.prank(voter);
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit VoteCast(voter, proposalId, 1, 100000000, "I like it");
+        coreFacet.castVoteWithReason(proposalId, 1, "I like it");
+
+        // our voting system allows us to change our vote at any time,
+        // regardless of the value of hasVoted
+        assertEq(coreFacet.hasVoted(proposalId, voter), true);
+
+        vm.roll(604_844);
+        vm.prank(voter);
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit VoteCast(voter, proposalId, 0, 100000000, "I no longer like it");
+        coreFacet.castVoteWithReason(proposalId, 0, "I no longer like it");
+
+        assertEq(coreFacet.hasVoted(proposalId, voter), true);
     }
 }
