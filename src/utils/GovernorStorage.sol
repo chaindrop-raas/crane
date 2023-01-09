@@ -19,7 +19,7 @@ library GovernorStorage {
     struct GovernorConfig {
         string name;
         address admin;
-        address timelock;
+        address payable timelock;
         address membershipToken;
         address proposalThresholdToken;
         // TODO: consider these uint sizes carefully

@@ -63,7 +63,7 @@ contract OrigamiGovernor is
 
         config.name = governorName;
         config.admin = admin;
-        config.timelock = address(timelock_);
+        config.timelock = payable(address(timelock_));
         config.membershipToken = address(token_);
         config.votingDelay = delay;
         config.votingPeriod = period;

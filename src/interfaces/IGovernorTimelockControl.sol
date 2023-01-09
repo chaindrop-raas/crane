@@ -58,5 +58,5 @@ interface IGovernorTimelockControl {
      *
      * Emits a {TimelockChange} event.
      */
-    function updateTimelock(address newTimelock) external;
+    function updateTimelock(address payable newTimelock) external;
 }

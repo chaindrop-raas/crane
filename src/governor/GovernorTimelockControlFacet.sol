@@ -15,8 +15,8 @@ import "src/utils/GovernorStorage.sol";
  * @custom:security-contact contract-security@joinorigami.com
  */
 contract GovernorTimelockControlFacet is IGovernorTimelockControl {
-    function timelock() internal view returns (ITimelockController) {
-        return ITimelockController(payable(GovernorStorage.configStorage().timelock));
+    function timelock() public view returns (ITimelockController) {
+        return ITimelockController(GovernorStorage.configStorage().timelock);
     }
 
     // this function has overloaded behavior in the OZ contracts, acting as a
@@ -124,7 +124,7 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
      * @notice update the timelock address
      * @param newTimelock the new timelock address
      */
-    function updateTimelock(address newTimelock) external onlyGovernance {
+    function updateTimelock(address payable newTimelock) external onlyGovernance {
         address oldTimelock = GovernorStorage.configStorage().timelock;
         emit TimelockChange(oldTimelock, newTimelock);
         GovernorStorage.configStorage().timelock = newTimelock;

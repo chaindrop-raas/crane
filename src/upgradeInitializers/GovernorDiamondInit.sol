@@ -32,7 +32,7 @@ contract GovernorDiamondInit {
     function init(
         string memory governorName,
         address admin,
-        address timelock,
+        address payable timelock,
         address membershipToken,
         uint24 delay,
         uint24 period,

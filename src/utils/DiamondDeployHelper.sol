@@ -118,12 +118,13 @@ library DiamondDeployHelper {
         pure
         returns (IDiamondCut.FacetCut memory governorTimelockControlCut)
     {
-        bytes4[] memory selectors = new bytes4[](5);
+        bytes4[] memory selectors = new bytes4[](6);
         selectors[0] = facet.cancel.selector;
         selectors[1] = facet.execute.selector;
         selectors[2] = facet.proposalEta.selector;
         selectors[3] = facet.queue.selector;
-        selectors[4] = facet.updateTimelock.selector;
+        selectors[4] = facet.timelock.selector;
+        selectors[5] = facet.updateTimelock.selector;
 
         governorTimelockControlCut = IDiamondCut.FacetCut({
             facetAddress: address(facet),
