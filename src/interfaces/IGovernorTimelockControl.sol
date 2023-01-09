@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "src/interfaces/ITimelockController.sol";
+
 interface IGovernorTimelockControl {
     event TimelockChange(address oldTimelock, address newTimelock);
     event ProposalQueued(uint256 proposalId, uint256 eta);
@@ -11,6 +13,11 @@ interface IGovernorTimelockControl {
      * @dev Public accessor to check the eta of a queued proposal
      */
     function proposalEta(uint256 proposalId) external view returns (uint256);
+
+    /**
+     * @dev Public accessor to return the address of the timelock
+     */
+    function timelock() external returns (ITimelockController);
 
     /**
      * @dev Queue a proposal to be executed after a delay.

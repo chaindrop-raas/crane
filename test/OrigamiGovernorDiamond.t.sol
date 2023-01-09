@@ -11,6 +11,10 @@ import "src/governor/GovernorTimelockControlFacet.sol";
 import "src/upgradeInitializers/GovernorDiamondInit.sol";
 import "src/utils/DiamondDeployHelper.sol";
 
+import "src/interfaces/IGovernor.sol";
+import "src/interfaces/IGovernorTimelockControl.sol";
+import "src/interfaces/utils/IAccessControl.sol";
+
 import "@std/Test.sol";
 
 import "@diamond/facets/DiamondCutFacet.sol";
@@ -52,6 +56,7 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
 
     OrigamiGovernorDiamond public origamiGovernorDiamond;
 
+    DiamondLoupeFacet public loupeFacet;
     GovernorCoreFacet public coreFacet;
     GovernorSettingsFacet public settingsFacet;
     GovernorTimelockControlFacet public timelockControlFacet;
@@ -187,6 +192,7 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         coreFacet = GovernorCoreFacet(address(origamiGovernorDiamond));
         settingsFacet = GovernorSettingsFacet(address(origamiGovernorDiamond));
         timelockControlFacet = GovernorTimelockControlFacet(address(origamiGovernorDiamond));
+        loupeFacet = DiamondLoupeFacet(address(origamiGovernorDiamond));
     }
 }
 
@@ -229,6 +235,16 @@ contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
             )
         );
     }
+
+    function testSupportsInterface() public {
+        assertTrue(loupeFacet.supportsInterface(type(IAccessControl).interfaceId));
+        assertTrue(loupeFacet.supportsInterface(type(IERC165).interfaceId));
+        assertTrue(loupeFacet.supportsInterface(type(IGovernor).interfaceId));
+        assertTrue(loupeFacet.supportsInterface(type(IGovernorQuorum).interfaceId));
+        assertTrue(loupeFacet.supportsInterface(type(IGovernorSettings).interfaceId));
+        assertTrue(loupeFacet.supportsInterface(type(IGovernorTimelockControl).interfaceId));
+    }
+
 }
 
 contract OrigamiGovernorProposalTest is GovernorDiamondHelper {

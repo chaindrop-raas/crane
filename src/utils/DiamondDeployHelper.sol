@@ -20,11 +20,12 @@ library DiamondDeployHelper {
         pure
         returns (IDiamondCut.FacetCut memory diamondLoupeCut)
     {
-        bytes4[] memory diamondLoupeSelectors = new bytes4[](4);
-        diamondLoupeSelectors[0] = IDiamondLoupe.facets.selector;
-        diamondLoupeSelectors[1] = IDiamondLoupe.facetFunctionSelectors.selector;
-        diamondLoupeSelectors[2] = IDiamondLoupe.facetAddresses.selector;
-        diamondLoupeSelectors[3] = IDiamondLoupe.facetAddress.selector;
+        bytes4[] memory diamondLoupeSelectors = new bytes4[](5);
+        diamondLoupeSelectors[0] = DiamondLoupeFacet.facetAddress.selector;
+        diamondLoupeSelectors[1] = DiamondLoupeFacet.facetAddresses.selector;
+        diamondLoupeSelectors[2] = DiamondLoupeFacet.facetFunctionSelectors.selector;
+        diamondLoupeSelectors[3] = DiamondLoupeFacet.facets.selector;
+        diamondLoupeSelectors[4] = DiamondLoupeFacet.supportsInterface.selector;
         diamondLoupeCut = IDiamondCut.FacetCut({
             facetAddress: diamondLoupeFacet,
             action: IDiamondCut.FacetCutAction.Add,
@@ -52,7 +53,7 @@ library DiamondDeployHelper {
         pure
         returns (IDiamondCut.FacetCut memory governorCoreCut)
     {
-        bytes4[] memory selectors = new bytes4[](28);
+        bytes4[] memory selectors = new bytes4[](27);
         selectors[0] = facet.CANCELLER_ROLE.selector;
         selectors[1] = facet.DEFAULT_ADMIN_ROLE.selector;
         selectors[2] = facet.EIP712_TYPEHASH.selector;
@@ -79,8 +80,7 @@ library DiamondDeployHelper {
         selectors[23] = facet.renounceRole.selector;
         selectors[24] = facet.revokeRole.selector;
         selectors[25] = facet.state.selector;
-        selectors[26] = facet.supportsInterface.selector;
-        selectors[27] = facet.version.selector;
+        selectors[26] = facet.version.selector;
 
         governorCoreCut = IDiamondCut.FacetCut({
             facetAddress: address(facet),

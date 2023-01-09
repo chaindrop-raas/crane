@@ -15,6 +15,10 @@ import "src/utils/GovernorStorage.sol";
  * @custom:security-contact contract-security@joinorigami.com
  */
 contract GovernorTimelockControlFacet is IGovernorTimelockControl {
+    /**
+     * @notice returns the timelock controller
+     * @return the timelock controller
+     */
     function timelock() public view returns (ITimelockController) {
         return ITimelockController(GovernorStorage.configStorage().timelock);
     }

@@ -6,6 +6,7 @@ import "src/interfaces/IGovernor.sol";
 import "src/interfaces/IGovernorQuorum.sol";
 import "src/interfaces/IGovernorSettings.sol";
 import "src/interfaces/IGovernorTimelockControl.sol";
+import "src/interfaces/utils/IAccessControl.sol";
 import "src/utils/AccessControlStorage.sol";
 import "src/utils/GovernorStorage.sol";
 
@@ -51,6 +52,7 @@ contract GovernorDiamondInit {
         ds.supportedInterfaces[type(IGovernorQuorum).interfaceId] = true;
         ds.supportedInterfaces[type(IGovernorTimelockControl).interfaceId] = true;
         ds.supportedInterfaces[type(IGovernorSettings).interfaceId] = true;
+        ds.supportedInterfaces[type(IAccessControl).interfaceId] = true;
 
         GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
 

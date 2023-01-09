@@ -6,7 +6,6 @@ pragma solidity 0.8.16;
 import "./AccessControlStorage.sol";
 import "src/interfaces/utils/IAccessControl.sol";
 
-import "@diamond/interfaces/IERC165.sol";
 import "@oz/utils/Strings.sol";
 
 /**
@@ -48,7 +47,7 @@ import "@oz/utils/Strings.sol";
  * @author Modified from OpenZeppelin Contracts v4.4.1 (access/IAccessControl.sol) to conform to and use Diamond Storage and minimize certain viral OZ dependencies.
  * @custom:security-contact contract-security@joinorigami.com
  */
-contract AccessControl is IAccessControl, IERC165 {
+contract AccessControl is IAccessControl {
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
 
     /**
@@ -64,13 +63,6 @@ contract AccessControl is IAccessControl, IERC165 {
     modifier onlyRole(bytes32 role) {
         _checkRole(role);
         _;
-    }
-
-    /**
-     * @dev See {IERC165-supportsInterface}.
-     */
-    function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
-        return interfaceId == type(IAccessControl).interfaceId || interfaceId == type(IERC165).interfaceId;
     }
 
     /**
