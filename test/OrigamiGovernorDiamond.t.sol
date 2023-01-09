@@ -25,7 +25,7 @@ abstract contract GovDiamondAddressHelper {
     address public admin = address(0x3);
 }
 
-contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
+contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
     OrigamiGovernanceToken public govTokenImpl;
     TransparentUpgradeableProxy public govTokenProxy;
     OrigamiGovernanceToken public govToken;
@@ -112,17 +112,30 @@ contract DeployOrigamiGovernorDiamond is GovDiamondAddressHelper, Test {
                 1
             )
         );
+
+
+    }
+
+}
+
+contract OrigamiGovernorDiamondTest is GovernorDiamondHelper {
+    GovernorCoreFacet public coreFacet;
+    GovernorSettingsFacet public settingsFacet;
+
+    function setUp() public {
+        coreFacet = GovernorCoreFacet(address(origamiGovernorDiamond));
+        settingsFacet = GovernorSettingsFacet(address(origamiGovernorDiamond));
     }
 
     function testRetrieveGovernorName() public {
-        assertEq(GovernorCoreFacet(address(origamiGovernorDiamond)).name(), "TestGovernor");
+        assertEq(coreFacet.name(), "TestGovernor");
     }
 
     function testAdminHasDefaultAdminRole() public {
-        assertTrue(GovernorCoreFacet(address(origamiGovernorDiamond)).hasRole(0x00, admin));
+        assertTrue(coreFacet.hasRole(0x00, admin));
     }
 
     function testRetrieveProposalThreshold() public {
-        assertEq(GovernorSettingsFacet(address(origamiGovernorDiamond)).proposalThreshold(), 1);
+        assertEq(settingsFacet.proposalThreshold(), 1);
     }
 }
