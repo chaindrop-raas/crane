@@ -99,7 +99,6 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      */
     function getVotes(address account, uint256 blockNumber, address proposalToken) public view returns (uint256) {
         uint256 pastVotes = IVotes(proposalToken).getPastVotes(account, blockNumber);
-        require(pastVotes > 0, "Governor: only accounts with delegated voting power can vote");
         return pastVotes;
     }
 
@@ -108,7 +107,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      * @dev See {IGovernor-_hasVoted}. Note that we differ from the base implementation in that we don't want to prevent multiple votes, we instead update their previous vote.
      * @return true if the account has voted on the proposal, false otherwise.
      */
-    function hasVoted(uint256 proposalId, address account) public view virtual returns (bool) {
+    function hasVoted(uint256 proposalId, address account) public view returns (bool) {
         return GovernorStorage.proposalHasVoted(proposalId, account);
     }
 
@@ -135,17 +134,22 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             "Governor: proposer votes below proposal threshold"
         );
 
-        (address proposalToken,) = abi.decode(params, (address, bytes4));
+        address proposalToken;
+        if (keccak256(params) == keccak256("")) {
+            proposalToken = GovernorStorage.configStorage().membershipToken;
+        } else {
+            (proposalToken,) = abi.decode(params, (address, bytes4));
+        }
         require(
             IERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
             "Governor: proposal token must support IVotes"
         );
 
-        proposalId = GovernorCommon.hashProposal(targets, values, calldatas, keccak256(bytes(description)));
-
         require(targets.length == values.length, "Governor: invalid proposal length");
-        require(targets.length == values.length, "Governor: invalid proposal length");
+        require(targets.length == calldatas.length, "Governor: invalid proposal length");
         require(targets.length > 0, "Governor: empty proposal");
+
+        proposalId = GovernorCommon.hashProposal(targets, values, calldatas, keccak256(bytes(description)));
 
         // start populating the new ProposalCore struct
         GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
@@ -211,6 +215,8 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         require(state(proposalId) == IGovernor.ProposalState.Active, "Governor: proposal not active");
 
         weight = getVotes(voter, ps.snapshot, ps.params);
+        require(weight > 0, "Governor: only accounts with delegated voting power can vote");
+
         SimpleCounting.setVote(proposalId, voter, support, weight, ps.params);
 
         emit VoteCast(voter, proposalId, support, weight, reason);

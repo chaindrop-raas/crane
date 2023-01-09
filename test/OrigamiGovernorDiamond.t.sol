@@ -52,6 +52,10 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
 
     OrigamiGovernorDiamond public origamiGovernorDiamond;
 
+    GovernorCoreFacet public coreFacet;
+    GovernorSettingsFacet public settingsFacet;
+    GovernorTimelockControlFacet public timelockControlFacet;
+
     constructor() {
         vm.startPrank(deployer);
 
@@ -154,6 +158,8 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         govToken.mint(nonMember, 56250000);
         govToken.mint(signingVoter, 100000000);
 
+        // mine, so that proposals snapshot after these mints.
+        vm.roll(2);
         vm.stopPrank();
 
         // self-delegate the NFT
@@ -175,19 +181,16 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         govToken.delegate(voter3);
         vm.prank(voter4);
         govToken.delegate(voter4);
-    }
-}
 
-contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
-    GovernorCoreFacet public coreFacet;
-    GovernorSettingsFacet public settingsFacet;
-    GovernorTimelockControlFacet public timelockControlFacet;
+        vm.roll(42);
 
-    function setUp() public {
         coreFacet = GovernorCoreFacet(address(origamiGovernorDiamond));
         settingsFacet = GovernorSettingsFacet(address(origamiGovernorDiamond));
         timelockControlFacet = GovernorTimelockControlFacet(address(origamiGovernorDiamond));
     }
+}
+
+contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
 
     function testRetrieveGovernorName() public {
         assertEq(coreFacet.name(), "TestGovernor");
@@ -224,6 +227,106 @@ contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
                     address(origamiGovernorDiamond)
                 )
             )
+        );
+    }
+}
+
+contract OrigamiGovernorProposalTest is GovernorDiamondHelper {
+    event ProposalCreated(
+        uint256 proposalId,
+        address proposer,
+        address[] targets,
+        uint256[] values,
+        string[] signatures,
+        bytes[] calldatas,
+        uint256 startBlock,
+        uint256 endBlock,
+        string description
+    );
+
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+    }
+
+    function testCanSubmitProposal() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+
+        vm.prank(voter2);
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit ProposalCreated(
+            62912883481399652201384617016484797517292059425633292282859862689999298978076,
+            voter2,
+            targets,
+            values,
+            signatures,
+            calldatas,
+            604842,
+            1209642,
+            "New proposal"
+            );
+        coreFacet.propose(targets, values, calldatas, "New proposal");
+    }
+
+    function testCannotSubmitProposalWithZeroTargets() public {
+        targets = new address[](0);
+        values = new uint256[](0);
+        calldatas = new bytes[](0);
+        vm.prank(voter2);
+        vm.expectRevert("Governor: empty proposal");
+        coreFacet.propose(targets, values, calldatas, "Empty");
+    }
+
+    function testCannotSubmitProposalWithTargetsButZeroValues() public {
+        targets = new address[](1);
+        values = new uint256[](0);
+        calldatas = new bytes[](0);
+        vm.prank(voter2);
+        vm.expectRevert("Governor: invalid proposal length");
+        coreFacet.propose(targets, values, calldatas, "Empty");
+    }
+
+    function testCannotSubmitProposalWithTargetsButZeroCalldatas() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](0);
+        vm.prank(voter2);
+        vm.expectRevert("Governor: invalid proposal length");
+        coreFacet.propose(targets, values, calldatas, "Empty");
+    }
+
+    function testCannotSubmitSameProposalTwice() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        vm.startPrank(voter2);
+        coreFacet.propose(targets, values, calldatas, "New proposal");
+        vm.expectRevert("Governor: proposal already exists");
+        coreFacet.propose(targets, values, calldatas, "New proposal");
+    }
+
+    function testProposalWithParamsTokenMustSupportIVotes() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        vm.prank(voter2);
+        vm.expectRevert("Governor: proposal token must support IVotes");
+        coreFacet.proposeWithParams(
+            targets,
+            values,
+            calldatas,
+            "New proposal",
+            abi.encode(address(timelock), bytes4(keccak256("simpleWeight(uint256)")))
         );
     }
 }

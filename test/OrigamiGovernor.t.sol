@@ -136,9 +136,8 @@ abstract contract GovHelper is GovAddressHelper, Test {
         govToken.mint(nonMember, 56250000);
         govToken.mint(signingVoter, 100000000);
 
-        // let's travel an arbitrary and small amount of time forward so
-        // proposals snapshot after these mints.
-        vm.roll(42);
+        // mine, so that proposals snapshot after these mints.
+        vm.roll(2);
         vm.stopPrank();
 
         // self-delegate the NFT
@@ -160,6 +159,8 @@ abstract contract GovHelper is GovAddressHelper, Test {
         govToken.delegate(voter3);
         vm.prank(voter4);
         govToken.delegate(voter4);
+
+        vm.roll(42);
     }
 }
 
