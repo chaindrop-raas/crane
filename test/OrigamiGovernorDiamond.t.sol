@@ -3,11 +3,12 @@ pragma solidity 0.8.16;
 
 import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiGovernorDiamond.sol";
-import "src/upgradeInitializers/GovernorDiamondInit.sol";
+import "src/OrigamiMembershipToken.sol";
 
 import "src/governor/GovernorCoreFacet.sol";
 import "src/governor/GovernorSettingsFacet.sol";
 import "src/governor/GovernorTimelockControlFacet.sol";
+import "src/upgradeInitializers/GovernorDiamondInit.sol";
 import "src/utils/DiamondDeployHelper.sol";
 
 import "@std/Test.sol";
@@ -23,9 +24,22 @@ abstract contract GovDiamondAddressHelper {
     address public deployer = address(0x1);
     address public owner = address(0x2);
     address public admin = address(0x3);
+    address public voter = address(0x4);
+    address public voter2 = address(0x5);
+    address public voter3 = address(0x6);
+    address public voter4 = address(0x7);
+    address public newVoter = address(0x8);
+    address public nonMember = address(0x9);
+    address public voterProxy = address(0xa);
+    address public signingVoter = address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
 }
 
 contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
+    OrigamiMembershipToken public memTokenImpl;
+    TransparentUpgradeableProxy public memTokenProxy;
+    OrigamiMembershipToken public memToken;
+    ProxyAdmin public memTokenAdmin;
+
     OrigamiGovernanceToken public govTokenImpl;
     TransparentUpgradeableProxy public govTokenProxy;
     OrigamiGovernanceToken public govToken;
@@ -40,6 +54,17 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
 
     constructor() {
         vm.startPrank(deployer);
+
+        // deploy membership token via proxy
+        memTokenAdmin = new ProxyAdmin();
+        memTokenImpl = new OrigamiMembershipToken();
+        memTokenProxy = new TransparentUpgradeableProxy(
+            address(memTokenImpl),
+            address(memTokenAdmin),
+            ""
+        );
+        memToken = OrigamiMembershipToken(address(memTokenProxy));
+        memToken.initialize(owner, "Deciduous Tree DAO Membership", "DTDM", "https://example.com/metadata/");
 
         // deploy gov token via proxy
         govTokenAdmin = new ProxyAdmin();
@@ -96,7 +121,7 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
 
         vm.stopPrank();
 
-        vm.prank(owner);
+        vm.startPrank(owner);
         DiamondCutFacet(address(origamiGovernorDiamond)).diamondCut(
             cuts,
             address(diamondInit),
@@ -105,7 +130,7 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
                 "TestGovernor",
                 admin,
                 address(timelock),
-                address(govToken),
+                address(memToken),
                 7 days,
                 7 days,
                 10,
@@ -113,18 +138,55 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
             )
         );
 
+        // issue the voters membership tokens
+        memToken.safeMint(voter);
+        memToken.safeMint(voter2);
+        memToken.safeMint(voter3);
+        memToken.safeMint(voter4);
+        memToken.safeMint(newVoter);
+        memToken.safeMint(signingVoter);
 
+        // issue the voters gov tokens
+        govToken.mint(voter, 100000000); // 10000^2
+        govToken.mint(voter2, 225000000); // 15000^2
+        govToken.mint(voter3, 56250000); // 7500^2
+        govToken.mint(voter4, 306250000); // 17500^2
+        govToken.mint(nonMember, 56250000);
+        govToken.mint(signingVoter, 100000000);
+
+        vm.stopPrank();
+
+        // self-delegate the NFT
+        vm.prank(voter);
+        memToken.delegate(voter);
+        vm.prank(newVoter);
+        memToken.delegate(newVoter);
+        vm.prank(voter2);
+        memToken.delegate(voter2);
+        vm.prank(voter3);
+        memToken.delegate(voter3);
+        vm.prank(voter4);
+        memToken.delegate(voter4);
+
+        // selectively self-delegate the gov token for voters past the first one
+        vm.prank(voter2);
+        govToken.delegate(voter2);
+        vm.prank(voter3);
+        govToken.delegate(voter3);
+        vm.prank(voter4);
+        govToken.delegate(voter4);
     }
-
 }
 
-contract OrigamiGovernorDiamondTest is GovernorDiamondHelper {
+contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
     GovernorCoreFacet public coreFacet;
     GovernorSettingsFacet public settingsFacet;
+    GovernorTimelockControlFacet public timelockControlFacet;
 
     function setUp() public {
         coreFacet = GovernorCoreFacet(address(origamiGovernorDiamond));
         settingsFacet = GovernorSettingsFacet(address(origamiGovernorDiamond));
+        timelockControlFacet = GovernorTimelockControlFacet(address(origamiGovernorDiamond));
     }
 
     function testRetrieveGovernorName() public {
@@ -137,5 +199,31 @@ contract OrigamiGovernorDiamondTest is GovernorDiamondHelper {
 
     function testRetrieveProposalThreshold() public {
         assertEq(settingsFacet.proposalThreshold(), 1);
+    }
+
+    function testInformationalFunctions() public {
+        assertEq(address(timelockControlFacet.timelock()), address(timelock));
+        assertEq(coreFacet.name(), "TestGovernor");
+        assertEq(settingsFacet.votingDelay(), 604_800);
+        assertEq(coreFacet.version(), "1.1.0");
+        assertEq(settingsFacet.votingPeriod(), 604_800);
+        assertEq(settingsFacet.proposalThreshold(), 1);
+        assertEq(settingsFacet.quorumNumerator(), 10);
+    }
+
+    function testEIP712DomainSeparator() public {
+        // just to be clear about the external implementation of the domainSeparator:
+        assertEq(
+            coreFacet.domainSeparatorV4(),
+            keccak256(
+                abi.encode(
+                    keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                    keccak256(bytes(coreFacet.name())),
+                    keccak256(bytes(coreFacet.version())),
+                    block.chainid,
+                    address(origamiGovernorDiamond)
+                )
+            )
+        );
     }
 }
