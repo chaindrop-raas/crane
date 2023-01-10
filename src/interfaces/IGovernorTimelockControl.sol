@@ -40,7 +40,6 @@ interface IGovernorTimelockControl {
      * Note: some module can modify the requirements for execution, for example by adding an additional timelock.
      */
     function execute(
-        uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,

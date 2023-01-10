@@ -113,14 +113,6 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         );
         timelock = OrigamiTimelock(payable(timelockProxy));
 
-        // initialize the timelock after we have an address for the governor
-        address[] memory proposers = new address[](1);
-        proposers[0] = address(governorCoreFacet);
-        address[] memory executors = new address[](1);
-        executors[0] = address(governorCoreFacet);
-
-        timelock.initialize(1 days, proposers, executors);
-
         cuts[2] = DiamondDeployHelper.governorCoreFacetCut(governorCoreFacet);
 
         GovernorSettingsFacet governorSettingsFacet = new GovernorSettingsFacet();
@@ -130,6 +122,15 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         cuts[4] = DiamondDeployHelper.governorTimelockControlFacetCut(governorTimelockControlFacet);
 
         origamiGovernorDiamond = new OrigamiGovernorDiamond(owner, address(diamondCutFacet));
+
+        // initialize the timelock after we have an address for the diamond
+        address[] memory proposers = new address[](1);
+        proposers[0] = address(origamiGovernorDiamond);
+        address[] memory executors = new address[](1);
+        executors[0] = address(origamiGovernorDiamond);
+
+        timelock.initialize(1 days, proposers, executors);
+
 
         vm.stopPrank();
 
@@ -738,7 +739,7 @@ contract OrigamiGovernorProposalQuadraticVoteTest is GovernorDiamondHelper {
         vm.startPrank(voter);
         govToken.delegate(voter);
 
-        vm.roll(640_843);
+        vm.roll(604_843);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit VoteCast(voter, proposalId, FOR, 100000000, "I like it!");
         coreFacet.castVoteWithReason(proposalId, FOR, "I like it!");
@@ -776,7 +777,7 @@ contract OrigamiGovernorProposalQuadraticVoteResultsTest is GovernorDiamondHelpe
         govToken.delegate(voter);
 
         // set block to first eligible voting block
-        vm.roll(640_843);
+        vm.roll(604_843);
 
         // voter and voter2 collectively have fewer tokens than voter3 by
         // themselves, but quadratic weighting has the effect of making them
@@ -802,5 +803,154 @@ contract OrigamiGovernorProposalQuadraticVoteResultsTest is GovernorDiamondHelpe
         assertEq(againstVotes, 15000);
         assertEq(forVotes, 17500);
         assertEq(abstainVotes, 17500);
+    }
+}
+
+contract OrigamiGovernorSimpleCounting is GovernorDiamondHelper {
+    function testCannotSpecifyInvalidWeightStrategy() public {
+        vm.expectRevert("Governor: weighting strategy not found");
+        SimpleCounting.applyWeightStrategy(100, bytes4(keccak256("blahdraticWeight(uint256)")));
+    }
+}
+
+contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
+    event ProposalCanceled(uint256 proposalId);
+    event ProposalExecuted(uint256 proposalId);
+
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+    bytes32 public proposalHash;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0x0);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
+        proposalHash = keccak256(bytes("New proposal"));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.proposeWithParams(targets, values, calldatas, "New proposal", params);
+    }
+
+    function testCanTransitionProposalThroughToExecution() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // proposal is created in the pending state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+        // advance to the voting period
+        vm.roll(604_843);
+        vm.prank(voter);
+        coreFacet.castVoteWithReason(proposalId, 1, "I like it");
+
+        // proposal is in the active state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
+
+        // advance to the voting deadline
+        vm.roll(604_843 + 604_800);
+
+        // proposal is in the succeeded state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+        // console2.log("PR", Strings.toHexString(uint256(timelock.PROPOSER_ROLE())), 32);
+
+        // Enqueue the proposal
+        timelockControlFacet.queue(targets, values, calldatas, proposalHash);
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
+
+        // the TimelockController cares about the block timestamp, so we need to warp in addition to roll
+        // advance block timestamp so that it's after the proposal's required queuing time
+        vm.warp(604_801);
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit ProposalExecuted(proposalId);
+        timelockControlFacet.execute(targets, values, calldatas, proposalHash);
+
+        // advance to the the next block
+        vm.roll(604_843 + 604_801);
+
+        // proposal is in the executed state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Executed));
+    }
+
+    function testCanTransitionProposalThroughToCancellation() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // proposal is created in the pending state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+        // advance to the voting period
+        vm.roll(604_843);
+        vm.prank(voter);
+        coreFacet.castVoteWithReason(proposalId, 1, "I like it");
+
+        // proposal is in the active state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
+
+        // advance to the voting deadline
+        vm.roll(604_843 + 604_800);
+
+        // proposal is in the succeeded state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+        // Enqueue the proposal
+        timelockControlFacet.queue(targets, values, calldatas, proposalHash);
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
+
+        // grant the admin the CANCELLER_ROLE
+        vm.startPrank(admin);
+        coreFacet.grantRole(coreFacet.CANCELLER_ROLE(), admin);
+
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit ProposalCanceled(proposalId);
+        timelockControlFacet.cancel(targets, values, calldatas, proposalHash);
+        vm.stopPrank();
+
+        // advance to the the next block
+        vm.roll(604_843 + 604_801);
+
+        // proposal is in the canceled state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Canceled));
+    }
+
+    function testCannotQueueIfProposalIsDefeated() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // proposal is created in the pending state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+        // advance to the voting period
+        vm.roll(604_843);
+        vm.prank(voter);
+        coreFacet.castVoteWithReason(proposalId, 0, "I Don't like it");
+
+        // proposal is in the active state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
+
+        // advance to the voting deadline
+        vm.roll(604_843 + 604_800);
+
+        // proposal is in the succeeded state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
+
+        vm.expectRevert("Governor: proposal not successful");
+        // Enqueue the proposal
+        timelockControlFacet.queue(targets, values, calldatas, proposalHash);
     }
 }

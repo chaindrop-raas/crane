@@ -68,7 +68,6 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
 
     /**
      * @notice execute a queued proposal after the delay has passed
-     * @param proposalId the id of the proposal
      * @param targets the targets of the proposal
      * @param values the values of the proposal
      * @param calldatas the calldatas of the proposal
@@ -76,12 +75,12 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
      * @return the id of the proposal
      */
     function execute(
-        uint256 proposalId,
         address[] calldata targets,
         uint256[] calldata values,
         bytes[] calldata calldatas,
         bytes32 descriptionHash
     ) external payable returns (uint256) {
+        uint256 proposalId = GovernorCommon.hashProposal(targets, values, calldatas, descriptionHash);
         require(GovernorCommon.state(proposalId) == IGovernor.ProposalState.Queued, "Governor: proposal not queued");
         timelock().executeBatch{value: msg.value}(targets, values, calldatas, 0, descriptionHash);
         GovernorStorage.proposal(proposalId).executed = true;
