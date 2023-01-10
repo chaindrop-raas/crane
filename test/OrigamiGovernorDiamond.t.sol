@@ -621,3 +621,83 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
         coreFacet.castVoteWithReasonBySig(proposalId, 1, "I like it", nonce, v, r, s);
     }
 }
+
+contract OrigamiGovernorProposalQuorumTest is GovernorDiamondHelper {
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.proposeWithParams(targets, values, calldatas, "New proposal", params);
+    }
+
+    function testUnreachedQuorumDefeatsProposal() public {
+        // travel to proposal voting period completion
+        vm.roll(604_843 + 604_800);
+        assertEq(coreFacet.quorum(proposalId), 84375000);
+        // there have been no votes, so quorum will not be reached and state will be Defeated
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
+    }
+
+    function testReachedQuorumButDefeated() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // travel to proposal voting period
+        vm.roll(604_843);
+
+        // vote against the proposal - voter weight exceeds quorum
+        vm.prank(voter);
+        coreFacet.castVoteWithReason(proposalId, 0, "I don't like it.");
+
+        // travel to proposal voting period completion
+        vm.roll(604_843 + 604_800);
+
+        // assert vote failed
+        (uint256 againstVotes, uint256 forVotes,) = coreFacet.proposalVotes(proposalId);
+        assertGt(againstVotes, forVotes);
+
+        // quorum is reached, but the proposal is defeated
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
+    }
+
+    function testReachedQuorumAndSucceeded() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // travel to proposal voting period
+        vm.roll(604_843);
+
+        // vote against the proposal - voter weight exceeds quorum
+        vm.prank(voter);
+        coreFacet.castVoteWithReason(proposalId, 1, "I like it.");
+
+        // travel to proposal voting period completion
+        vm.roll(604_843 + 604_800);
+
+        // assert vote failed
+        (uint256 againstVotes, uint256 forVotes,) = coreFacet.proposalVotes(proposalId);
+        assertGt(forVotes, againstVotes);
+
+        // quorum is reached, but the proposal is defeated
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+    }
+}

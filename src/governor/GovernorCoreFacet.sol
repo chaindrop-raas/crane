@@ -190,6 +190,21 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
+     * @notice returns the current votes for, against, or abstaining for a given proposal. Once the voting period has lapsed, this is used to determine the outcome.
+     * @dev this delegates weight calculation to the strategy specified in the params
+     * @param proposalId the id of the proposal to get the votes for.
+     * @return againstVotes - the number of votes against the proposal.
+     * @return forVotes - the number of votes for the proposal.
+     * @return abstainVotes - the number of votes abstaining from the vote.
+     * module:core
+     */
+    // TODO: this return type is specific to SimpleCounting, which probably
+    // means it's not generic enough to be in the public interface
+    function proposalVotes(uint256 proposalId) public view virtual returns (uint256, uint256, uint256) {
+        return SimpleCounting.simpleProposalVotes(proposalId);
+    }
+
+    /**
      * @notice propose a new action to be performed by the governor.
      * @param targets The ordered list of target addresses for calls to be made on.
      * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.

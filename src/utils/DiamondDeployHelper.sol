@@ -73,13 +73,14 @@ library DiamondDeployHelper {
         selectors[16] = facet.nonces.selector;
         selectors[17] = facet.proposalDeadline.selector;
         selectors[18] = facet.proposalSnapshot.selector;
-        selectors[19] = facet.propose.selector;
-        selectors[20] = facet.proposeWithParams.selector;
-        selectors[21] = facet.quorum.selector;
-        selectors[22] = facet.renounceRole.selector;
-        selectors[23] = facet.revokeRole.selector;
-        selectors[24] = facet.state.selector;
-        selectors[25] = facet.version.selector;
+        selectors[19] = facet.proposalVotes.selector;
+        selectors[20] = facet.propose.selector;
+        selectors[21] = facet.proposeWithParams.selector;
+        selectors[22] = facet.quorum.selector;
+        selectors[23] = facet.renounceRole.selector;
+        selectors[24] = facet.revokeRole.selector;
+        selectors[25] = facet.state.selector;
+        selectors[26] = facet.version.selector;
 
         governorCoreCut = IDiamondCut.FacetCut({
             facetAddress: address(facet),
