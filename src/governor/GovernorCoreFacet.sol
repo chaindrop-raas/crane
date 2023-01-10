@@ -27,8 +27,6 @@ interface BalanceToken {
  * @custom:security-contact contract-security@joinorigami.com
  */
 contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
-    bytes32 public constant EXTENDED_BALLOT_TYPEHASH =
-        keccak256("ExtendedBallot(uint256 proposalId,uint8 support,string reason,bytes params)");
     /// @notice the role hash for granting the ability to cancel a timelocked proposal. This role is not granted as part of deployment. It should be granted only in the event of an emergency.
     bytes32 public constant CANCELLER_ROLE = keccak256("CANCELLER_ROLE");
     bytes32 public constant EXTENDED_IDEMPOTENT_BALLOT_TYPEHASH =
