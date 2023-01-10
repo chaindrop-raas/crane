@@ -34,7 +34,6 @@ abstract contract GovDiamondAddressHelper {
     address public voter4 = address(0x7);
     address public newVoter = address(0x8);
     address public nonMember = address(0x9);
-    address public voterProxy = address(0xa);
     address public signingVoter = address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
 }
 
@@ -476,5 +475,149 @@ contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {
         coreFacet.castVoteWithReason(proposalId, 0, "I no longer like it");
 
         assertEq(coreFacet.hasVoted(proposalId, voter), true);
+    }
+}
+
+contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
+    event VoteCast(address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason);
+    event ProposalExecuted(uint256 proposalId);
+
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+    bytes32 public proposalHash;
+    uint8 public v;
+    bytes32 public r;
+    bytes32 public s;
+    uint256 public nonce;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0x0);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
+        proposalHash = keccak256(bytes("New proposal"));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.proposeWithParams(targets, values, calldatas, "New proposal", params);
+
+        // These values were derived by using this signing scheme:
+        // https://gist.github.com/mrmemes-eth/c308260a72563b8f3c568d131c272033
+        // the signer is anvil address 0: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+        v = 28;
+        r = 0xed6434d453be27288943d6459b0884e9e3dd6331817fe43243f07658508ba31e;
+        s = 0x715e1acc271986d24eb2bbfff1e9eb56f715d623704e077a947c5c6f2c4bb2a1;
+        nonce = 0;
+    }
+
+    function testCanVoteOnProposalWithReasonBySig() public {
+        // self-delegate to get voting power
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
+
+        // roll the block number forward to voting period
+        vm.roll(604_843);
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit VoteCast(signingVoter, proposalId, 1, 100000000, "I like it");
+        coreFacet.castVoteWithReasonBySig(proposalId, 1, "I like it", nonce, v, r, s);
+    }
+
+    function testCanVoteOnProposalBySig() public {
+        // self-delegate to get voting power
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
+
+        // signature updated to reflect empty reason
+        uint8 newV = 27;
+        bytes32 newR = 0x075ee72fb65c543c277eb40fd4030cd9da44801f11219120187930e5bc14f794;
+        bytes32 newS = 0x69a5212721a2768adb92fb10e3f02fca5666888d299e99fb4fd9021b9cb1c72d;
+
+        // roll the block number forward to voting period
+        vm.roll(604_843);
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit VoteCast(signingVoter, proposalId, 1, 100000000, "");
+        coreFacet.castVoteBySig(proposalId, 1, nonce, newV, newR, newS);
+    }
+
+    function testCanUpdateVoteOnProposalWithParamsBySignature() public {
+        // self-delegate to get voting power
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
+
+        // roll the block number forward to voting period
+        vm.roll(604_843);
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit VoteCast(signingVoter, proposalId, 1, 100000000, "I like it");
+        coreFacet.castVoteWithReasonBySig(proposalId, 1, "I like it", nonce, v, r, s);
+
+        // roll forward to the next block
+        vm.roll(604_844);
+        // signature updated to reflect new nonce and changed vote/reason
+        uint8 newV = 27;
+        bytes32 newR = 0x612f7cbfeecc12031b3c7c5c14663559b494e73d4157ff4e7db7112dccea79b4;
+        bytes32 newS = 0x366c7e8a43577c6edda0ce44fe3b3e4a32acca0c6101d47a84ba6cc03c057946;
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit VoteCast(signingVoter, proposalId, 0, 100000000, "I no longer like it");
+        coreFacet.castVoteWithReasonBySig(proposalId, 0, "I no longer like it", 1, newV, newR, newS);
+    }
+
+    function testCannotVoteBySigWithBadR() public {
+        // self-delegate to get voting power
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
+
+        // roll the block number forward to voting period
+        vm.roll(604_843);
+        bytes32 newR = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        vm.expectRevert("ECDSA: invalid signature");
+        coreFacet.castVoteWithReasonBySig(proposalId, 1, "I like it", nonce, v, newR, s);
+    }
+
+    function testCannotVoteBySigWithBadS() public {
+        // self-delegate to get voting power
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
+
+        // roll the block number forward to voting period
+        vm.roll(604_843);
+        bytes32 newS = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        vm.expectRevert("ECDSA: invalid signature");
+        coreFacet.castVoteWithReasonBySig(proposalId, 1, "I like it", nonce, v, r, newS);
+    }
+
+    function testCannotVoteBySigWithBadV() public {
+        // self-delegate to get voting power
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
+
+        // roll the block number forward to voting period
+        vm.roll(604_843);
+        vm.expectRevert("OrigamiGovernor: only members may vote");
+        coreFacet.castVoteWithReasonBySig(proposalId, 1, "I like it", nonce, 27, r, s);
+    }
+
+    function testCannotReplayVote() public {
+        // self-delegate to get voting power
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
+
+        // roll the block number forward to voting period
+        vm.roll(604_843);
+        coreFacet.castVoteWithReasonBySig(proposalId, 1, "I like it", nonce, v, r, s);
+
+        // cannot re-submit votes by signature
+        vm.roll(604_844);
+        vm.expectRevert("OrigamiGovernor: invalid nonce");
+        coreFacet.castVoteWithReasonBySig(proposalId, 1, "I like it", nonce, v, r, s);
     }
 }
