@@ -2,7 +2,7 @@
 pragma solidity 0.8.16;
 
 import "../GovernorQuorum.sol";
-import "../ProposalParams.sol";
+import "../GovernorProposalParams.sol";
 import "src/utils/GovernorStorage.sol";
 
 /**

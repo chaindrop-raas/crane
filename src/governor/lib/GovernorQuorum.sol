@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "./ProposalParams.sol";
+import "./GovernorProposalParams.sol";
 import "src/utils/GovernorStorage.sol";
 
 import "@oz/governance/utils/IVotes.sol";

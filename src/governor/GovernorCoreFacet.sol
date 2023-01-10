@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 import "src/OrigamiTimelock.sol";
 import "src/governor/lib/GovernorCommon.sol";
 import "src/governor/lib/GovernorQuorum.sol";
-import "src/governor/lib/ProposalParams.sol";
+import "src/governor/lib/GovernorProposalParams.sol";
 import "src/interfaces/IGovernor.sol";
 import "src/interfaces/utils/IEIP712.sol";
 import "src/utils/AccessControl.sol";
