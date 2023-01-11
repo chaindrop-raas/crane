@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/OrigamiTimelock.sol";
 import "src/interfaces/IGovernor.sol";
 import "src/interfaces/IGovernorQuorum.sol";
 import "src/interfaces/IGovernorSettings.sol";

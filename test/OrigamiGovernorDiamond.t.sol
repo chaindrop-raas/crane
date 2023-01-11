@@ -4,6 +4,7 @@ pragma solidity 0.8.16;
 import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiGovernorDiamond.sol";
 import "src/OrigamiMembershipToken.sol";
+import "src/OrigamiTimelockController.sol";
 
 import "src/governor/GovernorCoreFacet.sol";
 import "src/governor/GovernorSettingsFacet.sol";
@@ -52,10 +53,7 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
     OrigamiGovernanceToken public govToken;
     ProxyAdmin public govTokenAdmin;
 
-    OrigamiTimelock public timelockImpl;
-    TransparentUpgradeableProxy public timelockProxy;
-    OrigamiTimelock public timelock;
-    ProxyAdmin public timelockAdmin;
+    OrigamiTimelockController public timelock;
 
     OrigamiGovernorDiamond public origamiGovernorDiamond;
 
@@ -103,15 +101,6 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
 
         GovernorCoreFacet governorCoreFacet = new GovernorCoreFacet();
 
-        // deploy timelock via proxy
-        timelockAdmin = new ProxyAdmin();
-        timelockImpl = new OrigamiTimelock();
-        timelockProxy = new TransparentUpgradeableProxy(
-            address(timelockImpl),
-            address(timelockAdmin),
-            ""
-        );
-        timelock = OrigamiTimelock(payable(timelockProxy));
 
         cuts[2] = DiamondDeployHelper.governorCoreFacetCut(governorCoreFacet);
 
@@ -129,8 +118,8 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         address[] memory executors = new address[](1);
         executors[0] = address(origamiGovernorDiamond);
 
-        timelock.initialize(1 days, proposers, executors);
-
+        // deploy the timelock
+        timelock = new OrigamiTimelockController(1 days, proposers, executors);
 
         vm.stopPrank();
 
@@ -520,8 +509,8 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
         // https://gist.github.com/mrmemes-eth/c308260a72563b8f3c568d131c272033
         // the signer is anvil address 0: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
         v = 28;
-        r = 0xed6434d453be27288943d6459b0884e9e3dd6331817fe43243f07658508ba31e;
-        s = 0x715e1acc271986d24eb2bbfff1e9eb56f715d623704e077a947c5c6f2c4bb2a1;
+        r = 0x26d06fbd26d0240e2b553ce8d9ff013cb6bc999704791ad74906cedcea268756;
+        s = 0x5a98f1215e9e048efee1c7599db38025800cc34c9f6965745290ae9492d5df85;
         nonce = 0;
     }
 
@@ -543,9 +532,9 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
         govToken.delegate(signingVoter);
 
         // signature updated to reflect empty reason
-        uint8 newV = 27;
-        bytes32 newR = 0x075ee72fb65c543c277eb40fd4030cd9da44801f11219120187930e5bc14f794;
-        bytes32 newS = 0x69a5212721a2768adb92fb10e3f02fca5666888d299e99fb4fd9021b9cb1c72d;
+        uint8 newV = 28;
+        bytes32 newR = 0xe974bfd878c532034f95511e1e7789b83dd36e45ca34751f38a337d9b47e343c;
+        bytes32 newS = 0x62d6108696f9c8e46cc5740256db20ba1861a78fee666f7c4d9aeaf6dccaa8c4;
 
         // roll the block number forward to voting period
         vm.roll(604_843);
@@ -569,8 +558,8 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
         vm.roll(604_844);
         // signature updated to reflect new nonce and changed vote/reason
         uint8 newV = 27;
-        bytes32 newR = 0x612f7cbfeecc12031b3c7c5c14663559b494e73d4157ff4e7db7112dccea79b4;
-        bytes32 newS = 0x366c7e8a43577c6edda0ce44fe3b3e4a32acca0c6101d47a84ba6cc03c057946;
+        bytes32 newR = 0x91341c7324d79691d87b04f249915ac1ca5d1900554e78d6f8a194fca79ee28d;
+        bytes32 newS = 0x6bad4aefbb9ff0bfedeac64718dc2866b16aaa0cfe1054e3270aefc7be51d5d7;
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit VoteCast(signingVoter, proposalId, AGAINST, 100000000, "I no longer like it");
         coreFacet.castVoteWithReasonBySig(proposalId, AGAINST, "I no longer like it", 1, newV, newR, newS);
@@ -911,10 +900,14 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         timelockControlFacet.queue(targets, values, calldatas, proposalHash);
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
 
-        // grant the admin the CANCELLER_ROLE
-        vm.startPrank(admin);
-        coreFacet.grantRole(coreFacet.CANCELLER_ROLE(), admin);
+        // grant the diamond the CANCELLER_ROLE
+        vm.startPrank(deployer);
+        timelock.grantRole(timelock.CANCELLER_ROLE(), address(origamiGovernorDiamond));
+        vm.stopPrank();
 
+        vm.startPrank(admin);
+        // grant the admin the CANCELLER_ROLE
+        coreFacet.grantRole(coreFacet.CANCELLER_ROLE(), admin);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit ProposalCanceled(proposalId);
         timelockControlFacet.cancel(targets, values, calldatas, proposalHash);

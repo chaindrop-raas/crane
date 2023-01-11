@@ -6,6 +6,7 @@ import "src/interfaces/IGovernor.sol";
 import "src/interfaces/IGovernorTimelockControl.sol";
 import "src/interfaces/ITimelockController.sol";
 import "src/utils/GovernorStorage.sol";
+import "src/utils/AccessControl.sol";
 
 /**
  * @title Origami Governor Timelock Control Facet
@@ -14,7 +15,9 @@ import "src/utils/GovernorStorage.sol";
  * @dev This facet is not intended to be used directly, but rather through the OrigamiGovernorDiamond interface.
  * @custom:security-contact contract-security@joinorigami.com
  */
-contract GovernorTimelockControlFacet is IGovernorTimelockControl {
+contract GovernorTimelockControlFacet is IGovernorTimelockControl, AccessControl {
+    bytes32 public constant CANCELLER_ROLE = keccak256("CANCELLER_ROLE");
+
     /**
      * @notice returns the timelock controller
      * @return the timelock controller
@@ -101,7 +104,7 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl {
         uint256[] calldata values,
         bytes[] calldata calldatas,
         bytes32 descriptionHash
-    ) external returns (uint256) {
+    ) external onlyRole(CANCELLER_ROLE) returns (uint256) {
         uint256 proposalId = GovernorCommon.hashProposal(targets, values, calldatas, descriptionHash);
         IGovernor.ProposalState state = GovernorCommon.state(proposalId);
 
