@@ -33,6 +33,9 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     bytes32 public constant EIP712_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
+    /**
+     * @notice Name of the governor instance (used in building the ERC712 domain separator).
+     */
     function name() public view returns (string memory) {
         return GovernorStorage.configStorage().name;
     }
@@ -113,6 +116,47 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
+     * @dev internal function to create a proposal.
+     */
+    function createProposal(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description,
+        bytes memory params
+    ) internal returns (uint256 proposalId) {
+        GovernorStorage.GovernorConfig storage cs = GovernorStorage.configStorage();
+
+        proposalId = GovernorCommon.hashProposal(targets, values, calldatas, keccak256(bytes(description)));
+
+        // start populating the new ProposalCore struct
+        GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
+        require(ps.snapshot == 0, "Governor: proposal already exists");
+
+        ps.params = params;
+        ps.quorumNumerator = cs.quorumNumerator;
+        // TODO: circle back and factor away from block.number and to
+        // block.timestamp so we can deploy to chains like Optimism.
+        // --
+        // An epoch exceeding max UINT64 is 584,942,417,355 years from now. I
+        // feel pretty safe casting this.
+        ps.snapshot = uint64(block.number) + cs.votingDelay;
+        ps.deadline = ps.snapshot + cs.votingPeriod;
+
+        emit ProposalCreated(
+            proposalId,
+            msg.sender,
+            targets,
+            values,
+            new string[](targets.length),
+            calldatas,
+            ps.snapshot,
+            ps.deadline,
+            description
+            );
+    }
+
+    /**
      * @notice Propose a new action to be performed by the governor, specifying the proposal's counting strategy.
      * @dev See {GovernorUpgradeable-_propose}.
      * @param targets The ordered list of target addresses for calls to be made on.
@@ -143,33 +187,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         require(targets.length == calldatas.length, "Governor: invalid proposal length");
         require(targets.length > 0, "Governor: empty proposal");
 
-        proposalId = GovernorCommon.hashProposal(targets, values, calldatas, keccak256(bytes(description)));
-
-        // start populating the new ProposalCore struct
-        GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
-        require(ps.snapshot == 0, "Governor: proposal already exists");
-
-        ps.params = params;
-        ps.quorumNumerator = GovernorStorage.configStorage().quorumNumerator;
-        // TODO: circle back and factor away from block.number and to
-        // block.timestamp so we can deploy to chains like Optimism.
-        // --
-        // An epoch exceeding max UINT64 is 584,942,417,355 years from now. I
-        // feel pretty safe casting this.
-        ps.snapshot = uint64(block.number) + GovernorStorage.configStorage().votingDelay;
-        ps.deadline = ps.snapshot + GovernorStorage.configStorage().votingPeriod;
-
-        emit ProposalCreated(
-            proposalId,
-            msg.sender,
-            targets,
-            values,
-            new string[](targets.length),
-            calldatas,
-            ps.snapshot,
-            ps.deadline,
-            description
-            );
+        return createProposal(targets, values, calldatas, description, params);
     }
 
     /**
@@ -347,9 +365,9 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      * @dev restricts calling functions with this modifier to those who hold at least the threshold amount of the threshold token.
      */
     modifier onlyThresholdTokenHolder(address account) {
-        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
+        GovernorStorage.GovernorConfig storage cs = GovernorStorage.configStorage();
         require(
-            getVotes(account, block.number - 1, config.proposalThresholdToken) >= config.proposalThreshold,
+            getVotes(account, block.number - 1, cs.proposalThresholdToken) >= cs.proposalThreshold,
             "Governor: proposer votes below proposal threshold"
         );
         _;

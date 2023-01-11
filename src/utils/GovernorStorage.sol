@@ -7,6 +7,55 @@ library GovernorStorage {
     bytes32 public constant CONFIG_STORAGE_POSITION = keccak256("com.origami.governor.configStorage");
     bytes32 public constant PROPOSAL_STORAGE_POSITION = keccak256("com.origami.governor.proposalStorage");
 
+    /**
+     * @dev Emitted when the voting delay is set.
+     * @param oldVotingDelay The previous voting delay.
+     * @param newVotingDelay The new voting delay.
+     */
+    event VotingDelaySet(uint24 oldVotingDelay, uint24 newVotingDelay);
+
+    /**
+     * @dev Emitted when the voting period is set.
+     * @param oldVotingPeriod The previous voting period.
+     * @param newVotingPeriod The new voting period.
+     */
+    event VotingPeriodSet(uint24 oldVotingPeriod, uint24 newVotingPeriod);
+
+    /**
+     * @dev Emitted when the proposal threshold is set.
+     * @param oldProposalThreshold The previous proposal threshold.
+     * @param newProposalThreshold The new proposal threshold.
+     */
+    event ProposalThresholdSet(uint64 oldProposalThreshold, uint64 newProposalThreshold);
+
+    /**
+     * @dev Emitted when the proposal threshold token is set.
+     * @param oldProposalThresholdToken The previous proposal threshold.
+     * @param newProposalThresholdToken The new proposal threshold.
+     */
+    event ProposalThresholdTokenSet(address oldProposalThresholdToken, address newProposalThresholdToken);
+
+    /**
+     * @dev Emitted when the quorum numerator is set.
+     * @param oldQuorumNumerator The previous quorum numerator.
+     * @param newQuorumNumerator The new quorum numerator.
+     */
+    event QuorumNumeratorSet(uint16 oldQuorumNumerator, uint16 newQuorumNumerator);
+
+    /**
+     * @dev Emitted when the membership token is set.
+     * @param oldMembershipToken The previous membership token.
+     * @param newMembershipToken The new membership token.
+     */
+    event MembershipTokenSet(address oldMembershipToken, address newMembershipToken);
+
+    /**
+     * @dev Emitted when the governance token is set.
+     * @param oldGovernanceToken The previous governance token.
+     * @param newGovernanceToken The new governance token.
+     */
+    event GovernanceTokenSet(address oldGovernanceToken, address newGovernanceToken);
+
     struct ProposalCore {
         uint16 quorumNumerator;
         uint64 snapshot;
@@ -21,6 +70,7 @@ library GovernorStorage {
         address admin;
         address payable timelock;
         address membershipToken;
+        address governanceToken;
         address proposalThresholdToken;
         // TODO: consider these uint sizes carefully
         uint24 votingDelay;
@@ -55,6 +105,90 @@ library GovernorStorage {
         assembly {
             gs.slot := position
         }
+    }
+
+    /**
+     * @notice sets the Governance token.
+     * @param newGovernanceToken the new governance token address.
+     * emits GovernanceTokenSet event.
+     */
+    function setGovernanceToken(address newGovernanceToken) internal {
+        address oldGovernanceToken = configStorage().governanceToken;
+        configStorage().governanceToken = newGovernanceToken;
+
+        emit GovernanceTokenSet(oldGovernanceToken, newGovernanceToken);
+    }
+
+    /**
+     * @notice sets the Membership token.
+     * @param newMembershipToken the new membership token address.
+     * emits MembershipTokenSet event.
+     */
+    function setMembershipToken(address newMembershipToken) internal {
+        address oldMembershipToken = configStorage().membershipToken;
+        configStorage().membershipToken = newMembershipToken;
+
+        emit MembershipTokenSet(oldMembershipToken, newMembershipToken);
+    }
+
+    /**
+     * @notice Sets the proposal threshold.
+     * @param newProposalThreshold the new proposal threshold.
+     * emits ProposalThresholdSet event.
+     */
+    function setProposalThreshold(uint64 newProposalThreshold) internal {
+        uint64 oldProposalThreshold = configStorage().proposalThreshold;
+        configStorage().proposalThreshold = newProposalThreshold;
+
+        emit ProposalThresholdSet(oldProposalThreshold, newProposalThreshold);
+    }
+
+    /**
+     * @notice Sets the proposal threshold token.
+     * @param newProposalThresholdToken the new proposal threshold token.
+     * emits ProposalThresholdTokenSet event.
+     */
+    function setProposalThresholdToken(address newProposalThresholdToken) internal {
+        address oldProposalThresholdToken = configStorage().proposalThresholdToken;
+        configStorage().proposalThresholdToken = newProposalThresholdToken;
+
+        emit ProposalThresholdTokenSet(oldProposalThresholdToken, newProposalThresholdToken);
+    }
+
+    /**
+     * @notice Sets the quorum numerator.
+     * @param newQuorumNumerator the new quorum numerator.
+     * emits QuorumNumeratorSet event.
+     */
+    function setQuorumNumerator(uint16 newQuorumNumerator) internal {
+        uint16 oldQuorumNumerator = configStorage().quorumNumerator;
+        configStorage().quorumNumerator = newQuorumNumerator;
+
+        emit QuorumNumeratorSet(oldQuorumNumerator, newQuorumNumerator);
+    }
+
+    /**
+     * @notice Sets the voting delay.
+     * @param newVotingDelay the new voting delay.
+     * emits VotingDelaySet event.
+     */
+    function setVotingDelay(uint24 newVotingDelay) internal {
+        uint24 oldVotingDelay = configStorage().votingDelay;
+        configStorage().votingDelay = newVotingDelay;
+
+        emit VotingDelaySet(oldVotingDelay, newVotingDelay);
+    }
+
+    /**
+     * @notice Sets the voting period.
+     * @param newVotingPeriod the new voting period.
+     * emits VotingPeriodSet event.
+     */
+    function setVotingPeriod(uint24 newVotingPeriod) internal {
+        uint24 oldVotingPeriod = configStorage().votingPeriod;
+        configStorage().votingPeriod = newVotingPeriod;
+
+        emit VotingPeriodSet(oldVotingPeriod, newVotingPeriod);
     }
 
     function proposalStorage() internal pure returns (ProposalStorage storage ps) {

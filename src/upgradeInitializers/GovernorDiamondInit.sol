@@ -53,6 +53,9 @@ contract GovernorDiamondInit {
         ds.supportedInterfaces[type(IGovernorSettings).interfaceId] = true;
         ds.supportedInterfaces[type(IAccessControl).interfaceId] = true;
 
+        // Initialize the governor configuration. Any subsequent changes to
+        // these values should go through their interfaces in the
+        // GovernorStorage libary so the proper events are emitted.
         GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
 
         config.name = governorName;
@@ -65,6 +68,8 @@ contract GovernorDiamondInit {
         config.proposalThreshold = threshold;
         config.proposalThresholdToken = membershipToken;
 
+        // in order to facilitate role administration, we add the admin to the admin role
+        // it is advised that the admin renounces this role after the diamond is deployed
         AccessControlStorage.RoleStorage storage rs = AccessControlStorage.roleStorage();
         rs.roles[0x0].members[config.admin] = true;
     }
