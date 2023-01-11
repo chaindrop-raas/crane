@@ -127,14 +127,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         bytes[] memory calldatas,
         string memory description,
         bytes memory params
-    ) public returns (uint256 proposalId) {
-        address proposalThresholdToken = GovernorStorage.configStorage().proposalThresholdToken;
-        uint256 proposerVotes = getVotes(msg.sender, block.number - 1, proposalThresholdToken);
-        require(
-            proposerVotes >= GovernorStorage.configStorage().proposalThreshold,
-            "Governor: proposer votes below proposal threshold"
-        );
-
+    ) public onlyThresholdTokenHolder(msg.sender) returns (uint256 proposalId) {
         address proposalToken;
         if (keccak256(params) == keccak256("")) {
             proposalToken = GovernorStorage.configStorage().membershipToken;
@@ -346,6 +339,18 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         require(
             BalanceToken(GovernorStorage.configStorage().membershipToken).balanceOf(account) > 0,
             "OrigamiGovernor: only members may vote"
+        );
+        _;
+    }
+
+    /**
+     * @dev restricts calling functions with this modifier to those who hold at least the threshold amount of the threshold token.
+     */
+    modifier onlyThresholdTokenHolder(address account) {
+        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
+        require(
+            getVotes(account, block.number - 1, config.proposalThresholdToken) >= config.proposalThreshold,
+            "Governor: proposer votes below proposal threshold"
         );
         _;
     }
