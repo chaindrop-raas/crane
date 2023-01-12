@@ -94,17 +94,21 @@ library DiamondDeployHelper {
         pure
         returns (IDiamondCut.FacetCut memory governorSettingsCut)
     {
-        bytes4[] memory selectors = new bytes4[](10);
-        selectors[0] = facet.proposalThreshold.selector;
-        selectors[1] = facet.proposalThresholdToken.selector;
-        selectors[2] = facet.quorumNumerator.selector;
-        selectors[3] = facet.setProposalThreshold.selector;
-        selectors[4] = facet.setProposalThresholdToken.selector;
-        selectors[5] = facet.setQuorumNumerator.selector;
-        selectors[6] = facet.setVotingDelay.selector;
-        selectors[7] = facet.setVotingPeriod.selector;
-        selectors[8] = facet.votingDelay.selector;
-        selectors[9] = facet.votingPeriod.selector;
+        bytes4[] memory selectors = new bytes4[](14);
+        selectors[0] = facet.governanceToken.selector;
+        selectors[1] = facet.membershipToken.selector;
+        selectors[2] = facet.proposalThreshold.selector;
+        selectors[3] = facet.proposalThresholdToken.selector;
+        selectors[4] = facet.quorumNumerator.selector;
+        selectors[5] = facet.setGovernanceToken.selector;
+        selectors[6] = facet.setMembershipToken.selector;
+        selectors[7] = facet.setProposalThreshold.selector;
+        selectors[8] = facet.setProposalThresholdToken.selector;
+        selectors[9] = facet.setQuorumNumerator.selector;
+        selectors[10] = facet.setVotingDelay.selector;
+        selectors[11] = facet.setVotingPeriod.selector;
+        selectors[12] = facet.votingDelay.selector;
+        selectors[13] = facet.votingPeriod.selector;
 
         governorSettingsCut = IDiamondCut.FacetCut({
             facetAddress: address(facet),
