@@ -11,19 +11,19 @@ import "@oz/governance/utils/IVotes.sol";
  * @custom:security-contact contract-security@joinorigami.com
  */
 library GovernorQuorum {
-    event QuorumNumeratorUpdated(uint16 quorumNumerator);
+    event QuorumNumeratorUpdated(uint128 quorumNumerator);
 
     /**
      * @dev Returns the current quorum numerator. See {quorumDenominator}.
      */
-    function quorumNumerator() internal view returns (uint16) {
+    function quorumNumerator() internal view returns (uint128) {
         return GovernorStorage.configStorage().quorumNumerator;
     }
 
     /**
      * @dev Returns the quorum numerator at a specific block number. See {quorumDenominator}.
      */
-    function quorumNumerator(uint256 proposalId) internal view returns (uint16) {
+    function quorumNumerator(uint256 proposalId) internal view returns (uint128) {
         return GovernorStorage.proposal(proposalId).quorumNumerator;
     }
 

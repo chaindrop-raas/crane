@@ -26,21 +26,21 @@ library GovernorStorage {
      * @param oldVotingDelay The previous voting delay.
      * @param newVotingDelay The new voting delay.
      */
-    event VotingDelaySet(uint24 oldVotingDelay, uint24 newVotingDelay);
+    event VotingDelaySet(uint64 oldVotingDelay, uint64 newVotingDelay);
 
     /**
      * @dev Emitted when the voting period is set.
      * @param oldVotingPeriod The previous voting period.
      * @param newVotingPeriod The new voting period.
      */
-    event VotingPeriodSet(uint24 oldVotingPeriod, uint24 newVotingPeriod);
+    event VotingPeriodSet(uint64 oldVotingPeriod, uint64 newVotingPeriod);
 
     /**
      * @dev Emitted when the proposal threshold is set.
      * @param oldProposalThreshold The previous proposal threshold.
      * @param newProposalThreshold The new proposal threshold.
      */
-    event ProposalThresholdSet(uint64 oldProposalThreshold, uint64 newProposalThreshold);
+    event ProposalThresholdSet(uint256 oldProposalThreshold, uint256 newProposalThreshold);
 
     /**
      * @dev Emitted when the proposal threshold token is set.
@@ -54,7 +54,7 @@ library GovernorStorage {
      * @param oldQuorumNumerator The previous quorum numerator.
      * @param newQuorumNumerator The new quorum numerator.
      */
-    event QuorumNumeratorSet(uint16 oldQuorumNumerator, uint16 newQuorumNumerator);
+    event QuorumNumeratorSet(uint128 oldQuorumNumerator, uint128 newQuorumNumerator);
 
     /**
      * @dev Emitted when the membership token is set.
@@ -73,7 +73,7 @@ library GovernorStorage {
     struct ProposalCore {
         address proposalToken;
         bytes4 countingStrategy;
-        uint16 quorumNumerator;
+        uint128 quorumNumerator;
         uint64 snapshot;
         uint64 deadline;
         bytes params;
@@ -90,12 +90,10 @@ library GovernorStorage {
         address membershipToken;
         address governanceToken;
         address proposalThresholdToken;
-        // TODO: consider these uint sizes carefully
-        uint24 votingDelay;
-        uint24 votingPeriod;
-        uint16 quorumNumerator;
-        // specifically, this seems like it might be too small to denote quantity in wei
-        uint64 proposalThreshold;
+        uint64 votingDelay; // 2^64 seconds is 585 years
+        uint64 votingPeriod;
+        uint128 quorumNumerator;
+        uint256 proposalThreshold;
     }
 
     struct TimelockQueue {
@@ -194,7 +192,7 @@ library GovernorStorage {
      * emits ProposalThresholdSet event.
      */
     function setProposalThreshold(uint64 newProposalThreshold) internal {
-        uint64 oldProposalThreshold = configStorage().proposalThreshold;
+        uint256 oldProposalThreshold = configStorage().proposalThreshold;
         configStorage().proposalThreshold = newProposalThreshold;
 
         emit ProposalThresholdSet(oldProposalThreshold, newProposalThreshold);
@@ -217,8 +215,8 @@ library GovernorStorage {
      * @param newQuorumNumerator the new quorum numerator.
      * emits QuorumNumeratorSet event.
      */
-    function setQuorumNumerator(uint16 newQuorumNumerator) internal {
-        uint16 oldQuorumNumerator = configStorage().quorumNumerator;
+    function setQuorumNumerator(uint128 newQuorumNumerator) internal {
+        uint128 oldQuorumNumerator = configStorage().quorumNumerator;
         configStorage().quorumNumerator = newQuorumNumerator;
 
         emit QuorumNumeratorSet(oldQuorumNumerator, newQuorumNumerator);
@@ -229,8 +227,8 @@ library GovernorStorage {
      * @param newVotingDelay the new voting delay.
      * emits VotingDelaySet event.
      */
-    function setVotingDelay(uint24 newVotingDelay) internal {
-        uint24 oldVotingDelay = configStorage().votingDelay;
+    function setVotingDelay(uint64 newVotingDelay) internal {
+        uint64 oldVotingDelay = configStorage().votingDelay;
         configStorage().votingDelay = newVotingDelay;
 
         emit VotingDelaySet(oldVotingDelay, newVotingDelay);
@@ -241,8 +239,8 @@ library GovernorStorage {
      * @param newVotingPeriod the new voting period.
      * emits VotingPeriodSet event.
      */
-    function setVotingPeriod(uint24 newVotingPeriod) internal {
-        uint24 oldVotingPeriod = configStorage().votingPeriod;
+    function setVotingPeriod(uint64 newVotingPeriod) internal {
+        uint64 oldVotingPeriod = configStorage().votingPeriod;
         configStorage().votingPeriod = newVotingPeriod;
 
         emit VotingPeriodSet(oldVotingPeriod, newVotingPeriod);

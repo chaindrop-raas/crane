@@ -35,10 +35,10 @@ contract GovernorDiamondInit {
         address admin,
         address payable timelock,
         address membershipToken,
-        uint24 delay,
-        uint24 period,
-        uint8 quorumPercentage,
-        uint16 threshold
+        uint64 delay,
+        uint64 period,
+        uint128 quorumPercentage,
+        uint256 threshold
     ) external {
         // adding ERC165 data
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();

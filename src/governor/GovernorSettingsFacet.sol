@@ -49,7 +49,7 @@ contract GovernorSettingsFacet is IGovernorSettings {
      * @notice public interface to retrieve the configured proposal threshold.
      * @return the threshold for the proposal. Should always be 1.
      */
-    function proposalThreshold() public view returns (uint64) {
+    function proposalThreshold() public view returns (uint256) {
         return config().proposalThreshold;
     }
 
@@ -65,7 +65,7 @@ contract GovernorSettingsFacet is IGovernorSettings {
      * @notice public interface to retrieve the configured quorum numerator.
      * @return the quorum numerator for the proposal.
      */
-    function quorumNumerator() public view returns (uint16) {
+    function quorumNumerator() public view returns (uint128) {
         return config().quorumNumerator;
     }
 
@@ -73,7 +73,7 @@ contract GovernorSettingsFacet is IGovernorSettings {
      * @notice Enumerates the delay in blocks between proposal creation and voting start.
      * @return delay the delay between proposal creation and voting start.
      */
-    function votingDelay() public view returns (uint24) {
+    function votingDelay() public view returns (uint64) {
         return config().votingDelay;
     }
 
@@ -81,7 +81,7 @@ contract GovernorSettingsFacet is IGovernorSettings {
      * @notice Enumerates the duration in blocks of the voting period.
      * @return period the duration of the voting period.
      */
-    function votingPeriod() public view returns (uint24) {
+    function votingPeriod() public view returns (uint64) {
         return config().votingPeriod;
     }
 
@@ -126,7 +126,7 @@ contract GovernorSettingsFacet is IGovernorSettings {
      * @param newVotingDelay the new voting delay.
      * emits VotingDelaySet event.
      */
-    function setVotingDelay(uint24 newVotingDelay) public onlyGovernance {
+    function setVotingDelay(uint64 newVotingDelay) public onlyGovernance {
         GovernorStorage.setVotingDelay(newVotingDelay);
     }
 
@@ -153,7 +153,7 @@ contract GovernorSettingsFacet is IGovernorSettings {
      * @param newQuorumNumerator the new quorum numerator.
      * emits QuorumNumeratorSet event.
      */
-    function setQuorumNumerator(uint16 newQuorumNumerator) public onlyGovernance {
+    function setQuorumNumerator(uint128 newQuorumNumerator) public onlyGovernance {
         GovernorStorage.setQuorumNumerator(newQuorumNumerator);
     }
 
@@ -162,7 +162,7 @@ contract GovernorSettingsFacet is IGovernorSettings {
      * @param newVotingPeriod the new voting period.
      * emits VotingPeriodSet event.
      */
-    function setVotingPeriod(uint24 newVotingPeriod) public onlyGovernance {
+    function setVotingPeriod(uint64 newVotingPeriod) public onlyGovernance {
         GovernorStorage.setVotingPeriod(newVotingPeriod);
     }
 

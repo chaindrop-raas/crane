@@ -26,7 +26,7 @@ interface IGovernorSettings {
     /**
      * @dev Returns the number of votes required in order for a voter to become a proposer.
      */
-    function proposalThreshold() external view returns (uint64);
+    function proposalThreshold() external view returns (uint256);
 
     /**
      * @dev Returns the token to use for proposal threshold.
@@ -36,19 +36,19 @@ interface IGovernorSettings {
     /**
      * @dev Returns the quorum numerator for the proposal.
      */
-    function quorumNumerator() external view returns (uint16);
+    function quorumNumerator() external view returns (uint128);
 
     /**
      * @dev Returns the delay before voting on a proposal may take place, once proposed.
      */
     // TODO: change to seconds instead of blocks
-    function votingDelay() external view returns (uint24);
+    function votingDelay() external view returns (uint64);
 
     /**
      * @dev Returns the duration of voting on a proposal, in blocks.
      */
     //TODO: change to seconds instead of blocks
-    function votingPeriod() external view returns (uint24);
+    function votingPeriod() external view returns (uint64);
 
     /**
      * @dev sets the default counting strategy.
@@ -96,20 +96,20 @@ interface IGovernorSettings {
      * @param newQuorumNumerator The new quorum numerator.
      * Emits a {QuorumNumeratorSet} event.
      */
-     function setQuorumNumerator(uint16 newQuorumNumerator) external;
+     function setQuorumNumerator(uint128 newQuorumNumerator) external;
 
     /**
      * @dev Sets the voting delay.
      * @param newVotingDelay The new voting delay.
      * Emits a {VotingDelaySet} event.
      */
-    function setVotingDelay(uint24 newVotingDelay) external;
+    function setVotingDelay(uint64 newVotingDelay) external;
 
     /**
      * @dev Sets the voting period.
      * @param newVotingPeriod The new voting period.
      * Emits a {VotingPeriodSet} event.
      */
-    function setVotingPeriod(uint24 newVotingPeriod) external;
+    function setVotingPeriod(uint64 newVotingPeriod) external;
 
 }
