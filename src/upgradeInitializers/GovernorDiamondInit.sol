@@ -62,6 +62,7 @@ contract GovernorDiamondInit {
         config.admin = admin;
         config.timelock = timelock;
         config.membershipToken = membershipToken;
+        config.defaultProposalToken = membershipToken;
         config.votingDelay = delay;
         config.votingPeriod = period;
         config.quorumNumerator = quorumPercentage;

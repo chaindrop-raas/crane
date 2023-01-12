@@ -12,8 +12,9 @@ import "src/utils/GovernorStorage.sol";
  * @custom:security-contact contract-security@joinorigami.com
  */
 contract GovernorSettingsFacet is IGovernorSettings {
-    function config() internal pure returns (GovernorStorage.GovernorConfig storage) {
-        return GovernorStorage.configStorage();
+
+    function defaultProposalToken() public view override returns (address) {
+        return config().defaultProposalToken;
     }
 
     /**
@@ -70,6 +71,10 @@ contract GovernorSettingsFacet is IGovernorSettings {
      */
     function votingPeriod() public view returns (uint24) {
         return config().votingPeriod;
+    }
+
+    function setDefaultProposalToken(address newDefaultProposalToken) public onlyGovernance {
+        GovernorStorage.setDefaultProposalToken(newDefaultProposalToken);
     }
 
     /**
@@ -135,6 +140,16 @@ contract GovernorSettingsFacet is IGovernorSettings {
         GovernorStorage.setVotingPeriod(newVotingPeriod);
     }
 
+    /**
+     * @dev returns the GovernorConfig storage pointer.
+     */
+    function config() internal pure returns (GovernorStorage.GovernorConfig storage) {
+        return GovernorStorage.configStorage();
+    }
+
+    /**
+     * @dev restricts interaction to the timelock contract.
+     */
     modifier onlyGovernance() {
         require(msg.sender == GovernorStorage.configStorage().timelock, "Governor: onlyGovernance");
         _;

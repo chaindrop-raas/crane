@@ -4,6 +4,11 @@ pragma solidity 0.8.16;
 interface IGovernorSettings {
 
     /**
+     * @dev Returns the default proposal token address.
+     */
+    function defaultProposalToken() external view returns (address);
+
+    /**
      * @dev Returns the governance token address.
      */
     function governanceToken() external view returns (address);
@@ -39,6 +44,13 @@ interface IGovernorSettings {
      */
     //TODO: change to seconds instead of blocks
     function votingPeriod() external view returns (uint24);
+
+    /**
+     * @dev Sets the default proposal token.
+     * @param newDefaultProposalToken The new default proposal token.
+     * Emits a {DefaultProposalTokenSet} event.
+     */
+    function setDefaultProposalToken(address newDefaultProposalToken) external;
 
     /**
      * @dev Sets the governance token.

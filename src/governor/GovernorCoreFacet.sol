@@ -88,7 +88,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     function getVotes(address account, uint256 blockNumber, bytes storage params) internal view returns (uint256) {
         address tokenForProposal;
         if (keccak256(params) == keccak256("")) {
-            tokenForProposal = GovernorStorage.configStorage().membershipToken;
+            tokenForProposal = GovernorStorage.configStorage().defaultProposalToken;
         } else {
             (tokenForProposal,) = GovernorProposalParams.decodeProposalParams(params);
         }
@@ -174,7 +174,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     ) public onlyThresholdTokenHolder(msg.sender) returns (uint256 proposalId) {
         address proposalToken;
         if (keccak256(params) == keccak256("")) {
-            proposalToken = GovernorStorage.configStorage().membershipToken;
+            proposalToken = GovernorStorage.configStorage().defaultProposalToken;
         } else {
             (proposalToken,) = abi.decode(params, (address, bytes4));
         }
@@ -183,11 +183,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             "Governor: proposal token must support IVotes"
         );
 
-        require(
-            proposalToken == GovernorStorage.configStorage().membershipToken
-                || proposalToken == GovernorStorage.configStorage().governanceToken,
-            "Governor: proposal token not allowed"
-        );
+        require(GovernorStorage.isConfiguredToken(proposalToken), "Governor: proposal token not allowed");
 
         require(targets.length == values.length, "Governor: invalid proposal length");
         require(targets.length == calldatas.length, "Governor: invalid proposal length");
@@ -356,8 +352,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
-     * @notice restricts calling functions with this modifier to holders of the default token.
-     * module:voting
+     * @dev restricts calling functions with this modifier to holders of the membership token.
      */
     modifier onlyMember(address account) {
         require(

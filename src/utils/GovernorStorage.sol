@@ -8,6 +8,13 @@ library GovernorStorage {
     bytes32 public constant PROPOSAL_STORAGE_POSITION = keccak256("com.origami.governor.proposalStorage");
 
     /**
+     * Emitted when the default proposal token is set.
+     * @param oldDefaultProposalToken The previous default proposal token.
+     * @param newDefaultProposalToken The new default proposal token.
+     */
+    event DefaultProposalTokenSet(address oldDefaultProposalToken, address newDefaultProposalToken);
+
+    /**
      * @dev Emitted when the voting delay is set.
      * @param oldVotingDelay The previous voting delay.
      * @param newVotingDelay The new voting delay.
@@ -69,6 +76,7 @@ library GovernorStorage {
         string name;
         address admin;
         address payable timelock;
+        address defaultProposalToken;
         address membershipToken;
         address governanceToken;
         address proposalThresholdToken;
@@ -105,6 +113,18 @@ library GovernorStorage {
         assembly {
             gs.slot := position
         }
+    }
+
+    function isConfiguredToken(address token) internal view returns (bool) {
+        GovernorConfig storage cs = configStorage();
+        return token == cs.membershipToken || token == cs.governanceToken;
+    }
+
+    function setDefaultProposalToken(address newDefaultProposalToken) internal {
+        address oldDefaultProposalToken = configStorage().defaultProposalToken;
+        configStorage().defaultProposalToken = newDefaultProposalToken;
+
+        emit DefaultProposalTokenSet(oldDefaultProposalToken, newDefaultProposalToken);
     }
 
     /**
