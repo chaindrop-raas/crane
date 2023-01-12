@@ -2,25 +2,25 @@
 pragma solidity 0.8.16;
 
 interface IGovernorQuorum {
-    event QuorumNumeratorUpdated(uint16 quorumNumerator);
+    event QuorumNumeratorUpdated(uint128 quorumNumerator);
 
     /**
      * @dev Returns the current quorum numerator. See {quorumDenominator}.
      */
-    function quorumNumerator() external view returns (uint16);
+    function quorumNumerator() external view returns (uint128);
 
     /**
-     * @dev Returns the quorum numerator at a specific block number. See {quorumDenominator}.
+     * @dev Returns the quorum numerator for a specific proposalId.
      */
-    function quorumNumerator(uint256 blockNumber) external view returns (uint16);
+    function quorumNumerator(uint256 proposalId) external view returns (uint128);
 
     /**
      * @dev Returns the quorum denominator. Defaults to 100, but may be overridden.
      */
-    function quorumDenominator() external view returns (uint16);
+    function quorumDenominator() external view returns (uint128);
 
     /**
-     * @dev Returns the quorum for a specific proposal's counting token at the given block number, in terms of number of votes: `supply * numerator / denominator`.
+     * @dev Returns the quorum for a specific proposal's counting token, in terms of number of votes: `supply * numerator / denominator`.
      */
     function quorum(uint256 proposalId) external view returns (uint256);
 
@@ -34,5 +34,5 @@ interface IGovernorQuorum {
      * - Must be called through a governance proposal.
      * - New numerator must be smaller or equal to the denominator.
      */
-    function updateQuorumNumerator(uint16 newQuorumNumerator) external;
+    function updateQuorumNumerator(uint128 newQuorumNumerator) external;
 }

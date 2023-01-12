@@ -21,7 +21,7 @@ library GovernorQuorum {
     }
 
     /**
-     * @dev Returns the quorum numerator at a specific block number. See {quorumDenominator}.
+     * @dev Returns the quorum numerator for a specific proposalId. This value is set from global config at the time of proposal creation.
      */
     function quorumNumerator(uint256 proposalId) internal view returns (uint128) {
         return GovernorStorage.proposal(proposalId).quorumNumerator;
@@ -30,12 +30,12 @@ library GovernorQuorum {
     /**
      * @dev Returns the quorum denominator. Defaults to 100, but may be overridden.
      */
-    function quorumDenominator() internal pure returns (uint16) {
+    function quorumDenominator() internal pure returns (uint128) {
         return 100;
     }
 
     /**
-     * @dev Returns the quorum for a specific proposal's counting token at the given block number, in terms of number of votes: `supply * numerator / denominator`.
+     * @dev Returns the quorum for a specific proposal's counting token as of its time of creation, in terms of number of votes: `supply * numerator / denominator`.
      */
     function quorum(uint256 proposalId) internal view returns (uint256) {
         address proposalToken = GovernorStorage.proposal(proposalId).proposalToken;
@@ -54,7 +54,7 @@ library GovernorQuorum {
      * - Must be called through a governance proposal.
      * - New numerator must be smaller or equal to the denominator.
      */
-    function updateQuorumNumerator(uint16 newQuorumNumerator) internal {
+    function updateQuorumNumerator(uint128 newQuorumNumerator) internal {
         require(
             newQuorumNumerator <= quorumDenominator(), "GovernorQuorumFacet: new numerator must be LTE the denominator"
         );
