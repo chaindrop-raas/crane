@@ -277,11 +277,7 @@ library GovernorStorage {
         ps.proposalToken = proposalToken;
         ps.countingStrategy = countingStrategy;
         ps.quorumNumerator = cs.quorumNumerator;
-        // TODO: circle back and factor away from block.number and to
-        // block.timestamp so we can deploy to chains like Optimism.
-        // --
-        // An epoch exceeding max UINT64 is 584,942,417,355 years from now. I
-        // feel pretty safe casting this.
+        // An epoch exceeding max UINT64 is 584,942,417,355 years from now.
         ps.snapshot = uint64(block.number) + cs.votingDelay;
         ps.deadline = ps.snapshot + cs.votingPeriod;
 

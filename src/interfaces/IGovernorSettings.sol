@@ -41,13 +41,11 @@ interface IGovernorSettings {
     /**
      * @dev Returns the delay before voting on a proposal may take place, once proposed.
      */
-    // TODO: change to seconds instead of blocks
     function votingDelay() external view returns (uint64);
 
     /**
      * @dev Returns the duration of voting on a proposal, in blocks.
      */
-    //TODO: change to seconds instead of blocks
     function votingPeriod() external view returns (uint64);
 
     /**
