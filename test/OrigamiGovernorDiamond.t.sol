@@ -338,6 +338,33 @@ contract OrigamiGovernorProposalTest is GovernorDiamondHelper {
             abi.encode(address(timelock), bytes4(keccak256("simpleWeight(uint256)")))
         );
     }
+
+    function testProposalWithParamsTokenMustBeAConfiguredToken() public {
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        // deploy another gov token via proxy
+        ProxyAdmin diffGovTokenAdmin = new ProxyAdmin();
+        OrigamiGovernanceToken diffGovTokenImpl = new OrigamiGovernanceToken();
+        TransparentUpgradeableProxy diffGovTokenProxy = new TransparentUpgradeableProxy(
+            address(diffGovTokenImpl),
+            address(diffGovTokenAdmin),
+            ""
+        );
+        OrigamiGovernanceToken diffGovToken = OrigamiGovernanceToken(address(diffGovTokenProxy));
+        diffGovToken.initialize(owner, "Deciduous Tree Fellowship", "DTF", 10000000000000000000000000000);
+
+        vm.prank(voter2);
+        vm.expectRevert("Governor: proposal token not allowed");
+        coreFacet.proposeWithParams(
+            targets,
+            values,
+            calldatas,
+            "New proposal",
+            abi.encode(address(diffGovToken), bytes4(keccak256("simpleWeight(uint256)")))
+        );
+    }
 }
 
 contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {

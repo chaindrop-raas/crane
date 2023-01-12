@@ -183,6 +183,12 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             "Governor: proposal token must support IVotes"
         );
 
+        require(
+            proposalToken == GovernorStorage.configStorage().membershipToken
+                || proposalToken == GovernorStorage.configStorage().governanceToken,
+            "Governor: proposal token not allowed"
+        );
+
         require(targets.length == values.length, "Governor: invalid proposal length");
         require(targets.length == calldatas.length, "Governor: invalid proposal length");
         require(targets.length > 0, "Governor: empty proposal");
