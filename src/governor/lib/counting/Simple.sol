@@ -80,7 +80,7 @@ library SimpleCounting {
         bytes memory vote = abi.encode(VoteType(support), weight, applyWeightStrategy(weight, weightingSelector));
         GovernorStorage.setProposalVote(proposalId, account, vote);
         GovernorStorage.proposalVoters(proposalId).push(account);
-        GovernorStorage.setProposalHasVoted(proposalId, account, true);
+        GovernorStorage.setProposalHasVoted(proposalId, account);
     }
 
     /**

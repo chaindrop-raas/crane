@@ -117,6 +117,9 @@ library GovernorStorage {
         mapping(address => uint256) nonces;
     }
 
+    /**
+     * @dev returns the ConfigStorage location.
+     */
     function configStorage() internal pure returns (GovernorConfig storage gs) {
         bytes32 position = CONFIG_STORAGE_POSITION;
         //solhint-disable-next-line no-inline-assembly
@@ -245,6 +248,9 @@ library GovernorStorage {
         emit VotingPeriodSet(oldVotingPeriod, newVotingPeriod);
     }
 
+    /**
+     * @dev returns the ProposalStorage location.
+     */
     function proposalStorage() internal pure returns (ProposalStorage storage ps) {
         bytes32 position = PROPOSAL_STORAGE_POSITION;
         //solhint-disable-next-line no-inline-assembly
@@ -253,6 +259,13 @@ library GovernorStorage {
         }
     }
 
+    /**
+     * @notice creates a new proposal.
+     * @param proposalId the proposal id.
+     * @param proposalToken the proposal token.
+     * @param countingStrategy the counting strategy.
+     * @return ps the proposal core storage.
+     */
     function createProposal(uint256 proposalId, address proposalToken, bytes4 countingStrategy)
         internal
         returns (ProposalCore storage ps)
@@ -277,27 +290,60 @@ library GovernorStorage {
         return ps;
     }
 
+    /**
+     * @notice returns the proposal core storage.
+     * @param proposalId the proposal id.
+     * @return ps the proposal core storage.
+     */
     function proposal(uint256 proposalId) internal view returns (ProposalCore storage) {
         return proposalStorage().proposals[proposalId];
     }
 
+    /**
+     * @notice returns the vote for an account on a particular proposal.
+     * @param proposalId the proposal id.
+     * @param account the account.
+     * @return the bytes representation of the vote
+     */
     function proposalVote(uint256 proposalId, address account) internal view returns (bytes memory) {
         return proposalStorage().proposalVote[proposalId][account];
     }
 
+    /**
+     * @notice sets the vote for an account on a particular proposal.
+     * @param proposalId the proposal id.
+     * @param account the account.
+     * @param vote the bytes representation of the vote
+     */
     function setProposalVote(uint256 proposalId, address account, bytes memory vote) internal {
         proposalStorage().proposalVote[proposalId][account] = vote;
     }
 
+    /**
+     * @notice returns the list of voters for a particular proposal.
+     * @param proposalId the proposal id.
+     * @return the list of voters.
+     */
     function proposalVoters(uint256 proposalId) internal view returns (address[] storage) {
         return proposalStorage().proposalVoters[proposalId];
     }
 
+    /**
+     * @notice returns whether an account has voted on a particular proposal.
+     * @param proposalId the proposal id.
+     * @param account the account.
+     * @return true if the account has voted on the proposal.
+     */
     function proposalHasVoted(uint256 proposalId, address account) internal view returns (bool) {
         return proposalStorage().proposalHasVoted[proposalId][account];
     }
 
-    function setProposalHasVoted(uint256 proposalId, address account, bool voted) internal {
-        proposalStorage().proposalHasVoted[proposalId][account] = voted;
+    /**
+     * @notice call to indicate that an account has voted on a particular proposal.
+     * @param proposalId the proposal id.
+     * @param account the account.
+     */
+    function setProposalHasVoted(uint256 proposalId, address account) internal {
+        proposalStorage().proposalHasVoted[proposalId][account] = true;
     }
 }
