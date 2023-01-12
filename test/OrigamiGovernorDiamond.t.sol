@@ -538,8 +538,8 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
         // https://gist.github.com/mrmemes-eth/c308260a72563b8f3c568d131c272033
         // the signer is anvil address 0: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
         v = 28;
-        r = 0x26d06fbd26d0240e2b553ce8d9ff013cb6bc999704791ad74906cedcea268756;
-        s = 0x5a98f1215e9e048efee1c7599db38025800cc34c9f6965745290ae9492d5df85;
+        r = 0x4d22d95982621b207f482d7ed1d52ce0ec0bca6276be2d221d1b9a09988aedae;
+        s = 0x1496ed0ad3410a751db21e575d98a00f2d2da5a66d855bc7a0722b578216b6dd;
         nonce = 0;
     }
 
@@ -561,9 +561,9 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
         govToken.delegate(signingVoter);
 
         // signature updated to reflect empty reason
-        uint8 newV = 28;
-        bytes32 newR = 0xe974bfd878c532034f95511e1e7789b83dd36e45ca34751f38a337d9b47e343c;
-        bytes32 newS = 0x62d6108696f9c8e46cc5740256db20ba1861a78fee666f7c4d9aeaf6dccaa8c4;
+        uint8 newV = 27;
+        bytes32 newR = 0x28ddce5ed6018161b74a41314e1e97ac39e18f2b06d2af01020430d4a5d12423;
+        bytes32 newS = 0x41d1ecf448b2c62fc807b9e412a81a04dc440e8bd360c9054b50f3e166f69cb5;
 
         // roll the block number forward to voting period
         vm.roll(604_843);
@@ -587,8 +587,8 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
         vm.roll(604_844);
         // signature updated to reflect new nonce and changed vote/reason
         uint8 newV = 27;
-        bytes32 newR = 0x91341c7324d79691d87b04f249915ac1ca5d1900554e78d6f8a194fca79ee28d;
-        bytes32 newS = 0x6bad4aefbb9ff0bfedeac64718dc2866b16aaa0cfe1054e3270aefc7be51d5d7;
+        bytes32 newR = 0x4551adb0883cc8316d33a1b7899e03da39d0dcf13cca960264f933cd10b48d21;
+        bytes32 newS = 0x6536c9a892fdcdc416b8d5a11a5f66a7bdc08f2e3411ff8acad66e23c8d2636c;
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit VoteCast(signingVoter, proposalId, AGAINST, 100000000, "I no longer like it");
         coreFacet.castVoteWithReasonBySig(proposalId, AGAINST, "I no longer like it", 1, newV, newR, newS);

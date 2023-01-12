@@ -74,7 +74,7 @@ library SimpleCounting {
      * @param support the VoteType that the account is voting
      * @param weight the weight of their vote as of the proposal snapshot
      */
-    function setVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory) internal {
+    function setVote(uint256 proposalId, address account, uint8 support, uint256 weight) internal {
         bytes4 weightingSelector = GovernorStorage.proposal(proposalId).countingStrategy;
 
         bytes memory vote = abi.encode(VoteType(support), weight, applyWeightStrategy(weight, weightingSelector));

@@ -57,7 +57,7 @@ library DiamondDeployHelper {
         selectors[0] = facet.CANCELLER_ROLE.selector;
         selectors[1] = facet.DEFAULT_ADMIN_ROLE.selector;
         selectors[2] = facet.EIP712_TYPEHASH.selector;
-        selectors[3] = facet.EXTENDED_IDEMPOTENT_BALLOT_TYPEHASH.selector;
+        selectors[3] = facet.IDEMPOTENT_BALLOT_TYPEHASH.selector;
         selectors[4] = facet.castVote.selector;
         selectors[5] = facet.castVoteBySig.selector;
         selectors[6] = facet.castVoteWithReason.selector;

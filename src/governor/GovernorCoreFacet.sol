@@ -27,10 +27,10 @@ interface BalanceToken {
 contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     /// @notice the role hash for granting the ability to cancel a timelocked proposal. This role is not granted as part of deployment. It should be granted only in the event of an emergency.
     bytes32 public constant CANCELLER_ROLE = keccak256("CANCELLER_ROLE");
-    bytes32 public constant EXTENDED_IDEMPOTENT_BALLOT_TYPEHASH =
-        keccak256("ExtendedIdempotentBallot(uint256 proposalId,uint8 support,string reason,uint256 nonce,bytes params)");
     bytes32 public constant EIP712_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 public constant IDEMPOTENT_BALLOT_TYPEHASH =
+        keccak256("IdempotentBallot(uint256 proposalId,uint8 support,string reason,uint256 nonce)");
 
     /**
      * @notice Name of the governor instance (used in building the ERC712 domain separator).
@@ -79,22 +79,6 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
-     * @dev Get votes for the given account at the given block number using proposal params.
-     * @param account the account to get the vote weight for.
-     * @param blockNumber the block number the snapshot was taken at.
-     * @param params the params of the proposal.
-     */
-    function getVotes(address account, uint256 blockNumber, bytes storage params) internal view returns (uint256) {
-        address tokenForProposal;
-        if (keccak256(params) == keccak256("")) {
-            tokenForProposal = GovernorStorage.configStorage().defaultProposalToken;
-        } else {
-            (tokenForProposal,) = decodeParams(params);
-        }
-        return getVotes(account, blockNumber, tokenForProposal);
-    }
-
-    /**
      * @dev Get votes for the given account at the given block number using proposal token.
      * @param account the account to get the vote weight for.
      * @param blockNumber the block number the snapshot was taken at.
@@ -122,29 +106,12 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description,
-        bytes memory params,
         address proposalToken,
         bytes4 countingStrategy
-    ) internal returns (uint256 proposalId) {
-        GovernorStorage.GovernorConfig storage cs = GovernorStorage.configStorage();
-
+    ) internal onlyThresholdTokenHolder(msg.sender) returns (uint256 proposalId) {
         proposalId = GovernorCommon.hashProposal(targets, values, calldatas, keccak256(bytes(description)));
-
-        // start populating the new ProposalCore struct
-        GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
-        require(ps.snapshot == 0, "Governor: proposal already exists");
-
-        ps.proposalToken = proposalToken;
-        ps.countingStrategy = countingStrategy;
-        ps.params = params;
-        ps.quorumNumerator = cs.quorumNumerator;
-        // TODO: circle back and factor away from block.number and to
-        // block.timestamp so we can deploy to chains like Optimism.
-        // --
-        // An epoch exceeding max UINT64 is 584,942,417,355 years from now. I
-        // feel pretty safe casting this.
-        ps.snapshot = uint64(block.number) + cs.votingDelay;
-        ps.deadline = ps.snapshot + cs.votingPeriod;
+        GovernorStorage.ProposalCore storage ps =
+            GovernorStorage.createProposal(proposalId, proposalToken, countingStrategy);
 
         emit ProposalCreated(
             proposalId,
@@ -157,6 +124,27 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             ps.deadline,
             description
             );
+    }
+
+    function proposeWithTokenAndCountingStrategy(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description,
+        address proposalToken,
+        bytes4 countingStrategy
+    ) public returns (uint256 proposalId) {
+        require(
+            IERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
+            "Governor: proposal token must support IVotes"
+        );
+        require(GovernorStorage.isConfiguredToken(proposalToken), "Governor: proposal token not allowed");
+
+        require(targets.length == values.length, "Governor: invalid proposal length");
+        require(targets.length == calldatas.length, "Governor: invalid proposal length");
+        require(targets.length > 0, "Governor: empty proposal");
+
+        proposalId = createProposal(targets, values, calldatas, description, proposalToken, countingStrategy);
     }
 
     /**
@@ -174,7 +162,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         bytes[] memory calldatas,
         string memory description,
         bytes memory params
-    ) public onlyThresholdTokenHolder(msg.sender) returns (uint256 proposalId) {
+    ) public returns (uint256 proposalId) {
         address proposalToken;
         bytes4 countingStrategy;
         if (keccak256(params) == keccak256("")) {
@@ -183,18 +171,9 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         } else {
             (proposalToken, countingStrategy) = decodeParams(params);
         }
-        require(
-            IERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
-            "Governor: proposal token must support IVotes"
+        return proposeWithTokenAndCountingStrategy(
+            targets, values, calldatas, description, proposalToken, countingStrategy
         );
-
-        require(GovernorStorage.isConfiguredToken(proposalToken), "Governor: proposal token not allowed");
-
-        require(targets.length == values.length, "Governor: invalid proposal length");
-        require(targets.length == calldatas.length, "Governor: invalid proposal length");
-        require(targets.length > 0, "Governor: empty proposal");
-
-        return createProposal(targets, values, calldatas, description, params, proposalToken, countingStrategy);
     }
 
     /**
@@ -206,6 +185,8 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return GovernorQuorum.quorum(proposalId);
     }
 
+    // TODO: this return type is specific to SimpleCounting, which probably
+    // means it's not generic enough to be in the public interface
     /**
      * @notice returns the current votes for, against, or abstaining for a given proposal. Once the voting period has lapsed, this is used to determine the outcome.
      * @dev this delegates weight calculation to the strategy specified in the params
@@ -213,10 +194,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      * @return againstVotes - the number of votes against the proposal.
      * @return forVotes - the number of votes for the proposal.
      * @return abstainVotes - the number of votes abstaining from the vote.
-     * module:core
      */
-    // TODO: this return type is specific to SimpleCounting, which probably
-    // means it's not generic enough to be in the public interface
     function proposalVotes(uint256 proposalId) public view virtual returns (uint256, uint256, uint256) {
         return SimpleCounting.simpleProposalVotes(proposalId);
     }
@@ -252,7 +230,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         weight = getVotes(account, ps.snapshot, ps.proposalToken);
         require(weight > 0, "Governor: only accounts with delegated voting power can vote");
 
-        SimpleCounting.setVote(proposalId, account, support, weight, ps.params);
+        SimpleCounting.setVote(proposalId, account, support, weight);
 
         emit VoteCast(account, proposalId, support, weight, reason);
     }
@@ -308,20 +286,10 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         bytes32 r,
         bytes32 s
     ) public returns (uint256 weight) {
-        GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
         address voter = ECDSA.recover(
             ECDSA.toTypedDataHash(
                 domainSeparatorV4(),
-                keccak256(
-                    abi.encode(
-                        EXTENDED_IDEMPOTENT_BALLOT_TYPEHASH,
-                        proposalId,
-                        support,
-                        keccak256(bytes(reason)),
-                        nonce,
-                        keccak256(ps.params)
-                    )
-                )
+                keccak256(abi.encode(IDEMPOTENT_BALLOT_TYPEHASH, proposalId, support, keccak256(bytes(reason)), nonce))
             ),
             v,
             r,
