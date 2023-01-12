@@ -3,7 +3,6 @@ pragma solidity 0.8.16;
 
 import "src/governor/lib/GovernorCommon.sol";
 import "src/governor/lib/GovernorQuorum.sol";
-import "src/governor/lib/GovernorProposalParams.sol";
 import "src/interfaces/IGovernor.sol";
 import "src/interfaces/utils/IEIP712.sol";
 import "src/utils/AccessControl.sol";
@@ -90,7 +89,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         if (keccak256(params) == keccak256("")) {
             tokenForProposal = GovernorStorage.configStorage().defaultProposalToken;
         } else {
-            (tokenForProposal,) = GovernorProposalParams.decodeProposalParams(params);
+            (tokenForProposal,) = decodeParams(params);
         }
         return getVotes(account, blockNumber, tokenForProposal);
     }
@@ -123,7 +122,9 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description,
-        bytes memory params
+        bytes memory params,
+        address proposalToken,
+        bytes4 countingStrategy
     ) internal returns (uint256 proposalId) {
         GovernorStorage.GovernorConfig storage cs = GovernorStorage.configStorage();
 
@@ -133,6 +134,8 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
         require(ps.snapshot == 0, "Governor: proposal already exists");
 
+        ps.proposalToken = proposalToken;
+        ps.countingStrategy = countingStrategy;
         ps.params = params;
         ps.quorumNumerator = cs.quorumNumerator;
         // TODO: circle back and factor away from block.number and to
@@ -173,10 +176,12 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         bytes memory params
     ) public onlyThresholdTokenHolder(msg.sender) returns (uint256 proposalId) {
         address proposalToken;
+        bytes4 countingStrategy;
         if (keccak256(params) == keccak256("")) {
             proposalToken = GovernorStorage.configStorage().defaultProposalToken;
+            countingStrategy = GovernorStorage.configStorage().defaultCountingStrategy;
         } else {
-            (proposalToken,) = abi.decode(params, (address, bytes4));
+            (proposalToken, countingStrategy) = decodeParams(params);
         }
         require(
             IERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
@@ -189,7 +194,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         require(targets.length == calldatas.length, "Governor: invalid proposal length");
         require(targets.length > 0, "Governor: empty proposal");
 
-        return createProposal(targets, values, calldatas, description, params);
+        return createProposal(targets, values, calldatas, description, params, proposalToken, countingStrategy);
     }
 
     /**
@@ -244,7 +249,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
         require(state(proposalId) == IGovernor.ProposalState.Active, "Governor: proposal not active");
 
-        weight = getVotes(account, ps.snapshot, ps.params);
+        weight = getVotes(account, ps.snapshot, ps.proposalToken);
         require(weight > 0, "Governor: only accounts with delegated voting power can vote");
 
         SimpleCounting.setVote(proposalId, account, support, weight, ps.params);
@@ -349,6 +354,13 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         returns (uint256 weight)
     {
         return castVoteWithReasonBySig(proposalId, support, "", nonce, v, r, s);
+    }
+
+    /**
+     * @dev decode the bytes param format into the proposal token and counting strategy.
+     */
+    function decodeParams(bytes memory params) internal pure returns (address proposalToken, bytes4 countingStrategy) {
+        return abi.decode(params, (address, bytes4));
     }
 
     /**

@@ -2,13 +2,12 @@
 pragma solidity 0.8.16;
 
 import "../GovernorQuorum.sol";
-import "../GovernorProposalParams.sol";
 import "src/utils/GovernorStorage.sol";
 
 /**
  * @title Simple Counting strategy
  * @author Origami
- * @notice Builds upon GovernorWithProposalParams to implement swappable counting strategies at the proposal level.
+ * @notice Implements swappable counting strategies at the proposal level.
  * @custom:security-contact contract-security@joinorigami.com
  */
 library SimpleCounting {
@@ -69,23 +68,16 @@ library SimpleCounting {
     }
 
     /**
-     * @dev a version of _countVote that is compatible with the GovernorWithProposalParams implementation.
+     * @notice sets the vote for a given proposal and account in a manner that is compatible with SimpleCounting strategies.
      * @param proposalId the proposal to record the vote for
      * @param account the account that is voting
      * @param support the VoteType that the account is voting
      * @param weight the weight of their vote as of the proposal snapshot
      */
     function setVote(uint256 proposalId, address account, uint8 support, uint256 weight, bytes memory) internal {
-        bytes memory vote;
-        bytes storage proposalParams = GovernorProposalParams.getProposalParams(proposalId);
-        // _defaultParams() from the OZ lib uses "" as the default value, so we
-        // check for that here and encode without a weighting strategy if so.
-        if (keccak256(proposalParams) == keccak256("")) {
-            vote = abi.encode(VoteType(support), weight, weight);
-        } else {
-            (, bytes4 weightingSelector) = GovernorProposalParams.decodeProposalParams(proposalParams);
-            vote = abi.encode(VoteType(support), weight, applyWeightStrategy(weight, weightingSelector));
-        }
+        bytes4 weightingSelector = GovernorStorage.proposal(proposalId).countingStrategy;
+
+        bytes memory vote = abi.encode(VoteType(support), weight, applyWeightStrategy(weight, weightingSelector));
         GovernorStorage.setProposalVote(proposalId, account, vote);
         GovernorStorage.proposalVoters(proposalId).push(account);
         GovernorStorage.setProposalHasVoted(proposalId, account, true);
@@ -138,14 +130,14 @@ library SimpleCounting {
     }
 
     /**
-     * @dev implementation of {Governor-quorumReached} that is compatible with the GovernorWithProposalParams interface.
+     * @dev implementation of {Governor-quorumReached} that is compatible with the SimpleCounting strategies.
      * @param proposalId the id of the proposal to check.
      * @return boolean - true if the quorum has been reached.
      */
     function quorumReached(uint256 proposalId) external view returns (bool) {
         (, uint256 forVotes, uint256 abstainVotes) = simpleProposalVotes(proposalId);
-        (, bytes4 weightingSelector) = GovernorProposalParams.getDecodedProposalParams(proposalId);
-        return applyWeightStrategy(GovernorQuorum.quorum(proposalId), weightingSelector) <= forVotes + abstainVotes;
+        bytes4 countingStrategy = GovernorStorage.proposal(proposalId).countingStrategy;
+        return applyWeightStrategy(GovernorQuorum.quorum(proposalId), countingStrategy) <= forVotes + abstainVotes;
     }
 
     function voteSucceeded(uint256 proposalId) external view returns (bool) {

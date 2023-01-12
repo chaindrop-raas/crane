@@ -4,6 +4,11 @@ pragma solidity 0.8.16;
 interface IGovernorSettings {
 
     /**
+     * @dev Returns the default counting strategy.
+     */
+    function defaultCountingStrategy() external view returns (bytes4);
+
+    /**
      * @dev Returns the default proposal token address.
      */
     function defaultProposalToken() external view returns (address);
@@ -44,6 +49,13 @@ interface IGovernorSettings {
      */
     //TODO: change to seconds instead of blocks
     function votingPeriod() external view returns (uint24);
+
+    /**
+     * @dev sets the default counting strategy.
+     * @param newDefaultCountingStrategy a bytes4 selector for the new default counting strategy.
+     * Emits a {DefaultCountingStrategySet} event.
+     */
+    function setDefaultCountingStrategy(bytes4 newDefaultCountingStrategy) external;
 
     /**
      * @dev Sets the default proposal token.

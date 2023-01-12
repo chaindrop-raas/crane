@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "src/governor/lib/counting/Simple.sol";
 import "src/interfaces/IGovernor.sol";
 import "src/interfaces/IGovernorQuorum.sol";
 import "src/interfaces/IGovernorSettings.sol";
@@ -63,6 +64,7 @@ contract GovernorDiamondInit {
         config.timelock = timelock;
         config.membershipToken = membershipToken;
         config.defaultProposalToken = membershipToken;
+        config.defaultCountingStrategy = SimpleCounting.simpleWeight.selector;
         config.votingDelay = delay;
         config.votingPeriod = period;
         config.quorumNumerator = quorumPercentage;

@@ -13,6 +13,18 @@ import "src/utils/GovernorStorage.sol";
  */
 contract GovernorSettingsFacet is IGovernorSettings {
 
+    /**
+     * @dev Returns the default counting strategy.
+     * @return the default counting strategy.
+     */
+    function defaultCountingStrategy() external view returns (bytes4) {
+        return config().defaultCountingStrategy;
+    }
+
+    /**
+     * @dev Returns the default proposal token address.
+     * @return the default proposal token address.
+     */
     function defaultProposalToken() public view override returns (address) {
         return config().defaultProposalToken;
     }
@@ -73,6 +85,20 @@ contract GovernorSettingsFacet is IGovernorSettings {
         return config().votingPeriod;
     }
 
+    /**
+     * @notice sets the default counting strategy.
+     * @param newDefaultCountingStrategy a bytes4 selector for the new default counting strategy.
+     * emits DefaultCountingStrategySet event.
+     */
+    function setDefaultCountingStrategy(bytes4 newDefaultCountingStrategy) public onlyGovernance {
+        GovernorStorage.setDefaultCountingStrategy(newDefaultCountingStrategy);
+    }
+
+    /**
+     * @notice sets the default proposal token.
+     * @param newDefaultProposalToken the new default proposal token address.
+     * emits DefaultProposalTokenSet event.
+    */
     function setDefaultProposalToken(address newDefaultProposalToken) public onlyGovernance {
         GovernorStorage.setDefaultProposalToken(newDefaultProposalToken);
     }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "./GovernorProposalParams.sol";
 import "src/utils/GovernorStorage.sol";
 
 import "@oz/governance/utils/IVotes.sol";
@@ -39,9 +38,9 @@ library GovernorQuorum {
      * @dev Returns the quorum for a specific proposal's counting token at the given block number, in terms of number of votes: `supply * numerator / denominator`.
      */
     function quorum(uint256 proposalId) internal view returns (uint256) {
-        (address token,) = GovernorProposalParams.getDecodedProposalParams(proposalId);
+        address proposalToken = GovernorStorage.proposal(proposalId).proposalToken;
         uint256 snapshot = GovernorStorage.proposal(proposalId).snapshot;
-        uint256 supply = IVotes(token).getPastTotalSupply(snapshot);
+        uint256 supply = IVotes(proposalToken).getPastTotalSupply(snapshot);
         return (supply * quorumNumerator(proposalId)) / quorumDenominator();
     }
 

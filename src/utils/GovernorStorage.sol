@@ -8,7 +8,14 @@ library GovernorStorage {
     bytes32 public constant PROPOSAL_STORAGE_POSITION = keccak256("com.origami.governor.proposalStorage");
 
     /**
-     * Emitted when the default proposal token is set.
+     * @dev Emitted when the default counting strategy is set.
+     * @param oldDefaultCountingStrategy The previous default counting strategy.
+     * @param newDefaultCountingStrategy The new default counting strategy.
+     */
+    event DefaultCountingStrategySet(bytes4 oldDefaultCountingStrategy, bytes4 newDefaultCountingStrategy);
+
+    /**
+     * @dev Emitted when the default proposal token is set.
      * @param oldDefaultProposalToken The previous default proposal token.
      * @param newDefaultProposalToken The new default proposal token.
      */
@@ -64,6 +71,8 @@ library GovernorStorage {
     event GovernanceTokenSet(address oldGovernanceToken, address newGovernanceToken);
 
     struct ProposalCore {
+        address proposalToken;
+        bytes4 countingStrategy;
         uint16 quorumNumerator;
         uint64 snapshot;
         uint64 deadline;
@@ -77,6 +86,7 @@ library GovernorStorage {
         address admin;
         address payable timelock;
         address defaultProposalToken;
+        bytes4 defaultCountingStrategy;
         address membershipToken;
         address governanceToken;
         address proposalThresholdToken;
@@ -115,11 +125,35 @@ library GovernorStorage {
         }
     }
 
+    /**
+     * @dev determines if the provided token is the membership token or
+     *  governance token. This is useful to ensure that functions that allow
+     *  specifying a token address can't use unexpected tokens.
+     * @param token the token address to check.
+     * @return true if the token is the membership token or governance token.
+     */
     function isConfiguredToken(address token) internal view returns (bool) {
         GovernorConfig storage cs = configStorage();
         return token == cs.membershipToken || token == cs.governanceToken;
     }
 
+    /**
+     * @notice sets the default counting strategy.
+     * @param newDefaultCountingStrategy the new default counting strategy address.
+     * emits DefaultCountingStrategySet event.
+     */
+    function setDefaultCountingStrategy(bytes4 newDefaultCountingStrategy) internal {
+        bytes4 oldDefaultCountingStrategy = configStorage().defaultCountingStrategy;
+        configStorage().defaultCountingStrategy = newDefaultCountingStrategy;
+
+        emit DefaultCountingStrategySet(oldDefaultCountingStrategy, newDefaultCountingStrategy);
+    }
+
+    /**
+     * @notice sets the default proposal token.
+     * @param newDefaultProposalToken the new default proposal token address.
+     * emits DefaultProposalTokenSet event.
+     */
     function setDefaultProposalToken(address newDefaultProposalToken) internal {
         address oldDefaultProposalToken = configStorage().defaultProposalToken;
         configStorage().defaultProposalToken = newDefaultProposalToken;
