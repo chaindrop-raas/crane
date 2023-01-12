@@ -48,6 +48,9 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return "1.1.0";
     }
 
+    /**
+     * @notice the EIP712 domain separator for this contract.
+     */
     function domainSeparatorV4() public view returns (bytes32) {
         return keccak256(
             abi.encode(
@@ -56,6 +59,14 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         );
     }
 
+    /**
+     * @notice hashes proposal params to create a proposalId.
+     * @param targets the targets of the proposal.
+     * @param values the values of the proposal.
+     * @param calldatas the calldatas of the proposal.
+     * @param descriptionHash the hash of the description of the proposal.
+     * @return the proposalId.
+     */
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
@@ -65,15 +76,30 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return GovernorCommon.hashProposal(targets, values, calldatas, descriptionHash);
     }
 
+    /**
+     * @notice returns the current ProposalState for a proposal.
+     * @param proposalId the id of the proposal.
+     * @return the ProposalState.
+     */
     function state(uint256 proposalId) public view returns (IGovernor.ProposalState) {
         IGovernor.ProposalState status = GovernorCommon.state(proposalId);
         return GovernorCommon.succededState(proposalId, status);
     }
 
+    /**
+     * @notice returns the snapshot block for a proposal.
+     * @param proposalId the id of the proposal.
+     * @return the snapshot block.
+     */
     function proposalSnapshot(uint256 proposalId) public view returns (uint256) {
         return GovernorStorage.proposalStorage().proposals[proposalId].snapshot;
     }
 
+    /**
+     * @notice returns the deadline block for a proposal.
+     * @param proposalId the id of the proposal.
+     * @return the deadline block.
+     */
     function proposalDeadline(uint256 proposalId) public view returns (uint256) {
         return GovernorStorage.proposalStorage().proposals[proposalId].deadline;
     }
@@ -96,34 +122,6 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      */
     function hasVoted(uint256 proposalId, address account) public view returns (bool) {
         return GovernorStorage.proposalHasVoted(proposalId, account);
-    }
-
-    /**
-     * @dev internal function to create a proposal.
-     */
-    function createProposal(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory description,
-        address proposalToken,
-        bytes4 countingStrategy
-    ) internal onlyThresholdTokenHolder(msg.sender) returns (uint256 proposalId) {
-        proposalId = GovernorCommon.hashProposal(targets, values, calldatas, keccak256(bytes(description)));
-        GovernorStorage.ProposalCore storage ps =
-            GovernorStorage.createProposal(proposalId, proposalToken, countingStrategy);
-
-        emit ProposalCreated(
-            proposalId,
-            msg.sender,
-            targets,
-            values,
-            new string[](targets.length),
-            calldatas,
-            ps.snapshot,
-            ps.deadline,
-            description
-            );
     }
 
     function proposeWithTokenAndCountingStrategy(
@@ -216,25 +214,6 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return proposeWithParams(targets, values, calldatas, description, "");
     }
 
-    // TODO: the cast vote functions really should be part of the counting strategy, since they couple to the support type
-
-    // @dev internal function to cast a vote on a proposal; restricts voting to members
-    function _castVote(uint256 proposalId, address account, uint8 support, string memory reason)
-        internal
-        onlyMember(account)
-        returns (uint256 weight)
-    {
-        GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
-        require(state(proposalId) == IGovernor.ProposalState.Active, "Governor: proposal not active");
-
-        weight = getVotes(account, ps.snapshot, ps.proposalToken);
-        require(weight > 0, "Governor: only accounts with delegated voting power can vote");
-
-        SimpleCounting.setVote(proposalId, account, support, weight);
-
-        emit VoteCast(account, proposalId, support, weight, reason);
-    }
-
     /**
      * @notice Cast a vote on a proposal.
      * @param proposalId The id of the proposal to cast a vote on.
@@ -322,6 +301,54 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         returns (uint256 weight)
     {
         return castVoteWithReasonBySig(proposalId, support, "", nonce, v, r, s);
+    }
+
+    /**
+     * @dev internal function to create a proposal.
+     */
+    function createProposal(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description,
+        address proposalToken,
+        bytes4 countingStrategy
+    ) internal onlyThresholdTokenHolder(msg.sender) returns (uint256 proposalId) {
+        proposalId = GovernorCommon.hashProposal(targets, values, calldatas, keccak256(bytes(description)));
+        GovernorStorage.ProposalCore storage ps =
+            GovernorStorage.createProposal(proposalId, proposalToken, countingStrategy);
+
+        emit ProposalCreated(
+            proposalId,
+            msg.sender,
+            targets,
+            values,
+            new string[](targets.length),
+            calldatas,
+            ps.snapshot,
+            ps.deadline,
+            description
+            );
+    }
+
+    /**
+     * @dev internal function to cast a vote on a proposal; restricts voting to members
+     * TODO: the cast vote functions really should be part of the counting strategy, since they couple to the support type
+     */
+    function _castVote(uint256 proposalId, address account, uint8 support, string memory reason)
+        internal
+        onlyMember(account)
+        returns (uint256 weight)
+    {
+        GovernorStorage.ProposalCore storage ps = GovernorStorage.proposal(proposalId);
+        require(state(proposalId) == IGovernor.ProposalState.Active, "Governor: proposal not active");
+
+        weight = getVotes(account, ps.snapshot, ps.proposalToken);
+        require(weight > 0, "Governor: only accounts with delegated voting power can vote");
+
+        SimpleCounting.setVote(proposalId, account, support, weight);
+
+        emit VoteCast(account, proposalId, support, weight, reason);
     }
 
     /**
