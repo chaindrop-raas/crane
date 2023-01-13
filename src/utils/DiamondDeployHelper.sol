@@ -53,7 +53,7 @@ library DiamondDeployHelper {
         pure
         returns (IDiamondCut.FacetCut memory governorCoreCut)
     {
-        bytes4[] memory selectors = new bytes4[](27);
+        bytes4[] memory selectors = new bytes4[](28);
         selectors[0] = facet.CANCELLER_ROLE.selector;
         selectors[1] = facet.DEFAULT_ADMIN_ROLE.selector;
         selectors[2] = facet.EIP712_TYPEHASH.selector;
@@ -81,6 +81,7 @@ library DiamondDeployHelper {
         selectors[24] = facet.revokeRole.selector;
         selectors[25] = facet.state.selector;
         selectors[26] = facet.version.selector;
+        selectors[27] = facet.proposeBySig.selector;
 
         governorCoreCut = IDiamondCut.FacetCut({
             facetAddress: address(facet),

@@ -170,6 +170,8 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         memToken.delegate(voter3);
         vm.prank(voter4);
         memToken.delegate(voter4);
+        vm.prank(signingVoter);
+        memToken.delegate(signingVoter);
 
         // selectively self-delegate the gov token for voters past the first one
         vm.prank(voter2);
@@ -178,6 +180,8 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         govToken.delegate(voter3);
         vm.prank(voter4);
         govToken.delegate(voter4);
+        vm.prank(signingVoter);
+        govToken.delegate(signingVoter);
 
         coreFacet = GovernorCoreFacet(address(origamiGovernorDiamond));
         settingsFacet = GovernorSettingsFacet(address(origamiGovernorDiamond));
@@ -544,10 +548,6 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
     }
 
     function testCanVoteOnProposalWithReasonBySig() public {
-        // self-delegate to get voting power
-        vm.prank(signingVoter);
-        govToken.delegate(signingVoter);
-
         // roll the block number forward to voting period
         vm.roll(604_843);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
@@ -556,10 +556,6 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
     }
 
     function testCanVoteOnProposalBySig() public {
-        // self-delegate to get voting power
-        vm.prank(signingVoter);
-        govToken.delegate(signingVoter);
-
         // signature updated to reflect empty reason
         uint8 newV = 27;
         bytes32 newR = 0x28ddce5ed6018161b74a41314e1e97ac39e18f2b06d2af01020430d4a5d12423;
@@ -573,10 +569,6 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
     }
 
     function testCanUpdateVoteOnProposalWithParamsBySignature() public {
-        // self-delegate to get voting power
-        vm.prank(signingVoter);
-        govToken.delegate(signingVoter);
-
         // roll the block number forward to voting period
         vm.roll(604_843);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
@@ -595,10 +587,6 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
     }
 
     function testCannotVoteBySigWithBadR() public {
-        // self-delegate to get voting power
-        vm.prank(signingVoter);
-        govToken.delegate(signingVoter);
-
         // roll the block number forward to voting period
         vm.roll(604_843);
         bytes32 newR = 0x0000000000000000000000000000000000000000000000000000000000000000;
@@ -607,10 +595,6 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
     }
 
     function testCannotVoteBySigWithBadS() public {
-        // self-delegate to get voting power
-        vm.prank(signingVoter);
-        govToken.delegate(signingVoter);
-
         // roll the block number forward to voting period
         vm.roll(604_843);
         bytes32 newS = 0x0000000000000000000000000000000000000000000000000000000000000000;
@@ -619,10 +603,6 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
     }
 
     function testCannotVoteBySigWithBadV() public {
-        // self-delegate to get voting power
-        vm.prank(signingVoter);
-        govToken.delegate(signingVoter);
-
         // roll the block number forward to voting period
         vm.roll(604_843);
         vm.expectRevert("OrigamiGovernor: only members may vote");
@@ -630,10 +610,6 @@ contract OrigamiGovernorProposalVoteWithSignatureTest is GovernorDiamondHelper {
     }
 
     function testCannotReplayVote() public {
-        // self-delegate to get voting power
-        vm.prank(signingVoter);
-        govToken.delegate(signingVoter);
-
         // roll the block number forward to voting period
         vm.roll(604_843);
         coreFacet.castVoteWithReasonBySig(proposalId, FOR, "I like it", nonce, v, r, s);
@@ -978,7 +954,6 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
 }
 
 contract OrigamiGovernorConfigTest is GovernorDiamondHelper {
-
     function testCannotDirectlyUpdateGovernanceToken() public {
         vm.expectRevert("Governor: onlyGovernance");
         settingsFacet.setGovernanceToken(address(0));
@@ -1091,8 +1066,6 @@ contract OrigamiGovernorUpdateSettingsViaProposal is GovernorDiamondHelper {
 
         vm.prank(voter2);
         proposalId = coreFacet.proposeWithParams(targets, values, calldatas, "New proposal", params);
-
-        vm.deal(address(timelock), 1 ether);
     }
 
     function testUpdateGovernanceTokenViaProposal() public {
@@ -1134,5 +1107,43 @@ contract OrigamiGovernorUpdateSettingsViaProposal is GovernorDiamondHelper {
 
         // check that the governance token has been updated
         assertEq(settingsFacet.governanceToken(), address(newGovToken));
+    }
+}
+
+contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+    bytes32 public proposalHash;
+    uint8 public v;
+    bytes32 public r;
+    bytes32 public s;
+    uint256 public nonce;
+    string public description;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
+        targets[0] = address(origamiGovernorDiamond);
+        values[0] = uint256(0);
+        calldatas[0] = abi.encodeWithSignature("setGovernanceToken(address)", address(0xbad));
+
+        // use the gov token for vote weight
+        description = "Update the governance token.";
+
+        v = 27;
+        r = 0x4ba5e0c307c5e9d25f68f0a548955cf119206d273d4bcdb6dc876f3085b1dc67;
+        s = 0x1a5722452f9f182f039bf5c86bdd1df1a1c13c0aae6bd7ada6ff7826e90bb04c;
+        nonce = 0;
+    }
+
+    function testProposeBySig() public {
+        coreFacet.proposeBySig(targets, values, calldatas, description, 0, v, r, s);
     }
 }

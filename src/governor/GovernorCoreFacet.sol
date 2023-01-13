@@ -31,6 +31,8 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     bytes32 public constant IDEMPOTENT_BALLOT_TYPEHASH =
         keccak256("IdempotentBallot(uint256 proposalId,uint8 support,string reason,uint256 nonce)");
+    bytes32 public constant IDEMPOTENT_PROPOSAL_TYPEHASH =
+        keccak256("IdempotentProposal(address[] targets,uint256[] values,bytes[] calldatas,string description,uint256 nonce)");
 
     /**
      * @notice Name of the governor instance (used in building the ERC712 domain separator).
@@ -142,7 +144,8 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         require(targets.length == calldatas.length, "Governor: invalid proposal length");
         require(targets.length > 0, "Governor: empty proposal");
 
-        proposalId = createProposal(targets, values, calldatas, description, proposalToken, countingStrategy);
+        proposalId =
+            createProposal(msg.sender, targets, values, calldatas, description, proposalToken, countingStrategy);
     }
 
     /**
@@ -175,6 +178,75 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
+     * @notice Propose a new action to be performed by the governor, by signature.
+     * @param targets The ordered list of target addresses for calls to be made on.
+     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
+     * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made.
+     * @param description The description of the proposal.
+     * @param nonce The nonce of the proposer.
+     * @param v The recovery byte of the signature.
+     * @param r Half of the ECDSA signature pair.
+     * @param s Half of the ECDSA signature pair.
+     * @return proposalId The id of the newly created proposal.
+     */
+    function proposeBySig(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description,
+        uint256 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 proposalId) {
+        bytes32[] memory encodedCallData = new bytes32[](calldatas.length);
+        for (uint256 i = 0; i < calldatas.length; i++) {
+            encodedCallData[i] = keccak256(calldatas[i]);
+        }
+        address proposer = ECDSA.recover(
+            ECDSA.toTypedDataHash(
+                domainSeparatorV4(),
+                keccak256(abi.encode(
+                    IDEMPOTENT_PROPOSAL_TYPEHASH,
+                    keccak256(abi.encodePacked(targets)),
+                    keccak256(abi.encodePacked(values)),
+                    keccak256(abi.encodePacked(encodedCallData)),
+                    keccak256(bytes(description)),
+                    nonce))
+            ),
+            v,
+            r,
+            s
+        );
+        proposalId = createProposal(
+            proposer,
+            targets,
+            values,
+            calldatas,
+            description,
+            GovernorStorage.configStorage().defaultProposalToken,
+            GovernorStorage.configStorage().defaultCountingStrategy
+        );
+    }
+
+    /**
+     * @notice propose a new action to be performed by the governor.
+     * @param targets The ordered list of target addresses for calls to be made on.
+     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
+     * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made.
+     * @param description The description of the proposal.
+     * @return proposalId The id of the newly created proposal.
+     */
+    function propose(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description
+    ) external returns (uint256 proposalId) {
+        return proposeWithParams(targets, values, calldatas, description, "");
+    }
+
+    /**
      * @notice Get the configured quorum for a proposal.
      * @param proposalId The id of the proposal to get the quorum for.
      * @return The quorum for the given proposal.
@@ -195,23 +267,6 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      */
     function proposalVotes(uint256 proposalId) public view virtual returns (uint256, uint256, uint256) {
         return SimpleCounting.simpleProposalVotes(proposalId);
-    }
-
-    /**
-     * @notice propose a new action to be performed by the governor.
-     * @param targets The ordered list of target addresses for calls to be made on.
-     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
-     * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made.
-     * @param description The description of the proposal.
-     * @return proposalId The id of the newly created proposal.
-     */
-    function propose(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory description
-    ) external returns (uint256 proposalId) {
-        return proposeWithParams(targets, values, calldatas, description, "");
     }
 
     /**
@@ -307,20 +362,21 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      * @dev internal function to create a proposal.
      */
     function createProposal(
+        address proposer,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description,
         address proposalToken,
         bytes4 countingStrategy
-    ) internal onlyThresholdTokenHolder(msg.sender) returns (uint256 proposalId) {
+    ) internal onlyThresholdTokenHolder(proposer) returns (uint256 proposalId) {
         proposalId = GovernorCommon.hashProposal(targets, values, calldatas, keccak256(bytes(description)));
         GovernorStorage.ProposalCore storage ps =
             GovernorStorage.createProposal(proposalId, proposalToken, countingStrategy);
 
         emit ProposalCreated(
             proposalId,
-            msg.sender,
+            proposer,
             targets,
             values,
             new string[](targets.length),
