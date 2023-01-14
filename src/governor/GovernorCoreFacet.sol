@@ -13,6 +13,9 @@ import "@oz/utils/cryptography/ECDSA.sol";
 import "@oz/governance/utils/IVotes.sol";
 import "@oz/utils/Address.sol";
 
+/**
+ * @dev a really simple interface for a token that has a balanceOf function.
+ */
 interface BalanceToken {
     function balanceOf(address account) external view returns (uint256);
 }
@@ -127,6 +130,20 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return GovernorStorage.proposalHasVoted(proposalId, account);
     }
 
+    /**
+     * @notice Propose a new action to be performed by the governor, specifying the proposal's counting strategy and voting token. This method supports EIP-712 signed data structures, enabling gasless proposals.
+     * @param targets The ordered list of target addresses for calls to be made on the proposal.
+     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made on the proposal.
+     * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made on the proposal.
+     * @param description The description of the proposal.
+     * @param proposalToken The token to use for counting votes.
+     * @param countingStrategy The strategy to use for counting votes.
+     * @param nonce The nonce of the proposer.
+     * @param v The recovery byte of the signature.
+     * @param r Half of the ECDSA signature pair.
+     * @param s Half of the ECDSA signature pair.
+     * @return proposalId The id of the newly created proposal.
+     */
     function proposeWithTokenAndCountingStrategyBySig(
         address[] memory targets,
         uint256[] memory values,
@@ -148,6 +165,16 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         GovernorStorage.incrementAccountNonce(proposer);
     }
 
+    /**
+     * @notice Propose a new action to be performed by the governor, specifying the proposal's counting strategy and voting token.
+     * @param targets The ordered list of target addresses for calls to be made on.
+     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
+     * @param calldatas The ordered list of calldata to be passed to each call.
+     * @param description The description of the proposal.
+     * @param proposalToken The token to use for counting votes.
+     * @param countingStrategy The strategy to use for counting votes.
+     * @return proposalId The id of the newly created proposal.
+     */
     function proposeWithTokenAndCountingStrategy(
         address[] memory targets,
         uint256[] memory values,
@@ -159,6 +186,19 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return createProposal(msg.sender, targets, values, calldatas, description, proposalToken, countingStrategy);
     }
 
+    /**
+     * @notice Propose a new action to be performed by the governor, with params specifying proposal token and counting strategy. This method supports EIP-712 signed data structures, enabling gasless proposals.
+     * @param targets The ordered list of target addresses for calls to be made on.
+     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
+     * @param calldatas The ordered list of calldata to be passed to each call.
+     * @param description The description of the proposal.
+     * @param params The parameters of the proposal, encoded as a tuple of (proposalToken, countingStrategy).
+     * @param nonce The nonce of the proposer.
+     * @param v The recovery byte of the signature.
+     * @param r Half of the ECDSA signature pair.
+     * @param s Half of the ECDSA signature pair.
+     * @return proposalId The id of the newly created proposal.
+     */
     function proposeWithParamsBySig(
         address[] memory targets,
         uint256[] memory values,
@@ -199,7 +239,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
-     * @notice Propose a new action to be performed by the governor, by signature.
+     * @notice Propose a new action to be performed by the governor. This method supports EIP-712 signed data structures, enabling gasless proposals.
      * @param targets The ordered list of target addresses for calls to be made on.
      * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
      * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made.
