@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/governor/lib/counting/Simple.sol";
 import "src/interfaces/IGovernor.sol";
 import "src/interfaces/IGovernorQuorum.sol";
 import "src/interfaces/IGovernorSettings.sol";
@@ -64,7 +63,7 @@ contract GovernorDiamondInit {
         config.timelock = timelock;
         config.membershipToken = membershipToken;
         config.defaultProposalToken = membershipToken;
-        config.defaultCountingStrategy = SimpleCounting.simpleWeight.selector;
+        config.defaultCountingStrategy = 0x6c4b0e9f; // GovernorCoreFacet.simpleWeight.selector
         config.votingDelay = delay;
         config.votingPeriod = period;
         config.quorumNumerator = quorumPercentage;
@@ -74,6 +73,7 @@ contract GovernorDiamondInit {
         // in order to facilitate role administration, we add the admin to the admin role
         // it is advised that the admin renounces this role after the diamond is deployed
         AccessControlStorage.RoleStorage storage rs = AccessControlStorage.roleStorage();
+        // 0x0 is the DEFAULT_ADMIN_ROLE
         rs.roles[0x0].members[config.admin] = true;
     }
 }

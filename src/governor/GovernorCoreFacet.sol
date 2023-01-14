@@ -111,6 +111,16 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
+     * @dev this is a shim for configuring the default counting strategy with a
+     * concrete selector. We can't use the lib directly or else its functions
+     * won't all be internal and would cause a separate contract deploy, as
+     * opposed to inlining the code.
+     */
+    function simpleWeight(uint256 weight) public pure returns (uint256) {
+        return SimpleCounting.simpleWeight(weight);
+    }
+
+    /**
      * @dev Get votes for the given account at the given block number using proposal token.
      * @param account the account to get the vote weight for.
      * @param blockNumber the block number the snapshot was taken at.

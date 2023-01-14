@@ -17,8 +17,8 @@ library SimpleCounting {
         Abstain
     }
 
-    bytes4 public constant simpleWeightSelector = bytes4(keccak256("simpleWeight(uint256)"));
-    bytes4 public constant quadraticWeightSelector = bytes4(keccak256("quadraticWeight(uint256)"));
+    bytes4 internal constant simpleWeightSelector = bytes4(keccak256("simpleWeight(uint256)"));
+    bytes4 internal constant quadraticWeightSelector = bytes4(keccak256("quadraticWeight(uint256)"));
 
     /**
      * @notice Applies the indicated weighting strategy to the amount `weight` that is supplied.
@@ -27,7 +27,7 @@ library SimpleCounting {
      * @param weightingSelector an encoded selector to use as a weighting strategy implementation.
      * @return the weight with the weighting strategy applied to it.
      */
-    function applyWeightStrategy(uint256 weight, bytes4 weightingSelector) public pure returns (uint256) {
+    function applyWeightStrategy(uint256 weight, bytes4 weightingSelector) internal pure returns (uint256) {
         // We check for success and only issue this as staticcall
 
         if (weightingSelector == simpleWeightSelector) {
@@ -45,7 +45,7 @@ library SimpleCounting {
      * @return string indicating the counting mode.
      */
     // solhint-disable-next-line func-name-mixedcase
-    function COUNTING_MODE() external pure returns (string memory) {
+    function COUNTING_MODE() internal pure returns (string memory) {
         return "support=bravo&quorum=for,abstain";
     }
 
@@ -54,7 +54,7 @@ library SimpleCounting {
      * @param weight the weight to apply the weighting strategy to.
      * @return the weight with the weighting strategy applied to it.
      */
-    function simpleWeight(uint256 weight) public pure returns (uint256) {
+    function simpleWeight(uint256 weight) internal pure returns (uint256) {
         return weight;
     }
 
@@ -63,7 +63,7 @@ library SimpleCounting {
      * @param weight the weight to apply the weighting strategy to.
      * @return the weight with the weighting strategy applied to it.
      */
-    function quadraticWeight(uint256 weight) public pure returns (uint256) {
+    function quadraticWeight(uint256 weight) internal pure returns (uint256) {
         return squareRoot(weight);
     }
 
@@ -88,7 +88,7 @@ library SimpleCounting {
      * @param proposalId the id of the proposal to retrieve voters for.
      * @return the list of voters for the proposal.
      */
-    function getProposalVoters(uint256 proposalId) external view returns (address[] memory) {
+    function getProposalVoters(uint256 proposalId) internal view returns (address[] memory) {
         return GovernorStorage.proposalVoters(proposalId);
     }
 
@@ -98,7 +98,7 @@ library SimpleCounting {
      * @param voter the address of the voter.
      * @return the vote type, the weight of the vote, and the weight of the vote with the weighting strategy applied.
      */
-    function getVote(uint256 proposalId, address voter) public view returns (VoteType, uint256, uint256) {
+    function getVote(uint256 proposalId, address voter) internal view returns (VoteType, uint256, uint256) {
         return abi.decode(GovernorStorage.proposalVote(proposalId, voter), (VoteType, uint256, uint256));
     }
 
@@ -111,7 +111,7 @@ library SimpleCounting {
      * @return abstainVotes - the number of votes abstaining from the vote.
      */
     function simpleProposalVotes(uint256 proposalId)
-        public
+        internal
         view
         returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
     {
@@ -134,13 +134,13 @@ library SimpleCounting {
      * @param proposalId the id of the proposal to check.
      * @return boolean - true if the quorum has been reached.
      */
-    function quorumReached(uint256 proposalId) external view returns (bool) {
+    function quorumReached(uint256 proposalId) internal view returns (bool) {
         (, uint256 forVotes, uint256 abstainVotes) = simpleProposalVotes(proposalId);
         bytes4 countingStrategy = GovernorStorage.proposal(proposalId).countingStrategy;
         return applyWeightStrategy(GovernorQuorum.quorum(proposalId), countingStrategy) <= forVotes + abstainVotes;
     }
 
-    function voteSucceeded(uint256 proposalId) external view returns (bool) {
+    function voteSucceeded(uint256 proposalId) internal view returns (bool) {
         (uint256 againstVotes, uint256 forVotes,) = simpleProposalVotes(proposalId);
         return forVotes > againstVotes;
     }
