@@ -31,8 +31,9 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     bytes32 public constant IDEMPOTENT_BALLOT_TYPEHASH =
         keccak256("IdempotentBallot(uint256 proposalId,uint8 support,string reason,uint256 nonce)");
-    bytes32 public constant IDEMPOTENT_PROPOSAL_TYPEHASH =
-        keccak256("IdempotentProposal(address[] targets,uint256[] values,bytes[] calldatas,string description,uint256 nonce)");
+    bytes32 public constant IDEMPOTENT_PROPOSAL_TYPEHASH = keccak256(
+        "IdempotentProposal(address[] targets,uint256[] values,bytes[] calldatas,string description,uint256 nonce)"
+    );
 
     /**
      * @notice Name of the governor instance (used in building the ERC712 domain separator).
@@ -126,6 +127,27 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return GovernorStorage.proposalHasVoted(proposalId, account);
     }
 
+    function proposeWithTokenAndCountingStrategyBySig(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description,
+        address proposalToken,
+        bytes4 countingStrategy,
+        uint256 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public returns (uint256 proposalId) {
+        address proposer = recoverProposer(targets, values, calldatas, description, nonce, v, r, s);
+
+        require(GovernorStorage.getAccountNonce(proposer) == nonce, "OrigamiGovernor: invalid nonce");
+
+        proposalId = createProposal(proposer, targets, values, calldatas, description, proposalToken, countingStrategy);
+
+        GovernorStorage.incrementAccountNonce(proposer);
+    }
+
     function proposeWithTokenAndCountingStrategy(
         address[] memory targets,
         uint256[] memory values,
@@ -133,19 +155,25 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         string memory description,
         address proposalToken,
         bytes4 countingStrategy
-    ) public returns (uint256 proposalId) {
-        require(
-            IERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
-            "Governor: proposal token must support IVotes"
+    ) public returns (uint256) {
+        return createProposal(msg.sender, targets, values, calldatas, description, proposalToken, countingStrategy);
+    }
+
+    function proposeWithParamsBySig(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description,
+        bytes memory params,
+        uint256 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public returns (uint256) {
+        (address proposalToken, bytes4 countingStrategy) = decodeParams(params);
+        return proposeWithTokenAndCountingStrategyBySig(
+            targets, values, calldatas, description, proposalToken, countingStrategy, nonce, v, r, s
         );
-        require(GovernorStorage.isConfiguredToken(proposalToken), "Governor: proposal token not allowed");
-
-        require(targets.length == values.length, "Governor: invalid proposal length");
-        require(targets.length == calldatas.length, "Governor: invalid proposal length");
-        require(targets.length > 0, "Governor: empty proposal");
-
-        proposalId =
-            createProposal(msg.sender, targets, values, calldatas, description, proposalToken, countingStrategy);
     }
 
     /**
@@ -163,15 +191,8 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         bytes[] memory calldatas,
         string memory description,
         bytes memory params
-    ) public returns (uint256 proposalId) {
-        address proposalToken;
-        bytes4 countingStrategy;
-        if (keccak256(params) == keccak256("")) {
-            proposalToken = GovernorStorage.configStorage().defaultProposalToken;
-            countingStrategy = GovernorStorage.configStorage().defaultCountingStrategy;
-        } else {
-            (proposalToken, countingStrategy) = decodeParams(params);
-        }
+    ) public returns (uint256) {
+        (address proposalToken, bytes4 countingStrategy) = decodeParams(params);
         return proposeWithTokenAndCountingStrategy(
             targets, values, calldatas, description, proposalToken, countingStrategy
         );
@@ -198,34 +219,18 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external returns (uint256 proposalId) {
-        bytes32[] memory encodedCallData = new bytes32[](calldatas.length);
-        for (uint256 i = 0; i < calldatas.length; i++) {
-            encodedCallData[i] = keccak256(calldatas[i]);
-        }
-        address proposer = ECDSA.recover(
-            ECDSA.toTypedDataHash(
-                domainSeparatorV4(),
-                keccak256(abi.encode(
-                    IDEMPOTENT_PROPOSAL_TYPEHASH,
-                    keccak256(abi.encodePacked(targets)),
-                    keccak256(abi.encodePacked(values)),
-                    keccak256(abi.encodePacked(encodedCallData)),
-                    keccak256(bytes(description)),
-                    nonce))
-            ),
-            v,
-            r,
-            s
-        );
-        proposalId = createProposal(
-            proposer,
+    ) external returns (uint256) {
+        return proposeWithTokenAndCountingStrategyBySig(
             targets,
             values,
             calldatas,
             description,
             GovernorStorage.configStorage().defaultProposalToken,
-            GovernorStorage.configStorage().defaultCountingStrategy
+            GovernorStorage.configStorage().defaultCountingStrategy,
+            nonce,
+            v,
+            r,
+            s
         );
     }
 
@@ -243,7 +248,14 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         bytes[] memory calldatas,
         string memory description
     ) external returns (uint256 proposalId) {
-        return proposeWithParams(targets, values, calldatas, description, "");
+        return proposeWithTokenAndCountingStrategy(
+            targets,
+            values,
+            calldatas,
+            description,
+            GovernorStorage.configStorage().defaultProposalToken,
+            GovernorStorage.configStorage().defaultCountingStrategy
+        );
     }
 
     /**
@@ -291,16 +303,6 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
-     * @notice retrieve the current voting nonce for a given voter.
-     * @param owner the address of the nonce owner.
-     * @return the next nonce for the owner.
-     */
-    function nonces(address owner) public view returns (uint256) {
-        GovernorStorage.ProposalStorage storage ps = GovernorStorage.proposalStorage();
-        return ps.nonces[owner];
-    }
-
-    /**
      * @notice Cast a vote on a proposal with a reason by signature. This is useful in allowing another address to pay for gas.
      * @param proposalId The id of the proposal to cast a vote on.
      * @param support The support value for the vote.
@@ -330,15 +332,11 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             s
         );
 
-        require(nonces(voter) == nonce, "OrigamiGovernor: invalid nonce");
+        require(GovernorStorage.getAccountNonce(voter) == nonce, "OrigamiGovernor: invalid nonce");
 
         weight = _castVote(proposalId, voter, support, reason);
 
-        // since voter nonce is capped by the total number of proposals ever, it
-        // is extraordinarily unlikely that we can overflow it.
-        unchecked {
-            GovernorStorage.proposalStorage().nonces[voter]++;
-        }
+        GovernorStorage.incrementAccountNonce(voter);
     }
 
     /**
@@ -370,6 +368,16 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         address proposalToken,
         bytes4 countingStrategy
     ) internal onlyThresholdTokenHolder(proposer) returns (uint256 proposalId) {
+        require(
+            IERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
+            "Governor: proposal token must support IVotes"
+        );
+        require(GovernorStorage.isConfiguredToken(proposalToken), "Governor: proposal token not allowed");
+
+        require(targets.length == values.length, "Governor: invalid proposal length");
+        require(targets.length == calldatas.length, "Governor: invalid proposal length");
+        require(targets.length > 0, "Governor: empty proposal");
+
         proposalId = GovernorCommon.hashProposal(targets, values, calldatas, keccak256(bytes(description)));
         GovernorStorage.ProposalCore storage ps =
             GovernorStorage.createProposal(proposalId, proposalToken, countingStrategy);
@@ -408,10 +416,45 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
+     * @dev recover the proposer address from signed proposal data
+     */
+    function recoverProposer(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description,
+        uint256 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal view returns (address) {
+        bytes32[] memory encodedCallData = new bytes32[](calldatas.length);
+        for (uint256 i = 0; i < calldatas.length; i++) {
+            encodedCallData[i] = keccak256(calldatas[i]);
+        }
+        bytes32 structHash = keccak256(
+            abi.encode(
+                IDEMPOTENT_PROPOSAL_TYPEHASH,
+                keccak256(abi.encodePacked(targets)),
+                keccak256(abi.encodePacked(values)),
+                keccak256(abi.encodePacked(encodedCallData)),
+                keccak256(bytes(description)),
+                nonce
+            )
+        );
+        return ECDSA.recover(ECDSA.toTypedDataHash(domainSeparatorV4(), structHash), v, r, s);
+    }
+
+    /**
      * @dev decode the bytes param format into the proposal token and counting strategy.
      */
-    function decodeParams(bytes memory params) internal pure returns (address proposalToken, bytes4 countingStrategy) {
-        return abi.decode(params, (address, bytes4));
+    function decodeParams(bytes memory params) internal view returns (address proposalToken, bytes4 countingStrategy) {
+        if (keccak256(params) == keccak256("")) {
+            proposalToken = GovernorStorage.configStorage().defaultProposalToken;
+            countingStrategy = GovernorStorage.configStorage().defaultCountingStrategy;
+        } else {
+            (proposalToken, countingStrategy) = abi.decode(params, (address, bytes4));
+        }
     }
 
     /**

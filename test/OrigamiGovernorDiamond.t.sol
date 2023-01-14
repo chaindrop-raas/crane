@@ -1111,13 +1111,22 @@ contract OrigamiGovernorUpdateSettingsViaProposal is GovernorDiamondHelper {
 }
 
 contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
+    event ProposalCreated(
+        uint256 proposalId,
+        address proposer,
+        address[] targets,
+        uint256[] values,
+        string[] signatures,
+        bytes[] calldatas,
+        uint256 startBlock,
+        uint256 endBlock,
+        string description
+    );
+
     address[] public targets;
     uint256[] public values;
     bytes[] public calldatas;
     string[] public signatures;
-    uint256 public proposalId;
-    bytes public params;
-    bytes32 public proposalHash;
     uint8 public v;
     bytes32 public r;
     bytes32 public s;
@@ -1128,11 +1137,11 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
         targets = new address[](1);
         values = new uint256[](1);
         calldatas = new bytes[](1);
-        signatures = new string[](1);
 
         targets[0] = address(origamiGovernorDiamond);
         values[0] = uint256(0);
         calldatas[0] = abi.encodeWithSignature("setGovernanceToken(address)", address(0xbad));
+        signatures = new string[](1);
 
         // use the gov token for vote weight
         description = "Update the governance token.";
@@ -1144,6 +1153,61 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
     }
 
     function testProposeBySig() public {
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit ProposalCreated(
+            37152077084267662562237225731447583962862989080556817955865322358291679988170,
+            signingVoter,
+            targets,
+            values,
+            signatures,
+            calldatas,
+            604842,
+            1209642,
+            description
+            );
         coreFacet.proposeBySig(targets, values, calldatas, description, 0, v, r, s);
+    }
+
+    function testProposeWithParamsBySig() public {
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit ProposalCreated(
+            37152077084267662562237225731447583962862989080556817955865322358291679988170,
+            signingVoter,
+            targets,
+            values,
+            signatures,
+            calldatas,
+            604842,
+            1209642,
+            description
+            );
+        coreFacet.proposeWithParamsBySig(targets, values, calldatas, description, "", nonce, v, r, s);
+    }
+
+    function testProposeWithTokenAndCountingStrategyBySig() public {
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit ProposalCreated(
+            37152077084267662562237225731447583962862989080556817955865322358291679988170,
+            signingVoter,
+            targets,
+            values,
+            signatures,
+            calldatas,
+            604842,
+            1209642,
+            description
+            );
+        coreFacet.proposeWithTokenAndCountingStrategyBySig(
+            targets,
+            values,
+            calldatas,
+            description,
+            address(govToken),
+            bytes4(keccak256("simpleWeight(uint256)")),
+            nonce,
+            v,
+            r,
+            s
+        );
     }
 }

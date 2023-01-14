@@ -340,4 +340,28 @@ library GovernorStorage {
     function setProposalHasVoted(uint256 proposalId, address account) internal {
         proposalStorage().proposalHasVoted[proposalId][account] = true;
     }
+
+    /**
+     * @notice returns the account's current nonce.
+     * @param account the account.
+     * @return the account's nonce.
+     */
+    function getAccountNonce(address account) internal view returns (uint256) {
+        return proposalStorage().nonces[account];
+    }
+
+    /**
+     * @notice increments the account's nonce.
+     * @param account the account.
+     */
+    function incrementAccountNonce(address account) internal {
+        // This function is unchecked because it is virtually impossible to
+        // overflow the nonce.  If a given account submitted one proposal per
+        // second forever, it would take 5.44 septillion years to overflow.
+        // ChatGPT agrees that's a long time.
+        unchecked {
+            GovernorStorage.proposalStorage().nonces[account]++;
+        }
+    }
+
 }
