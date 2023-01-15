@@ -9,6 +9,7 @@ import "src/OrigamiTimelockController.sol";
 import "src/governor/GovernorCoreFacet.sol";
 import "src/governor/GovernorSettingsFacet.sol";
 import "src/governor/GovernorTimelockControlFacet.sol";
+import "src/governor/lib/TokenWeightStrategy.sol";
 import "src/upgradeInitializers/GovernorDiamondInit.sol";
 import "src/utils/DiamondDeployHelper.sol";
 
@@ -803,7 +804,7 @@ contract OrigamiGovernorProposalQuadraticVoteResultsTest is GovernorDiamondHelpe
 contract OrigamiGovernorSimpleCounting is GovernorDiamondHelper {
     function testCannotSpecifyInvalidWeightStrategy() public {
         vm.expectRevert("Governor: weighting strategy not found");
-        SimpleCounting.applyWeightStrategy(100, bytes4(keccak256("blahdraticWeight(uint256)")));
+        TokenWeightStrategy.applyStrategy(100, bytes4(keccak256("blahdraticWeight(uint256)")));
     }
 }
 

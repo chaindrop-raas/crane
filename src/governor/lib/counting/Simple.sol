@@ -2,6 +2,8 @@
 pragma solidity 0.8.16;
 
 import "../GovernorQuorum.sol";
+import "../TokenWeightStrategy.sol";
+import "src/governor/lib/Voting.sol";
 import "src/utils/GovernorStorage.sol";
 
 /**
@@ -17,28 +19,6 @@ library SimpleCounting {
         Abstain
     }
 
-    bytes4 internal constant simpleWeightSelector = bytes4(keccak256("simpleWeight(uint256)"));
-    bytes4 internal constant quadraticWeightSelector = bytes4(keccak256("quadraticWeight(uint256)"));
-
-    /**
-     * @notice Applies the indicated weighting strategy to the amount `weight` that is supplied.
-     * @dev the staticcall is only executed against this contract and is checked for success before failing to a revert if the selector isn't found on this contract.
-     * @param weight the token weight to apply the weighting strategy to.
-     * @param weightingSelector an encoded selector to use as a weighting strategy implementation.
-     * @return the weight with the weighting strategy applied to it.
-     */
-    function applyWeightStrategy(uint256 weight, bytes4 weightingSelector) internal pure returns (uint256) {
-        // We check for success and only issue this as staticcall
-
-        if (weightingSelector == simpleWeightSelector) {
-            return simpleWeight(weight);
-        } else if (weightingSelector == quadraticWeightSelector) {
-            return quadraticWeight(weight);
-        } else {
-            revert("Governor: weighting strategy not found");
-        }
-    }
-
     /**
      * @notice a required function from IGovernor that declares what Governor style we support and how we derive quorum.
      * @dev See {IGovernor-COUNTING_MODE}.
@@ -47,24 +27,6 @@ library SimpleCounting {
     // solhint-disable-next-line func-name-mixedcase
     function COUNTING_MODE() internal pure returns (string memory) {
         return "support=bravo&quorum=for,abstain";
-    }
-
-    /**
-     * @notice simple weight calculation does not apply any weighting strategy. It is an integer identity function.
-     * @param weight the weight to apply the weighting strategy to.
-     * @return the weight with the weighting strategy applied to it.
-     */
-    function simpleWeight(uint256 weight) internal pure returns (uint256) {
-        return weight;
-    }
-
-    /**
-     * @notice quadratic weight calculation returns square root of the weight.
-     * @param weight the weight to apply the weighting strategy to.
-     * @return the weight with the weighting strategy applied to it.
-     */
-    function quadraticWeight(uint256 weight) internal pure returns (uint256) {
-        return squareRoot(weight);
     }
 
     /**
@@ -77,10 +39,8 @@ library SimpleCounting {
     function setVote(uint256 proposalId, address account, uint8 support, uint256 weight) internal {
         bytes4 weightingSelector = GovernorStorage.proposal(proposalId).countingStrategy;
 
-        bytes memory vote = abi.encode(VoteType(support), weight, applyWeightStrategy(weight, weightingSelector));
-        GovernorStorage.setProposalVote(proposalId, account, vote);
-        GovernorStorage.proposalVoters(proposalId).push(account);
-        GovernorStorage.setProposalHasVoted(proposalId, account);
+        uint256 calculatedWeight = TokenWeightStrategy.applyStrategy(weight, weightingSelector);
+        Voting.setVote(proposalId, account, abi.encode(VoteType(support), weight, calculatedWeight));
     }
 
     /**
@@ -99,7 +59,7 @@ library SimpleCounting {
      * @return the vote type, the weight of the vote, and the weight of the vote with the weighting strategy applied.
      */
     function getVote(uint256 proposalId, address voter) internal view returns (VoteType, uint256, uint256) {
-        return abi.decode(GovernorStorage.proposalVote(proposalId, voter), (VoteType, uint256, uint256));
+        return abi.decode(Voting.getVote(proposalId, voter), (VoteType, uint256, uint256));
     }
 
     /**
@@ -137,25 +97,31 @@ library SimpleCounting {
     function quorumReached(uint256 proposalId) internal view returns (bool) {
         (, uint256 forVotes, uint256 abstainVotes) = simpleProposalVotes(proposalId);
         bytes4 countingStrategy = GovernorStorage.proposal(proposalId).countingStrategy;
-        return applyWeightStrategy(GovernorQuorum.quorum(proposalId), countingStrategy) <= forVotes + abstainVotes;
-    }
-
-    function voteSucceeded(uint256 proposalId) internal view returns (bool) {
-        (uint256 againstVotes, uint256 forVotes,) = simpleProposalVotes(proposalId);
-        return forVotes > againstVotes;
+        return TokenWeightStrategy.applyStrategy(GovernorQuorum.quorum(proposalId), countingStrategy)
+            <= forVotes + abstainVotes;
     }
 
     /**
-     * @dev square root algorithm from https://github.com/ethereum/dapp-bin/pull/50#issuecomment-1075267374
-     * @param x the number to derive the square root of.
-     * @return y - the square root of x.
+     * @dev returns the winning option for a given proposal.
+     * @param proposalId the id of the proposal to check.
+     * @return VoteType - the winning option.
      */
-    function squareRoot(uint256 x) private pure returns (uint256 y) {
-        uint256 z = (x + 1) / 2;
-        y = x;
-        while (z < y) {
-            y = z;
-            z = (x / z + z) / 2;
+    function winningOption(uint256 proposalId) internal view returns (VoteType) {
+        (uint256 againstVotes, uint256 forVotes,) = simpleProposalVotes(proposalId);
+        if (forVotes >= againstVotes) {
+            return VoteType.For;
+        } else {
+            return VoteType.Against;
         }
     }
+
+    /**
+     * @dev returns true if the vote succeeded.
+     * @param proposalId the id of the proposal to check.
+     * @return boolean - true if the vote succeeded.
+     */
+    function voteSucceeded(uint256 proposalId) internal view returns (bool) {
+        return winningOption(proposalId) == VoteType.For;
+    }
+
 }

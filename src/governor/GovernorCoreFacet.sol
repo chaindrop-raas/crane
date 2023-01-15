@@ -3,6 +3,7 @@ pragma solidity 0.8.16;
 
 import "src/governor/lib/GovernorCommon.sol";
 import "src/governor/lib/GovernorQuorum.sol";
+import "src/governor/lib/TokenWeightStrategy.sol";
 import "src/interfaces/IGovernor.sol";
 import "src/interfaces/utils/IEIP712.sol";
 import "src/utils/AccessControl.sol";
@@ -117,7 +118,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      * opposed to inlining the code.
      */
     function simpleWeight(uint256 weight) public pure returns (uint256) {
-        return SimpleCounting.simpleWeight(weight);
+        return TokenWeightStrategy.simpleWeight(weight);
     }
 
     /**
