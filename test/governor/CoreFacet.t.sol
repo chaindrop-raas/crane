@@ -10,7 +10,25 @@ import "src/interfaces/IGovernorTimelockControl.sol";
 import "src/interfaces/utils/IAccessControl.sol";
 import "@diamond/interfaces/IERC165.sol";
 
-contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
+contract OrigamiGovernorCoreTest is GovernorDiamondHelper {
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    bytes32 public descriptionHash;
+    string public description;
+    uint256 public proposalId;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        description = "Update the governance token.";
+        descriptionHash = keccak256(bytes(description));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.propose(targets, values, calldatas, description);
+    }
+
     function testRetrieveGovernorName() public {
         assertEq(coreFacet.name(), "TestGovernor");
     }
@@ -47,26 +65,6 @@ contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
         assertTrue(loupeFacet.supportsInterface(type(IGovernorQuorum).interfaceId));
         assertTrue(loupeFacet.supportsInterface(type(IGovernorSettings).interfaceId));
         assertTrue(loupeFacet.supportsInterface(type(IGovernorTimelockControl).interfaceId));
-    }
-}
-
-contract OrigamiGovernorCoreTest is GovernorDiamondHelper {
-    address[] public targets;
-    uint256[] public values;
-    bytes[] public calldatas;
-    bytes32 public descriptionHash;
-    string public description;
-    uint256 public proposalId;
-
-    function setUp() public {
-        targets = new address[](1);
-        values = new uint256[](1);
-        calldatas = new bytes[](1);
-        description = "Update the governance token.";
-        descriptionHash = keccak256(bytes(description));
-
-        vm.prank(voter2);
-        proposalId = coreFacet.propose(targets, values, calldatas, description);
     }
 
     function testHashProposal() public {
@@ -304,5 +302,78 @@ contract OrigamiGovernorProposalVoteBySignatureTest is GovernorDiamondHelper {
         vm.roll(604_844);
         vm.expectRevert("OrigamiGovernor: invalid nonce");
         coreFacet.castVoteWithReasonBySig(proposalId, FOR, "I like it", nonce, v, r, s);
+    }
+}
+
+contract OrigamiGovernorProposalQuadraticVoteTest is GovernorDiamondHelper {
+    event VoteCast(address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason);
+
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    string[] public signatures;
+    uint256 public proposalId;
+    bytes public params;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        signatures = new string[](1);
+
+        targets[0] = address(0xbeef);
+        values[0] = uint256(0xdead);
+        calldatas[0] = "0x";
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("quadraticWeight(uint256)")));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.proposeWithParams(targets, values, calldatas, "New proposal", params);
+    }
+
+    function testCanVoteOnProposalWithQuadraticCounting() public {
+        // self-delegate to get voting power
+        vm.startPrank(voter);
+        govToken.delegate(voter);
+
+        vm.roll(604_843);
+        vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
+        emit VoteCast(voter, proposalId, FOR, 100000000, "I like it!");
+        coreFacet.castVoteWithReason(proposalId, FOR, "I like it!");
+    }
+
+    function testQuadraticVotingResultsAreCorrect() public {
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // set block to first eligible voting block
+        vm.roll(604_843);
+
+        // voter and voter2 collectively have fewer tokens than voter3 by
+        // themselves, but quadratic weighting has the effect of making them
+        // more powerful together than voter3 alone
+
+        vm.prank(voter);
+        coreFacet.castVoteWithReason(proposalId, FOR, "I like it!");
+
+        vm.prank(voter2);
+        coreFacet.castVoteWithReason(proposalId, AGAINST, "This is rubbish!");
+
+        vm.prank(voter3);
+        coreFacet.castVoteWithReason(proposalId, FOR, "I like it too! It's not rubbish at all!");
+
+        vm.prank(voter4);
+        coreFacet.castVoteWithReason(proposalId, ABSTAIN, "I have no opinion.");
+
+        vm.roll(640_483 + 604_800);
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+        (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes) = coreFacet.proposalVotes(proposalId);
+
+        assertEq(againstVotes, 15000);
+        assertEq(forVotes, 17500);
+        assertEq(abstainVotes, 17500);
     }
 }

@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "../GovernorQuorum.sol";
-import "../TokenWeightStrategy.sol";
+import "src/governor/lib/GovernorQuorum.sol";
+import "src/governor/lib/TokenWeightStrategy.sol";
 import "src/governor/lib/Voting.sol";
 import "src/utils/GovernorStorage.sol";
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "./counting/Simple.sol";
+import "src/governor/lib/SimpleCounting.sol";
 import "src/interfaces/IGovernor.sol";
 import "src/utils/GovernorStorage.sol";
 
