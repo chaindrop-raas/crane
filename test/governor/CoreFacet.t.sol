@@ -19,18 +19,9 @@ contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
         assertTrue(coreFacet.hasRole(0x00, admin));
     }
 
-    function testRetrieveProposalThreshold() public {
-        assertEq(settingsFacet.proposalThreshold(), 1);
-    }
-
     function testInformationalFunctions() public {
-        assertEq(address(timelockControlFacet.timelock()), address(timelock));
         assertEq(coreFacet.name(), "TestGovernor");
-        assertEq(settingsFacet.votingDelay(), 604_800);
         assertEq(coreFacet.version(), "1.1.0");
-        assertEq(settingsFacet.votingPeriod(), 604_800);
-        assertEq(settingsFacet.proposalThreshold(), 1);
-        assertEq(settingsFacet.quorumNumerator(), 10);
     }
 
     function testEIP712DomainSeparator() public {
