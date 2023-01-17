@@ -59,6 +59,45 @@ contract OrigamiGovernorDiamondDeployTest is GovernorDiamondHelper {
     }
 }
 
+contract OrigamiGovernorCoreTest is GovernorDiamondHelper {
+    address[] public targets;
+    uint256[] public values;
+    bytes[] public calldatas;
+    bytes32 public descriptionHash;
+    string public description;
+    uint256 public proposalId;
+
+    function setUp() public {
+        targets = new address[](1);
+        values = new uint256[](1);
+        calldatas = new bytes[](1);
+        description = "Update the governance token.";
+        descriptionHash = keccak256(bytes(description));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.propose(targets, values, calldatas, description);
+    }
+
+    function testHashProposal() public {
+        assertEq(
+            coreFacet.hashProposal(targets, values, calldatas, descriptionHash),
+            111733488239690606578342420656734440275497824098664017028410490445773041641214
+        );
+    }
+
+    function testProposalSnapshot() public {
+        assertEq(coreFacet.proposalSnapshot(proposalId), 604_842);
+    }
+
+    function testProposalDeadline() public {
+        assertEq(coreFacet.proposalDeadline(proposalId), 1_209_642);
+    }
+
+    function testSimpleWeight() public {
+        assertEq(coreFacet.simpleWeight(100), 100);
+    }
+}
+
 contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
     event ProposalCreated(
         uint256 proposalId,
