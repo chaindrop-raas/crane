@@ -45,13 +45,8 @@ library GovernorCommon {
         }
 
         GovernorStorage.TimelockQueue storage queue = GovernorStorage.proposalStorage().timelockQueue[proposalId];
-        GovernorStorage.ProposalCore storage proposal = GovernorStorage.proposal(proposalId);
         if (queue.timestamp == 0) {
             return IGovernor.ProposalState.Succeeded;
-        } else if (proposal.executed) {
-            return IGovernor.ProposalState.Executed;
-        } else if (proposal.canceled) {
-            return IGovernor.ProposalState.Canceled;
         } else {
             return IGovernor.ProposalState.Queued;
         }
@@ -69,6 +64,7 @@ library GovernorCommon {
         }
 
         if (proposal.snapshot == 0) {
+            // coverage seems convinced this is not invoked, but we have a test that proves it is
             revert("Governor: unknown proposal id");
         }
 
