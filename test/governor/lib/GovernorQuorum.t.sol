@@ -6,8 +6,6 @@ import {GovernorDiamondHelper} from "test/OrigamiDiamondTestHelper.sol";
 import "src/governor/lib/GovernorQuorum.sol";
 import "src/governor/lib/TokenWeightStrategy.sol";
 
-import "@std/console2.sol";
-
 contract QuorumContract {
     address public governanceToken;
     constructor(address govToken) {
