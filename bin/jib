@@ -184,8 +184,7 @@ grantPermissions() {
 coverage() {
   forge coverage --report lcov
   lcov -r lcov.info "test/*" \
-    -r lcov.info "script/*" \
-    -r lcov.info "src/versions/*" \
+    -r lcov.info "script/*" "src/governor/lib/*" "src/utils/*" \
     -o lcov-filtered.info
   genhtml -o coverage/ lcov-filtered.info
   rm lcov.info lcov-filtered.info
