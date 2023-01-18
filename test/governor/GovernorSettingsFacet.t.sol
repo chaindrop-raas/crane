@@ -12,8 +12,50 @@ contract SettingsFacetTest is GovernorDiamondHelper {
         assertEq(settingsFacet.quorumNumerator(), 10);
     }
 
+    function testRetrieveDefaultCountingStrategy() public {
+        assertEq(settingsFacet.defaultCountingStrategy(), bytes4(keccak256("simpleWeight(uint256)")));
+    }
+
+    function testRetrieveDefaultProposalToken() public {
+        assertEq(settingsFacet.defaultProposalToken(), address(memToken));
+    }
+
+    function testRetrieveGovernanceToken() public {
+        assertEq(settingsFacet.governanceToken(), address(govToken));
+    }
+
+    function testRetrieveMembershipToken() public {
+        assertEq(settingsFacet.membershipToken(), address(memToken));
+    }
+
     function testRetrieveProposalThreshold() public {
         assertEq(settingsFacet.proposalThreshold(), 1);
+    }
+
+    function testRetrieveProposalThresholdToken() public {
+        assertEq(settingsFacet.proposalThresholdToken(), address(memToken));
+    }
+
+    function testRetrieveQuorumNumerator() public {
+        assertEq(settingsFacet.quorumNumerator(), 10);
+    }
+
+    function testRetrieveVotingDelay() public {
+        assertEq(settingsFacet.votingDelay(), 604_800);
+    }
+
+    function testRetrieveVotingPeriod() public {
+        assertEq(settingsFacet.votingPeriod(), 604_800);
+    }
+
+    function testCannotDirectlyUpdateDefaultCountingStrategy() public {
+        vm.expectRevert("Governor: onlyGovernance");
+        settingsFacet.setDefaultCountingStrategy(bytes4(0));
+    }
+
+    function testCannotDirectlyUpdateDefaultProposalToken() public {
+        vm.expectRevert("Governor: onlyGovernance");
+        settingsFacet.setDefaultProposalToken(address(0));
     }
 
     function testCannotDirectlyUpdateGovernanceToken() public {
@@ -49,6 +91,16 @@ contract SettingsFacetTest is GovernorDiamondHelper {
     function testCannotDirectlyUpdateVotingPeriod() public {
         vm.expectRevert("Governor: onlyGovernance");
         settingsFacet.setVotingPeriod(0);
+    }
+
+    function testTimelockCanUpdateDefaultCountingStrategy() public {
+        vm.prank(address(timelock));
+        settingsFacet.setDefaultCountingStrategy(bytes4(0));
+    }
+
+    function testTimelockCanUpdateDefaultProposalToken() public {
+        vm.prank(address(timelock));
+        settingsFacet.setDefaultProposalToken(address(0xbeef));
     }
 
     function testTimelockCanUpdateGovernanceToken() public {
