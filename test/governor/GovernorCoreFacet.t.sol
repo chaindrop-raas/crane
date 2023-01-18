@@ -187,6 +187,28 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
             s
         );
     }
+
+    function testCannotReplayProposalBySignature() public {
+        bytes4 weighting = bytes4(keccak256("simpleWeight(uint256)"));
+        coreFacet.proposeWithTokenAndCountingStrategyBySig(
+            targets, values, calldatas, description, address(govToken), weighting, nonce, v, r, s
+        );
+
+        // cannot re-submit votes by signature
+        vm.roll(block.number + 1);
+        vm.expectRevert("OrigamiGovernor: invalid nonce");
+        coreFacet.proposeWithTokenAndCountingStrategyBySig(
+            targets, values, calldatas, description, address(govToken), weighting, nonce, v, r, s
+        );
+
+        // just incrementing the nonce won't work either
+        // cannot re-submit votes by signature
+        vm.roll(block.number + 1);
+        vm.expectRevert("OrigamiGovernor: invalid nonce");
+        coreFacet.proposeWithTokenAndCountingStrategyBySig(
+            targets, values, calldatas, description, address(govToken), weighting, nonce + 1, v, r, s
+        );
+    }
 }
 
 contract OrigamiGovernorProposalVoteBySignatureTest is GovernorDiamondHelper {
