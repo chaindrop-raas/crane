@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "src/interfaces/IAccessControl.sol";
 import "src/interfaces/IGovernor.sol";
 import "src/interfaces/IGovernorQuorum.sol";
 import "src/interfaces/IGovernorSettings.sol";
 import "src/interfaces/IGovernorTimelockControl.sol";
-import "src/interfaces/utils/IAccessControl.sol";
 import "src/utils/AccessControlStorage.sol";
 import "src/utils/GovernorStorage.sol";
 
