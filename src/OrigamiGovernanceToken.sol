@@ -8,7 +8,6 @@ import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
-import "@oz-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
 import "@oz/governance/utils/IVotes.sol";
 
 /// @title Origami Governance Token
@@ -22,7 +21,6 @@ contract OrigamiGovernanceToken is
     PausableUpgradeable,
     AccessControlUpgradeable,
     ERC20CappedUpgradeable,
-    ERC20PermitUpgradeable,
     ERC20VotesUpgradeable
 {
     /// @notice the role hash for granting the ability to pause the contract. By default, this role is granted to the contract admin.
@@ -74,7 +72,6 @@ contract OrigamiGovernanceToken is
         __AccessControl_init();
         __ERC20Burnable_init();
         __ERC20Capped_init(_supplyCap);
-        __ERC20Permit_init(_name);
         __ERC20Votes_init();
         __ERC20_init(_name, _symbol);
         __Pausable_init();
