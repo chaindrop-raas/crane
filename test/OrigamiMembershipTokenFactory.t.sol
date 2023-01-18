@@ -72,6 +72,15 @@ contract DeployingMembershipTokenFactoryTest is OMTFAddressHelper, Test {
         factory.initialize();
     }
 
+    function testCannotReinitialize() public {
+        vm.expectRevert(
+            abi.encodePacked(
+                "Initializable: contract is already initialized"
+            )
+        );
+        factory.initialize();
+    }
+
     function testCreateEmitsEvent() public {
         // we skip validating argument 2 because the address is not known until after the create call
         vm.expectEmit(true, false, true, true, address(factory));
