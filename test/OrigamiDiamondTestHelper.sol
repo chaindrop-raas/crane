@@ -9,7 +9,7 @@ import "src/OrigamiTimelockController.sol";
 import "src/governor/GovernorCoreFacet.sol";
 import "src/governor/GovernorSettingsFacet.sol";
 import "src/governor/GovernorTimelockControlFacet.sol";
-import "src/upgradeInitializers/GovernorDiamondInit.sol";
+import "src/utils/GovernorDiamondInit.sol";
 import "src/utils/DiamondDeployHelper.sol";
 
 import "@std/Test.sol";

@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 import "@std/Test.sol";
 import "src/OrigamiMembershipToken.sol";
 import "src/OrigamiMembershipTokenFactory.sol";
-import "src/versions/OrigamiMembershipTokenFactoryTestVersion.sol";
+import "test/versions/OrigamiMembershipTokenFactoryTestVersion.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 import "@oz/utils/Strings.sol";
