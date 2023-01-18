@@ -6,7 +6,6 @@ import "src/interfaces/utils/IERC721Receiver.sol";
 import "src/interfaces/utils/IERC1155Receiver.sol";
 import "src/interfaces/ITimelockController.sol";
 import "@diamond/interfaces/IERC165.sol";
-import "@std/console2.sol";
 
 /**
  * @dev Contract module which acts as a timelocked controller. When set as the
