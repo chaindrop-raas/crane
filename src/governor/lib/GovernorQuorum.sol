@@ -11,15 +11,6 @@ import "@oz/governance/utils/IVotes.sol";
  * @custom:security-contact contract-security@joinorigami.com
  */
 library GovernorQuorum {
-    event QuorumNumeratorUpdated(uint128 quorumNumerator);
-
-    /**
-     * @dev Returns the current quorum numerator. See {quorumDenominator}.
-     */
-    function quorumNumerator() internal view returns (uint128) {
-        return GovernorStorage.configStorage().quorumNumerator;
-    }
-
     /**
      * @dev Returns the quorum numerator for a specific proposalId. This value is set from global config at the time of proposal creation.
      */
@@ -44,21 +35,4 @@ library GovernorQuorum {
         return (supply * quorumNumerator(proposalId)) / quorumDenominator();
     }
 
-    /**
-     * @dev Changes the quorum numerator.
-     *
-     * Emits a {QuorumNumeratorUpdated} event.
-     *
-     * Requirements:
-     *
-     * - Must be called through a governance proposal.
-     * - New numerator must be smaller or equal to the denominator.
-     */
-    function updateQuorumNumerator(uint128 newQuorumNumerator) internal {
-        require(
-            newQuorumNumerator <= quorumDenominator(), "GovernorQuorumFacet: new numerator must be LTE the denominator"
-        );
-        GovernorStorage.configStorage().quorumNumerator = newQuorumNumerator;
-        emit QuorumNumeratorUpdated(newQuorumNumerator);
-    }
 }
