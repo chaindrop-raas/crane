@@ -316,9 +316,21 @@ contract BurnGovernanceTokenTest is OGTHelper {
 }
 
 contract PauseGovernanceTokenTest is OGTHelper {
+    event Paused(address account);
+    event Unpaused(address account);
+
     function setUp() public {
         vm.startPrank(owner);
         token.grantRole(token.PAUSER_ROLE(), pauser);
+    }
+
+    function testCanPauseAsPauser() public {
+        vm.stopPrank();
+        vm.prank(pauser);
+        vm.expectEmit(true, true, true, true, address(token));
+        emit Paused(pauser);
+        token.pause();
+        assertTrue(token.paused());
     }
 
     function testCannotPauseAsNonPauser(address nonPauser) public {
@@ -337,6 +349,17 @@ contract PauseGovernanceTokenTest is OGTHelper {
             )
         );
         token.pause();
+    }
+
+    function testCanUnpauseAsPauser() public {
+        vm.stopPrank();
+        vm.prank(pauser);
+        token.pause();
+        vm.prank(pauser);
+        vm.expectEmit(true, true, true, true, address(token));
+        emit Unpaused(pauser);
+        token.unpause();
+        assertFalse(token.paused());
     }
 
     function testCannotUnpauseAsNonPauser(address nonPauser) public {
@@ -522,6 +545,12 @@ contract TransferGovernanceTokenTest is OGTHelper {
         token.transfer(mintee, 1);
         assertEq(token.balanceOf(minter), 9);
         assertEq(token.balanceOf(mintee), 91);
+        vm.prank(mintee);
+        token.approve(minter, 10);
+        vm.prank(minter);
+        token.transferFrom(mintee, minter, 10);
+        assertEq(token.balanceOf(minter), 19);
+        assertEq(token.balanceOf(mintee), 81);
     }
 
     function testCanTransferAsTransferrerWhenTransfersAreDisabled() public {
