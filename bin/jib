@@ -186,8 +186,7 @@ coverage() {
   lcov -r lcov.info "test/*" \
     -r lcov.info "script/*" \
     -r lcov.info "src/versions/*" \
-    -o lcov-filtered.info \
-    --rc lcov_branch_coverage=1
+    -o lcov-filtered.info
   genhtml -o coverage/ lcov-filtered.info
   rm lcov.info lcov-filtered.info
   [ $argc_no_open ] || open coverage/index.html
