@@ -658,3 +658,92 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
         assertEq(token.delegates(mintee), delegatee);
     }
 }
+
+// This contract is stripped down as much as possible and intended to be used
+// for snapshotting estimated gas costs for functions used by holders. Each test
+// comes in a fuzzed and non-fuzzed version, providing multiple runs on a
+// variety of inputs versus a baseline.  This is not an accurate measurement of
+// gas costs, but can be a good way to ballpark gas consumption or to compare it
+// with snapshots to see how changes might impact gas costs.
+contract HolderFunctionGasEstimateTests is OGTHelper {
+    function setUp() public {
+        vm.startPrank(owner);
+        token.grantRole(token.PAUSER_ROLE(), pauser);
+        token.mint(mintee, 100_000_000);
+        token.enableTransfer();
+        token.enableBurn();
+        vm.stopPrank();
+    }
+
+    function testTransferGasCostFuzzed(uint96 amount) public {
+        vm.assume(amount < 100_000_000);
+        vm.prank(mintee);
+        token.transfer(minter, amount);
+    }
+
+    function testTransferGasCost() public {
+        vm.prank(mintee);
+        token.transfer(minter, 10);
+    }
+
+    function testApproveAndTransferFromGasCostFuzzed(uint96 amount) public {
+        vm.assume(amount < 100_000_000);
+        vm.prank(mintee);
+        token.approve(minter, amount);
+        vm.prank(minter);
+        token.transferFrom(mintee, minter, amount);
+    }
+
+    function testApproveAndTransferFromGasCost() public {
+        vm.prank(mintee);
+        token.approve(minter, 10);
+        vm.prank(minter);
+        token.transferFrom(mintee, minter, 10);
+    }
+
+    function testBurnGasCostFuzzed(uint96 amount) public {
+        vm.assume(amount < 100_000_000);
+        vm.prank(mintee);
+        token.burn(amount);
+    }
+
+    function testBurnGasCost() public {
+        vm.prank(mintee);
+        token.burn(10);
+    }
+
+    function testApproveGasCostFuzzed(uint96 amount) public {
+        vm.assume(amount < 100_000_000);
+        vm.prank(mintee);
+        token.approve(minter, amount);
+    }
+
+    function testApproveGasCost() public {
+        vm.prank(mintee);
+        token.approve(minter, 10);
+    }
+
+    function testIncreaseAllowanceGasCostFuzzed(uint96 amount) public {
+        vm.assume(amount < 100_000_000);
+        vm.prank(mintee);
+        token.increaseAllowance(minter, amount);
+    }
+
+    function testIncreaseAllowanceGasCost() public {
+        vm.prank(mintee);
+        token.increaseAllowance(minter, 10);
+    }
+
+    function testDecreaseAllowanceGasCostFuzzed(uint96 amount) public {
+        vm.assume(amount < 100_000_000);
+        vm.startPrank(mintee);
+        token.approve(minter, amount);
+        token.decreaseAllowance(minter, amount / 2);
+    }
+
+    function testDecreaseAllowanceGasCost() public {
+        vm.startPrank(mintee);
+        token.approve(minter, 15);
+        token.decreaseAllowance(minter, 10);
+    }
+}
