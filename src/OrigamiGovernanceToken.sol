@@ -27,27 +27,20 @@ contract OrigamiGovernanceToken is
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     /// @notice the role hash for granting the ability to mint new governance tokens. By default, this role is granted to the contract admin.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    /// @notice the role has for granting the ability to transfer governance tokens. By default, this role is granted to the contract admin. This is also typically granted to the DAO's treaury multisig for distributing compensation in the form of governance tokens.
+    bytes32 public constant TRANSFERRER_ROLE = keccak256("TRANSFERRER_ROLE");
 
     /// @notice this private variable denotes whether or not the contract allows buring tokens. By default, this is disabled.
     bool private _burnEnabled;
     /// @notice this private variable denotes whether or not the contract allows token transfers. By default, this is disabled.
     bool private _transferEnabled;
 
-    /// new storage slots added here after 2022-06-16
-
-    /// @notice the role has for granting the ability to transfer governance tokens. By default, this role is granted to the contract admin. This is also typically granted to the DAO's treaury multisig for distributing compensation in the form of governance tokens.
-    bytes32 public constant TRANSFERRER_ROLE = keccak256("TRANSFERRER_ROLE");
-
     /// @notice monitoring: this is fired when the transferEnabled state is changed.
     event TransferEnabled(address indexed caller, bool value);
     /// @notice monitoring: this is fired when the burnEnabled state is changed.
     event BurnEnabled(address indexed caller, bool value);
     /// @notice monitoring: this is fired when governance tokens are minted.
-    event GovernanceTokensMinted(
-        address indexed caller,
-        address indexed to,
-        uint256 amount
-    );
+    event GovernanceTokensMinted(address indexed caller, address indexed to, uint256 amount);
 
     /// @notice the constructor is not used since the contract is upgradeable except to disable initializers in the implementations that are deployed.
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -61,12 +54,10 @@ contract OrigamiGovernanceToken is
     /// @param _name the name of the token. Typically this is the name of the DAO.
     /// @param _symbol the symbol of the token. Typically this is a short abbreviation of the DAO's name.
     /// @param _supplyCap cap on the total supply mintable by this contract.
-    function initialize(
-        address _admin,
-        string memory _name,
-        string memory _symbol,
-        uint256 _supplyCap
-    ) public initializer {
+    function initialize(address _admin, string memory _name, string memory _symbol, uint256 _supplyCap)
+        public
+        initializer
+    {
         require(_admin != address(0x0), "Admin address cannot be zero");
 
         __AccessControl_init();
@@ -114,22 +105,14 @@ contract OrigamiGovernanceToken is
 
     /// @dev this emits an event indicating that the transferrable state has been set to enabled and by whom.
     /// @notice this function enables transfers of governance tokens. Only the contract admin can call this function.
-    function enableTransfer()
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        whenNontransferrable
-    {
+    function enableTransfer() public onlyRole(DEFAULT_ADMIN_ROLE) whenNontransferrable {
         _transferEnabled = true;
         emit TransferEnabled(_msgSender(), _transferEnabled);
     }
 
     /// @dev this emits an event indicating that the transferrable state has been set to disabled and by whom.
     /// @notice this function disables transfers of governance tokens. Only the contract admin can call this function.
-    function disableTransfer()
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        whenTransferrable
-    {
+    function disableTransfer() public onlyRole(DEFAULT_ADMIN_ROLE) whenTransferrable {
         _transferEnabled = false;
         emit TransferEnabled(_msgSender(), _transferEnabled);
     }
@@ -157,52 +140,39 @@ contract OrigamiGovernanceToken is
 
     /// @dev this is overridden so we can apply the `whenTransferrable` modifier
     /// @notice this allows transfers when the transferrable state is enabled.
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public virtual override whenTransferrable returns (bool) {
-        return super.transferFrom(from, to, amount);
-    }
-
-    /// @dev this is overridden so we can apply the `whenTransferrable` modifier
-    /// @notice this allows transfers when the transferrable state is enabled.
-    function transfer(address to, uint256 amount)
+    function transferFrom(address from, address to, uint256 amount)
         public
         virtual
         override
         whenTransferrable
         returns (bool)
     {
+        return super.transferFrom(from, to, amount);
+    }
+
+    /// @dev this is overridden so we can apply the `whenTransferrable` modifier
+    /// @notice this allows transfers when the transferrable state is enabled.
+    function transfer(address to, uint256 amount) public virtual override whenTransferrable returns (bool) {
         return super.transfer(to, amount);
     }
 
     /// @dev this is overridden so we can apply the `whenNotPaused` modifier
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override whenNotPaused {
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override whenNotPaused {
         super._beforeTokenTransfer(from, to, amount);
     }
 
     // The following functions are overrides required by Solidity.
 
-    function _afterTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override(ERC20Upgradeable, ERC20VotesUpgradeable) {
+    function _afterTokenTransfer(address from, address to, uint256 amount)
+        internal
+        override(ERC20Upgradeable, ERC20VotesUpgradeable)
+    {
         super._afterTokenTransfer(from, to, amount);
     }
 
     function _mint(address to, uint256 amount)
         internal
-        override(
-            ERC20Upgradeable,
-            ERC20CappedUpgradeable,
-            ERC20VotesUpgradeable
-        )
+        override(ERC20Upgradeable, ERC20CappedUpgradeable, ERC20VotesUpgradeable)
     {
         super._mint(to, amount);
     }
@@ -236,10 +206,7 @@ contract OrigamiGovernanceToken is
 
     /// @notice this modifier allows us to ensure that something may only occur when the transfers are enabled
     modifier whenTransferrable() {
-        require(
-            hasRole(TRANSFERRER_ROLE, _msgSender()) || transferrable(),
-            "Transferrable: transfers are disabled"
-        );
+        require(hasRole(TRANSFERRER_ROLE, _msgSender()) || transferrable(), "Transferrable: transfers are disabled");
         _;
     }
 
@@ -250,8 +217,6 @@ contract OrigamiGovernanceToken is
         override(AccessControlUpgradeable)
         returns (bool)
     {
-        return
-            interfaceId == type(IVotes).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return interfaceId == type(IVotes).interfaceId || super.supportsInterface(interfaceId);
     }
 }
