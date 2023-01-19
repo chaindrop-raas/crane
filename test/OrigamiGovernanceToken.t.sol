@@ -659,6 +659,53 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
     }
 }
 
+contract GovernanceTokenTransferLockTest is OGTHelper {
+    function setUp() public {
+        vm.startPrank(owner);
+        token.enableTransfer();
+        token.mint(mintee, 100);
+        vm.stopPrank();
+    }
+
+    function testEmptyTransferLock() public {
+        assertEq(token.getTransferLock(mintee), 0);
+    }
+
+    function testSetTransferLock() public {
+        assertEq(block.timestamp, 1);
+        vm.prank(mintee);
+        token.setTransferLock(100);
+        assertEq(token.getTransferLock(mintee), 100);
+    }
+
+    function testCannotTransferWhileLocked() public {
+        vm.warp(1673049600); // 2023-01-01
+        vm.prank(mintee);
+        token.setTransferLock(1704585600); // 2024-01-01
+        vm.prank(mintee);
+        vm.expectRevert("Timelock: address timelock has not expired");
+        token.transfer(minter, 10);
+    }
+
+    function testCanTransferAfterLockExpires() public {
+        vm.warp(1673049600); // 2023-01-01
+        vm.prank(mintee);
+        token.setTransferLock(1704585600); // 2024-01-01
+
+        // timelock date is inclusive, so an attempt to transfer at the exact timelock time will fail
+        vm.warp(1704585600); // 2024-01-01
+        vm.prank(mintee);
+        vm.expectRevert("Timelock: address timelock has not expired");
+        token.transfer(mintee, 10);
+
+        // warp to the second immediately after the timelock expires and try again
+        vm.prank(mintee);
+        vm.warp(1704585601); // 2024-01-01
+        token.transfer(minter, 10);
+        assertEq(token.balanceOf(minter), 10);
+    }
+}
+
 // This contract is stripped down as much as possible and intended to be used
 // for snapshotting estimated gas costs for functions used by holders. Each test
 // comes in a fuzzed and non-fuzzed version, providing multiple runs on a
