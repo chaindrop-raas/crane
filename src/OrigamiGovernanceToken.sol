@@ -35,6 +35,12 @@ contract OrigamiGovernanceToken is
     /// @notice this private variable denotes whether or not the contract allows token transfers. By default, this is disabled.
     bool private _transferEnabled;
 
+    /**
+     * @notice maintains a timelock on transfers for a given address. This is used to prevent transfers for selected addresses until block.timestamp exceeds the lockup date (stored as uint256).
+     * @dev time-locked address => transfer lock release date
+     */
+    mapping(address => uint256) public timelock;
+
     /// @notice monitoring: this is fired when the transferEnabled state is changed.
     event TransferEnabled(address indexed caller, bool value);
     /// @notice monitoring: this is fired when the burnEnabled state is changed.
@@ -117,6 +123,25 @@ contract OrigamiGovernanceToken is
         emit TransferEnabled(_msgSender(), _transferEnabled);
     }
 
+    /**
+     * @notice an address may use this function to voluntarily lock up their tokens until a given time. This is irreversible. Use with caution.
+     * @dev this prevents transfers until the lockup date has passed. Block timestamp may be innaccurate by up to 15 minutes, but on a timescale of years this is negligible.
+     * @param lockupDate the date (as a unix timestamp in UTC) until which transfers from the address will be locked.
+     */
+    function setTransferLock(uint256 lockupDate) public {
+        require(lockupDate > block.timestamp, "Cannot timelock transfer to past date");
+        timelock[_msgSender()] = lockupDate;
+    }
+
+    /**
+     * @notice check the timelock for an address. Returns 0 if there is no timelock.
+     * @param account the address to check.
+     * @return the timelock date (as a unix timestamp in UTC) for the given address.
+     */
+    function getTransferLock(address account) public view returns (uint256) {
+        return timelock[account];
+    }
+
     /// @dev this is only callable by an address that has the PAUSER_ROLE
     /// @notice this function pauses the contract, restricting mints, transfers and burns regardless of the independent state of other configurations.
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -158,6 +183,9 @@ contract OrigamiGovernanceToken is
 
     /// @dev this is overridden so we can apply the `whenNotPaused` modifier
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal override whenNotPaused {
+        if (timelock[from] > 0) {
+            require(block.timestamp > timelock[from], "Timelock: address timelock has not expired");
+        }
         super._beforeTokenTransfer(from, to, amount);
     }
 
