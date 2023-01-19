@@ -668,34 +668,54 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
     }
 
     function testEmptyTransferLock() public {
-        assertEq(token.getTransferLock(mintee), 0);
+        (uint256 amount, uint256 deadline) = token.getTransferLock(mintee);
+        assertEq(amount, 0);
+        assertEq(deadline, 0);
     }
 
     function testSetTransferLock() public {
         assertEq(block.timestamp, 1);
         vm.prank(mintee);
-        token.setTransferLock(100);
-        assertEq(token.getTransferLock(mintee), 100);
+        token.setTransferLock(100, 1000);
+        (uint256 amount, uint256 deadline) = token.getTransferLock(mintee);
+        assertEq(amount, 100);
+        assertEq(deadline, 1000);
+    }
+
+    function testCannotSetTransferLockAmountHigherThanBalance() public {
+        vm.prank(mintee);
+        vm.expectRevert("TransferLock: amount cannot exceed balance");
+        token.setTransferLock(101, 1000);
     }
 
     function testCannotTransferWhileLocked() public {
         vm.warp(1673049600); // 2023-01-01
         vm.prank(mintee);
-        token.setTransferLock(1704585600); // 2024-01-01
+        token.setTransferLock(100, 1704585600); // 2024-01-01
         vm.prank(mintee);
-        vm.expectRevert("Timelock: address timelock has not expired");
+        vm.expectRevert("TransferLock: address timelock has not expired");
         token.transfer(minter, 10);
+    }
+
+    function testCanTransferSurplusWhileLocked() public {
+        vm.warp(1673049600); // 2023-01-01
+        vm.prank(mintee);
+        token.setTransferLock(90, 1704585600); // 2024-01-01
+        vm.prank(mintee);
+        token.transfer(minter, 10);
+        assertEq(token.balanceOf(mintee), 90);
+        assertEq(token.balanceOf(minter), 10);
     }
 
     function testCanTransferAfterLockExpires() public {
         vm.warp(1673049600); // 2023-01-01
         vm.prank(mintee);
-        token.setTransferLock(1704585600); // 2024-01-01
+        token.setTransferLock(100, 1704585600); // 2024-01-01
 
         // timelock date is inclusive, so an attempt to transfer at the exact timelock time will fail
         vm.warp(1704585600); // 2024-01-01
         vm.prank(mintee);
-        vm.expectRevert("Timelock: address timelock has not expired");
+        vm.expectRevert("TransferLock: address timelock has not expired");
         token.transfer(mintee, 10);
 
         // warp to the second immediately after the timelock expires and try again
@@ -703,6 +723,17 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
         vm.warp(1704585601); // 2024-01-01
         token.transfer(minter, 10);
         assertEq(token.balanceOf(minter), 10);
+    }
+
+    function testCannotUnderflowAmount() public {
+        vm.prank(mintee);
+        token.setTransferLock(100, 1000);
+        // we would get an underflow revert if we weren't checking the balance
+        // exceeds the amount, since we do, we get the built-in revert about the
+        // amount being too high
+        vm.prank(mintee);
+        vm.expectRevert("ERC20: transfer amount exceeds balance");
+        token.transfer(minter, 200);
     }
 }
 
