@@ -54,11 +54,9 @@ jobs:
           cache: 'npm'
 
       - name: Install solhint
-        run: |
-          npm i -g solhint
+        run: npm ci
       - name: Lint contracts
-        run: |
-          npx solhint 'src/**/*.sol'
+        run: npx solhint 'src/**/*.sol'
         id: solhint-lint
 
   code_style:

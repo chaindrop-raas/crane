@@ -1,0 +1,17 @@
+{
+  "name": "crane",
+  "author": "Origami",
+  "version": "1.0.0",
+  "description": "Linting for the origami smart contracts suite.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoinOrigami/crane-foundry.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JoinOrigami/crane-foundry/issues"
+  },
+  "homepage": "https://github.com/JoinOrigami/crane-foundry#readme",
+  "devDependencies": {
+    "solhint": "^3.3.8"
+  }
+}
