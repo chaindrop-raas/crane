@@ -693,7 +693,7 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
         vm.prank(mintee);
         token.setTransferLock(100, 1704585600); // 2024-01-01
         vm.prank(mintee);
-        vm.expectRevert("TransferLock: address timelock has not expired");
+        vm.expectRevert("TransferLock: this exceeds your available balance while locked");
         token.transfer(minter, 10);
     }
 
@@ -715,7 +715,7 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
         // timelock date is inclusive, so an attempt to transfer at the exact timelock time will fail
         vm.warp(1704585600); // 2024-01-01
         vm.prank(mintee);
-        vm.expectRevert("TransferLock: address timelock has not expired");
+        vm.expectRevert("TransferLock: this exceeds your available balance while locked");
         token.transfer(mintee, 10);
 
         // warp to the second immediately after the timelock expires and try again
