@@ -1,6 +1,8 @@
 # The Origami family of smart contracts
 
-## contract synopsis
+[![CI](https://github.com/JoinOrigami/crane/actions/workflows/ci.yml/badge.svg)](https://github.com/JoinOrigami/crane/actions/workflows/ci.yml)
+
+## Synopsis of contracts
 
 | Contract                        | Purpose                                                        |
 | :------------------------------ | :------------------------------------------------------------- |
@@ -8,6 +10,13 @@
 | `OrigamiMembershipTokenFactory` | A factory contract for cheaply deploying new membership tokens |
 | `OrigamiGovernanceToken`        | An ERC20 token appropriate for use in governance               |
 | `OrigamiGovernanceTokenFactory` | A factory contract for cheaply deploying new governance tokens |
+| `OrigamiGovernorDiamond`        | The EIP-2535 Diamond interface to the governor facets          |
+| `OrigamiTimelockController`     | Part of a given DAO's governor deploy                          |
+| `AccessControl`                 | A re-implementation of OZ AccessControl using Diamond Storage  |
+
+### Governor Implementation
+
+A Governor instance is deployed as an [EIP-2535 Diamond](https://eips.ethereum.org/EIPS/eip-2535), with the facet deploys being reusable implementations. The facets and their supporting files can be found in `src/governor`.
 
 ## Development
 
@@ -20,7 +29,7 @@ We power our solidity development with `foundry`. The [book](https://book.getfou
    - `curl -L https://foundry.paradigm.xyz | bash`
    - `foundryup`
 3. Install `argc`: `cargo install argc`
-4. Install `solhint`: `npm install -g solhint`
+4. Install `solhint`: `npm ci`
 
 
 NB: if you intend to run the scripts in `./script` directly or via `./bin/jib`, ensure you've created a `.envrc` file (`cp {example,}.envrc`), populated its values and exported them to your shell (`direnv` is a convenient way of managing this).
