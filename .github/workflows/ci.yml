@@ -1,12 +1,15 @@
-name: test
+name: CI
 
-on: workflow_dispatch
+on:
+  push:
+    branches:
+      - main
 
 env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  check:
+  test:
     strategy:
       fail-fast: true
 
@@ -32,6 +35,7 @@ jobs:
         run: |
           forge test -vvv
         id: test
+
   lint:
     strategy:
       fail-fast: true
@@ -56,6 +60,7 @@ jobs:
         run: |
           npx solhint 'src/**/*.sol'
         id: solhint-lint
+
   code_style:
     strategy:
       fail-fast: true
