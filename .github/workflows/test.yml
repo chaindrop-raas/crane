@@ -32,3 +32,23 @@ jobs:
         run: |
           forge test -vvv
         id: test
+  code_style:
+    strategy:
+      fail-fast: true
+
+    name: Code style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Checks code style
+        run: |
+          forge fmt --check
+        id: forge-fmt
