@@ -194,7 +194,7 @@ contract OrigamiGovernanceToken is
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal override whenNotPaused {
         (uint256 lockedAmount, uint256 deadline) = getTransferLock(from);
         if (deadline > 0 && balanceOf(from) >= amount && balanceOf(from) - amount < lockedAmount) {
-            require(block.timestamp > deadline, "TransferLock: address lockup has not expired");
+            require(block.timestamp > deadline, "TransferLock: this exceeds your available balance while locked");
         }
         super._beforeTokenTransfer(from, to, amount);
     }
