@@ -2,7 +2,6 @@
 pragma solidity 0.8.16;
 
 interface IGovernorSettings {
-
     /**
      * @dev Returns the default counting strategy.
      */
@@ -94,7 +93,7 @@ interface IGovernorSettings {
      * @param newQuorumNumerator The new quorum numerator.
      * Emits a {QuorumNumeratorSet} event.
      */
-     function setQuorumNumerator(uint128 newQuorumNumerator) external;
+    function setQuorumNumerator(uint128 newQuorumNumerator) external;
 
     /**
      * @dev Sets the voting delay.
@@ -109,5 +108,4 @@ interface IGovernorSettings {
      * Emits a {VotingPeriodSet} event.
      */
     function setVotingPeriod(uint64 newVotingPeriod) external;
-
 }

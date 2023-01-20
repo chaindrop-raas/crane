@@ -11,7 +11,6 @@ import "src/utils/GovernorStorage.sol";
  * @custom:security-contact contract-security@joinorigami.com
  */
 library GovernorCommon {
-
     /**
      * @notice generates the hash of a proposal
      * @param targets the targets of the proposal

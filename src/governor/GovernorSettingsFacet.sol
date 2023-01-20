@@ -12,7 +12,6 @@ import "src/utils/GovernorStorage.sol";
  * @custom:security-contact contract-security@joinorigami.com
  */
 contract GovernorSettingsFacet is IGovernorSettings {
-
     /**
      * @dev Returns the default counting strategy.
      * @return the default counting strategy.
@@ -98,7 +97,7 @@ contract GovernorSettingsFacet is IGovernorSettings {
      * @notice sets the default proposal token.
      * @param newDefaultProposalToken the new default proposal token address.
      * emits DefaultProposalTokenSet event.
-    */
+     */
     function setDefaultProposalToken(address newDefaultProposalToken) public onlyGovernance {
         GovernorStorage.setDefaultProposalToken(newDefaultProposalToken);
     }

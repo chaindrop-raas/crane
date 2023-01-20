@@ -34,12 +34,8 @@ abstract contract OMTFHelper is OMTFAddressHelper, Test {
         factory = OrigamiMembershipTokenFactory(address(factoryProxy));
         factory.initialize();
 
-        address tokenProxyAddress = factory.createOrigamiMembershipToken(
-            owner,
-            "Factory Membership Token",
-            "FMT",
-            "ipfs://deadbeef/"
-        );
+        address tokenProxyAddress =
+            factory.createOrigamiMembershipToken(owner, "Factory Membership Token", "FMT", "ipfs://deadbeef/");
         token = OrigamiMembershipToken(tokenProxyAddress);
         vm.stopPrank();
         vm.startPrank(owner);
@@ -53,10 +49,7 @@ contract DeployingMembershipTokenFactoryTest is OMTFAddressHelper, Test {
     ProxyAdmin public factoryAdmin;
     OrigamiMembershipToken public token;
 
-    event OrigamiMembershipTokenCreated(
-        address indexed caller,
-        address indexed proxy
-    );
+    event OrigamiMembershipTokenCreated(address indexed caller, address indexed proxy);
 
     function setUp() public {
         vm.startPrank(admin);
@@ -73,11 +66,7 @@ contract DeployingMembershipTokenFactoryTest is OMTFAddressHelper, Test {
     }
 
     function testCannotReinitialize() public {
-        vm.expectRevert(
-            abi.encodePacked(
-                "Initializable: contract is already initialized"
-            )
-        );
+        vm.expectRevert(abi.encodePacked("Initializable: contract is already initialized"));
         factory.initialize();
     }
 
@@ -87,12 +76,8 @@ contract DeployingMembershipTokenFactoryTest is OMTFAddressHelper, Test {
 
         emit OrigamiMembershipTokenCreated(admin, address(0x0));
 
-        address tokenProxyAddress = factory.createOrigamiMembershipToken(
-            owner,
-            "Factory Membership Token",
-            "FMT",
-            "ipfs://deadbeef/"
-        );
+        address tokenProxyAddress =
+            factory.createOrigamiMembershipToken(owner, "Factory Membership Token", "FMT", "ipfs://deadbeef/");
         token = OrigamiMembershipToken(tokenProxyAddress);
         vm.stopPrank();
         vm.prank(owner);
@@ -115,12 +100,7 @@ contract AccessControlForMembershipTokenFactoryTest is OMTFHelper {
                 " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
-        factory.createOrigamiMembershipToken(
-            owner,
-            "Factory Membership Token",
-            "FMT",
-            "ipfs://deadbeef/"
-        );
+        factory.createOrigamiMembershipToken(owner, "Factory Membership Token", "FMT", "ipfs://deadbeef/");
     }
 
     function testCanGrantRoleOnFactoryIfAdmin() public {
@@ -158,9 +138,7 @@ contract UpgradingMembershipTokenFactoryTest is OMTFHelper {
         vm.startPrank(admin);
         newFactoryImpl = new OrigamiMembershipTokenFactoryTestVersion();
         factoryAdmin.upgrade(factoryProxy, address(newFactoryImpl));
-        newFactory = OrigamiMembershipTokenFactoryTestVersion(
-            address(factoryProxy)
-        );
+        newFactory = OrigamiMembershipTokenFactoryTestVersion(address(factoryProxy));
 
         // call a function that only exists in the new version
         assertEq(newFactory.isFromUpgrade(), true);
@@ -171,10 +149,7 @@ contract UpgradingMembershipTokenFactoryTest is OMTFHelper {
 
         // create a new token and verify that it is also upgraded
         address tokenProxyAddress = newFactory.createOrigamiMembershipToken(
-            owner,
-            "Upgraded Factory Membership Token",
-            "UFMT",
-            "ipfs://deadfee7/"
+            owner, "Upgraded Factory Membership Token", "UFMT", "ipfs://deadfee7/"
         );
         newToken = OrigamiMembershipTokenTestVersion(tokenProxyAddress);
         vm.stopPrank();
@@ -197,12 +172,8 @@ contract UpgradingOnlyTheMembershipTokenImplementationTest is OMTFHelper {
         vm.startPrank(admin);
         newTokenImpl = new OrigamiMembershipTokenTestVersion();
         factory.setTokenImplementation(address(newTokenImpl));
-        address tokenProxyAddress = factory.createOrigamiMembershipToken(
-            owner,
-            "Upgraded Factory Membership Token",
-            "UFMT",
-            "ipfs://deadfee7/"
-        );
+        address tokenProxyAddress =
+            factory.createOrigamiMembershipToken(owner, "Upgraded Factory Membership Token", "UFMT", "ipfs://deadfee7/");
         newToken = OrigamiMembershipTokenTestVersion(tokenProxyAddress);
         vm.stopPrank();
         vm.startPrank(owner);

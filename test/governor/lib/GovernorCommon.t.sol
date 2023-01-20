@@ -99,5 +99,4 @@ contract CommonContractTest is GovernorDiamondHelper {
         vm.roll(block.number + 7 days + 1);
         assertEq(uint8(commonContract.state(1)), uint8(IGovernor.ProposalState.Succeeded));
     }
-
 }

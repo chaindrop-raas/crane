@@ -54,12 +54,9 @@ contract DeployScript is Script {
         vm.stopBroadcast();
     }
 
-    function deployMembershipToken(
-        address owner,
-        string calldata name,
-        string calldata symbol,
-        string calldata baseURI
-    ) public {
+    function deployMembershipToken(address owner, string calldata name, string calldata symbol, string calldata baseURI)
+        public
+    {
         OrigamiMembershipToken impl;
         TransparentUpgradeableProxy proxy;
         OrigamiMembershipToken token;
@@ -82,12 +79,9 @@ contract DeployScript is Script {
         vm.stopBroadcast();
     }
 
-    function deployGovernanceToken(
-        address owner,
-        string calldata name,
-        string calldata symbol,
-        uint256 supplyCap
-    ) public {
+    function deployGovernanceToken(address owner, string calldata name, string calldata symbol, uint256 supplyCap)
+        public
+    {
         OrigamiGovernanceToken impl;
         TransparentUpgradeableProxy proxy;
         OrigamiGovernanceToken token;

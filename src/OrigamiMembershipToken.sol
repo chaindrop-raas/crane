@@ -174,7 +174,7 @@ contract OrigamiMembershipToken is
     function transferFrom(address from, address to, uint256 tokenId)
         public
         virtual
-        override (ERC721Upgradeable, IERC721Upgradeable)
+        override(ERC721Upgradeable, IERC721Upgradeable)
         whenTransferrable
     {
         super.transferFrom(from, to, tokenId);
@@ -185,7 +185,7 @@ contract OrigamiMembershipToken is
     function safeTransferFrom(address from, address to, uint256 tokenId)
         public
         virtual
-        override (ERC721Upgradeable, IERC721Upgradeable)
+        override(ERC721Upgradeable, IERC721Upgradeable)
         whenTransferrable
     {
         super.safeTransferFrom(from, to, tokenId);
@@ -196,7 +196,7 @@ contract OrigamiMembershipToken is
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data)
         public
         virtual
-        override (ERC721Upgradeable, IERC721Upgradeable)
+        override(ERC721Upgradeable, IERC721Upgradeable)
         whenTransferrable
     {
         super.safeTransferFrom(from, to, tokenId, _data);
@@ -205,7 +205,7 @@ contract OrigamiMembershipToken is
     /// @dev this is overridden so we can apply the `limitBalance` and `whenNotPaused` modifiers
     function _beforeTokenTransfer(address from, address to, uint256 tokenId)
         internal
-        override (ERC721Upgradeable, ERC721EnumerableUpgradeable)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
         limitBalance(to)
         whenNotPaused
     {
@@ -216,17 +216,17 @@ contract OrigamiMembershipToken is
 
     function _afterTokenTransfer(address from, address to, uint256 tokenId)
         internal
-        override (ERC721Upgradeable, ERC721VotesUpgradeable)
+        override(ERC721Upgradeable, ERC721VotesUpgradeable)
     {
         super._afterTokenTransfer(from, to, tokenId);
     }
 
-    function _burn(uint256 tokenId) internal override (ERC721Upgradeable) {
+    function _burn(uint256 tokenId) internal override(ERC721Upgradeable) {
         super._burn(tokenId);
     }
 
     /// @inheritdoc ERC721Upgradeable
-    function tokenURI(uint256 tokenId) public view override (ERC721Upgradeable) returns (string memory) {
+    function tokenURI(uint256 tokenId) public view override(ERC721Upgradeable) returns (string memory) {
         require(tokenId > 0, "Invalid token ID");
         require(tokenId <= _tokenIdCounter.current(), "Invalid token ID");
         return super.tokenURI(tokenId);
@@ -236,7 +236,7 @@ contract OrigamiMembershipToken is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override (ERC721Upgradeable, ERC721EnumerableUpgradeable, AccessControlUpgradeable)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return interfaceId == type(IVotes).interfaceId || super.supportsInterface(interfaceId);

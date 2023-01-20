@@ -33,11 +33,7 @@ contract OrigamiGovernanceTokenFactoryTestVersion is Initializable, AccessContro
     ) public onlyRole(DEFAULT_ADMIN_ROLE) returns (address) {
         address clone = ClonesUpgradeable.clone(tokenImplementation);
         bytes memory data = abi.encodeWithSelector(
-            OrigamiGovernanceTokenTestVersion(clone).initialize.selector,
-            _admin,
-            _name,
-            _symbol,
-            _supplyCap
+            OrigamiGovernanceTokenTestVersion(clone).initialize.selector, _admin, _name, _symbol, _supplyCap
         );
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(clone, _msgSender(), data);
         proxiedContracts.push(address(proxy));

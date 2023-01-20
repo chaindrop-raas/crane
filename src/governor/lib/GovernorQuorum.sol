@@ -34,5 +34,4 @@ library GovernorQuorum {
         uint256 supply = IVotes(proposalToken).getPastTotalSupply(snapshot);
         return (supply * quorumNumerator(proposalId)) / quorumDenominator();
     }
-
 }

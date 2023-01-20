@@ -8,7 +8,6 @@ import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
 contract UpgradeScript is Script {
-
     function upgradeGovernanceToken(address proxyAdmin, address payable transparentProxy) public {
         OrigamiGovernanceToken newImpl;
         TransparentUpgradeableProxy proxy;

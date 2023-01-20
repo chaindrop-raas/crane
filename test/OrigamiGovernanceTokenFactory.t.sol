@@ -35,10 +35,7 @@ abstract contract OGTFHelper is OGTFAddressHelper, Test {
         factory.initialize();
 
         address tokenProxyAddress = factory.createOrigamiGovernanceToken(
-            owner,
-            "Factory Governance Token",
-            "FGT",
-            10000000000000000000000000000
+            owner, "Factory Governance Token", "FGT", 10000000000000000000000000000
         );
         token = OrigamiGovernanceToken(tokenProxyAddress);
         vm.stopPrank();
@@ -53,10 +50,7 @@ contract DeployingGovernanceTokenFactoryTest is OGTFAddressHelper, Test {
     ProxyAdmin public factoryAdmin;
     OrigamiGovernanceToken public token;
 
-    event OrigamiGovernanceTokenCreated(
-        address indexed caller,
-        address indexed proxy
-    );
+    event OrigamiGovernanceTokenCreated(address indexed caller, address indexed proxy);
 
     function setUp() public {
         vm.startPrank(admin);
@@ -84,10 +78,7 @@ contract DeployingGovernanceTokenFactoryTest is OGTFAddressHelper, Test {
         emit OrigamiGovernanceTokenCreated(admin, address(0x0));
 
         address tokenProxyAddress = factory.createOrigamiGovernanceToken(
-            owner,
-            "Factory Governance Token",
-            "FGT",
-            10000000000000000000000000000
+            owner, "Factory Governance Token", "FGT", 10000000000000000000000000000
         );
         token = OrigamiGovernanceToken(tokenProxyAddress);
         vm.stopPrank();
@@ -111,12 +102,7 @@ contract AccessControlForGovernanceTokenFactoryTest is OGTFHelper {
                 " is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
             )
         );
-        factory.createOrigamiGovernanceToken(
-            owner,
-            "Factory Governance Token",
-            "FGT",
-            10000000000000000000000000000
-        );
+        factory.createOrigamiGovernanceToken(owner, "Factory Governance Token", "FGT", 10000000000000000000000000000);
     }
 
     function testCanGrantRoleOnFactoryIfAdmin() public {
@@ -154,9 +140,7 @@ contract UpgradingGovernanceTokenFactoryTest is OGTFHelper {
         vm.startPrank(admin);
         newFactoryImpl = new OrigamiGovernanceTokenFactoryTestVersion();
         factoryAdmin.upgrade(factoryProxy, address(newFactoryImpl));
-        newFactory = OrigamiGovernanceTokenFactoryTestVersion(
-            address(factoryProxy)
-        );
+        newFactory = OrigamiGovernanceTokenFactoryTestVersion(address(factoryProxy));
 
         // call a function that only exists in the new version
         assertEq(newFactory.isFromUpgrade(), true);
@@ -167,10 +151,7 @@ contract UpgradingGovernanceTokenFactoryTest is OGTFHelper {
 
         // create a new token and verify that it is also upgraded
         address tokenProxyAddress = newFactory.createOrigamiGovernanceToken(
-            owner,
-            "Upgraded Factory Governance Token",
-            "UFGT",
-            10000000000000000000000000000
+            owner, "Upgraded Factory Governance Token", "UFGT", 10000000000000000000000000000
         );
         newToken = OrigamiGovernanceTokenTestVersion(tokenProxyAddress);
         vm.stopPrank();
@@ -194,10 +175,7 @@ contract UpgradingOnlyTheGovernanceTokenImplementationTest is OGTFHelper {
         newTokenImpl = new OrigamiGovernanceTokenTestVersion();
         factory.setTokenImplementation(address(newTokenImpl));
         address tokenProxyAddress = factory.createOrigamiGovernanceToken(
-            owner,
-            "Upgraded Factory Governance Token",
-            "UFGT",
-            10000000000000000000000000000
+            owner, "Upgraded Factory Governance Token", "UFGT", 10000000000000000000000000000
         );
         newToken = OrigamiGovernanceTokenTestVersion(tokenProxyAddress);
         vm.stopPrank();

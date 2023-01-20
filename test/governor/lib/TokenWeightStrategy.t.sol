@@ -33,5 +33,4 @@ contract TokenWeightStrategyTest is Test {
         assertEq(TokenWeightStrategy.quadraticWeight(2500), 50);
         assertEq(TokenWeightStrategy.quadraticWeight(0), 0);
     }
-
 }

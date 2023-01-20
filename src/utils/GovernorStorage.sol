@@ -363,5 +363,4 @@ library GovernorStorage {
             GovernorStorage.proposalStorage().nonces[account]++;
         }
     }
-
 }

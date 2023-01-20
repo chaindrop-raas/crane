@@ -124,10 +124,8 @@ contract OrigamiTimelockController is AccessControl, IERC721Receiver, IERC1155Re
      * @dev See {IERC165-supportsInterface}.
      */
     function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
-        return interfaceId == type(IERC165).interfaceId
-            || interfaceId == type(ITimelockController).interfaceId
-            || interfaceId == type(IERC721Receiver).interfaceId
-            || interfaceId == type(IERC1155Receiver).interfaceId;
+        return interfaceId == type(IERC165).interfaceId || interfaceId == type(ITimelockController).interfaceId
+            || interfaceId == type(IERC721Receiver).interfaceId || interfaceId == type(IERC1155Receiver).interfaceId;
     }
 
     /**

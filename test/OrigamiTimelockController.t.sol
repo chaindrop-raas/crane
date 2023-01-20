@@ -217,5 +217,4 @@ contract OrigamiTimelockControllerTest is Test {
             bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
         );
     }
-
 }

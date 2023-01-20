@@ -180,7 +180,6 @@ contract BatchMintMembershipTokenTest is OMTHelper {
         assertEq(token.totalSupply(), 10);
     }
 
-
     function testBatchMintSucceedsWhenAddressZeroIsPresent() public {
         address[] memory mintees = new address[](10);
 

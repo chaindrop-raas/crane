@@ -123,5 +123,4 @@ library SimpleCounting {
     function voteSucceeded(uint256 proposalId) internal view returns (bool) {
         return winningOption(proposalId) == VoteType.For;
     }
-
 }

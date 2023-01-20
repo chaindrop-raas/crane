@@ -8,6 +8,7 @@ import "src/governor/lib/TokenWeightStrategy.sol";
 
 contract QuorumContract {
     address public governanceToken;
+
     constructor(address govToken) {
         governanceToken = govToken;
 
