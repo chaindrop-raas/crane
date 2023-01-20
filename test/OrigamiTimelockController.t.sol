@@ -6,7 +6,7 @@ import "src/interfaces/utils/IERC721Receiver.sol";
 import "src/interfaces/utils/IERC1155Receiver.sol";
 import "src/interfaces/ITimelockController.sol";
 
-import "@std/test.sol";
+import "@std/Test.sol";
 
 contract OrigamiTimelockControllerTest is Test {
     address public deployer = address(0xbeefea7e2);

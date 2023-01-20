@@ -53,9 +53,9 @@ jobs:
           node-version: '16.x'
           cache: 'npm'
 
-      - name: Install Node dependencies
+      - name: Install solhint
         run: |
-          npm ci
+          npm i -g solhint
       - name: Lint contracts
         run: |
           npx solhint 'src/**/*.sol'
