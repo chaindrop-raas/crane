@@ -34,6 +34,8 @@ contract GovernorDiamondInit {
         address admin,
         address payable timelock,
         address membershipToken,
+        address proposalToken,
+        address proposalThresholdToken,
         uint64 delay,
         uint64 period,
         uint128 quorumPercentage,
@@ -62,18 +64,18 @@ contract GovernorDiamondInit {
         config.admin = admin;
         config.timelock = timelock;
         config.membershipToken = membershipToken;
-        config.defaultProposalToken = membershipToken;
+        config.defaultProposalToken = proposalToken;
         config.defaultCountingStrategy = 0x6c4b0e9f; // GovernorCoreFacet.simpleWeight.selector
         config.votingDelay = delay;
         config.votingPeriod = period;
         config.quorumNumerator = quorumPercentage;
         config.proposalThreshold = threshold;
-        config.proposalThresholdToken = membershipToken;
+        config.proposalThresholdToken = proposalThresholdToken;
 
         // in order to facilitate role administration, we add the admin to the admin role
         // it is advised that the admin renounces this role after the diamond is deployed
         AccessControlStorage.RoleStorage storage rs = AccessControlStorage.roleStorage();
         // 0x0 is the DEFAULT_ADMIN_ROLE
-        rs.roles[0x0].members[config.admin] = true;
+        rs.roles[0x0].members[admin] = true;
     }
 }
