@@ -178,6 +178,39 @@ grantPermissions() {
   done <$argc_file
 }
 
+# @cmd deploy all current governor diamond facets
+# @alias deploy-facets
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @flag --ignore-deploy-warning ignore the warning about deploying all facets
+deployFacets() {
+  if [ $argc_ignore_deploy_warning ]; then
+    forge script script/Governor.s.sol:DeployGovernorFacets \
+      --broadcast --verify --rpc-url $argc_rpc_url \
+      --optimize --optimizer-runs 1000000
+  else
+    echo
+    echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+    echo "!!   WARNING: This will deploy all Governor Diamond Facets   !!"
+    echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+    echo
+    echo " Unless this is the first deploy to a given chain, you probably"
+    echo " don't want to do this. Facets are shared across all governor"
+    echo " diamonds, so you almost never want to deploy _all_ of them."
+    echo " If you are sure you want to deploy them, re-run this command"
+    echo " with the --ignore-deploy-warning flag."
+    echo
+  fi
+}
+
+# @cmd deploy a governor diamond (sans facets) and a timelock controller
+# @alias deploy-governor
+# @arg path! the path to the governor diamond config
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+deployGovernor() {
+  forge script script/Governor.s.sol:DeployGovernorInstance $argc_path \
+    --sig "run(string)" --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+}
+
 # @cmd output test coverage data for the contracts
 # @alias cov
 # @flag --no-open do not open the coverage report in the browser

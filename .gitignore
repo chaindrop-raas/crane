@@ -11,6 +11,9 @@ coverage/
 # slither-related files
 .venv/
 
+# governor configuration files
+configs/
+
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*
