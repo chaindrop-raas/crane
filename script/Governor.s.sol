@@ -78,13 +78,20 @@ contract DeployGovernorInstance is Script {
     function timelockController(uint256 delay, address operator) public returns (OrigamiTimelockController) {
         address[] memory operators = new address[](1);
         operators[0] = operator;
-        return new OrigamiTimelockController(delay, operators, operators);
+        OrigamiTimelockController timelock = new OrigamiTimelockController(delay, operators, operators);
+        return timelock;
     }
 
-    function encodeConfig(GovernorConfig memory config) public pure returns (bytes memory) {
+    function encodeConfig(address admin, address timelock, GovernorConfig memory config)
+        public
+        pure
+        returns (bytes memory)
+    {
         return abi.encodeWithSignature(
             "init(string,address,address,address,address,address,uint64,uint64,uint128,uint256)",
             config.name,
+            admin,
+            timelock,
             config.membershipToken,
             config.proposalToken,
             config.proposalThresholdToken,
@@ -109,7 +116,11 @@ contract DeployGovernorInstance is Script {
         vm.stopBroadcast();
 
         vm.startBroadcast(adminPrivateKey);
-        DiamondCutFacet(address(governor)).diamondCut(cuts, address(diamondInitializer), encodeConfig(config));
+        OrigamiTimelockController timelock = timelockController(config.timelockDelay, address(governor));
+
+        DiamondCutFacet(address(governor)).diamondCut(
+            cuts, address(diamondInitializer), encodeConfig(admin, address(timelock), config)
+        );
         vm.stopBroadcast();
     }
 }

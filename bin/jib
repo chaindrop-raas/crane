@@ -208,7 +208,8 @@ deployFacets() {
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployGovernor() {
   forge script script/Governor.s.sol:DeployGovernorInstance $argc_path \
-    --sig "run(string)" --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+    --optimize --optimizer-runs 1000000 --sig "run(string)" \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
 }
 
 # @cmd output test coverage data for the contracts
