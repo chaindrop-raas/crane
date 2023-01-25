@@ -2,7 +2,6 @@
 pragma solidity 0.8.16;
 
 import "src/OrigamiGovernanceToken.sol";
-import "src/OrigamiGovernorDiamond.sol";
 import "src/OrigamiMembershipToken.sol";
 import "src/OrigamiTimelockController.sol";
 
@@ -13,6 +12,7 @@ import "src/utils/GovernorDiamondInit.sol";
 import "src/utils/DiamondDeployHelper.sol";
 
 import "@std/Test.sol";
+import "@diamond/Diamond.sol";
 
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
@@ -47,7 +47,7 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
 
     OrigamiTimelockController public timelock;
 
-    OrigamiGovernorDiamond public origamiGovernorDiamond;
+    Diamond public origamiGovernorDiamond;
 
     DiamondLoupeFacet public loupeFacet;
     GovernorCoreFacet public coreFacet;
@@ -101,7 +101,7 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         GovernorTimelockControlFacet governorTimelockControlFacet = new GovernorTimelockControlFacet();
         cuts[4] = DiamondDeployHelper.governorTimelockControlFacetCut(governorTimelockControlFacet);
 
-        origamiGovernorDiamond = new OrigamiGovernorDiamond(owner, address(diamondCutFacet));
+        origamiGovernorDiamond = new Diamond(owner, address(diamondCutFacet));
 
         // initialize the timelock after we have an address for the diamond
         address[] memory proposers = new address[](1);

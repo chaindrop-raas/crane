@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.16;
 
-import "@std/Script.sol";
 
-import "src/OrigamiGovernorDiamond.sol";
 import "src/OrigamiTimelockController.sol";
 import "src/utils/DiamondDeployHelper.sol";
 import "src/utils/GovernorDiamondInit.sol";
+
+import "@std/Script.sol";
+import "@diamond/Diamond.sol";
 
 contract DeployGovernorFacets is Script {
     function run() external {
@@ -110,7 +111,7 @@ contract DeployGovernorInstance is Script {
         GovernorConfig memory config = parseGovernorConfig(relativeConfigPath);
 
         vm.startBroadcast(deployerPrivateKey);
-        OrigamiGovernorDiamond governor = new OrigamiGovernorDiamond(admin, config.diamondCutFacet);
+        Diamond governor = new Diamond(admin, config.diamondCutFacet);
         IDiamondCut.FacetCut[] memory cuts = facetCuts(config);
         GovernorDiamondInit diamondInitializer = new GovernorDiamondInit();
         vm.stopBroadcast();
