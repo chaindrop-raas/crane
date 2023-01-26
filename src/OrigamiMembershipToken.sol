@@ -203,22 +203,22 @@ contract OrigamiMembershipToken is
     }
 
     /// @dev this is overridden so we can apply the `limitBalance` and `whenNotPaused` modifiers
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
         internal
         override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
         limitBalance(to)
         whenNotPaused
     {
-        super._beforeTokenTransfer(from, to, tokenId);
+        super._beforeTokenTransfer(from, to, tokenId, batchSize);
     }
 
     // The following functions are overrides required by Solidity.
 
-    function _afterTokenTransfer(address from, address to, uint256 tokenId)
+    function _afterTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
         internal
         override(ERC721Upgradeable, ERC721VotesUpgradeable)
     {
-        super._afterTokenTransfer(from, to, tokenId);
+        super._afterTokenTransfer(from, to, tokenId, batchSize);
     }
 
     function _burn(uint256 tokenId) internal override(ERC721Upgradeable) {

@@ -421,7 +421,7 @@ contract TransferrabilityMembershipTokenTest is OMTHelper {
         token.enableTransfer();
         vm.stopPrank();
         vm.prank(recipient);
-        vm.expectRevert(bytes("ERC721: caller is not token owner nor approved"));
+        vm.expectRevert(bytes("ERC721: caller is not token owner or approved"));
         token.transferFrom(mintee, recipient, 1);
     }
 
