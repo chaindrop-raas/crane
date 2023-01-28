@@ -173,6 +173,17 @@ checkPermissions() {
   done <$argc_file
 }
 
+# @cmd check balances of wallets
+# @alias check-balances
+# @arg file! the path to the file containing the addresses to check balances for (one per line)
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+checkBalances() {
+  while read -r address; do
+    local BALANCE="$(cast balance --rpc-url $argc_rpc_url $address)"
+    echo "$address has a balance of $BALANCE"
+  done <$argc_file
+}
+
 # @cmd deploy all current governor diamond facets
 # @alias deploy-facets
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
