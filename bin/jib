@@ -125,6 +125,19 @@ deployAndUpgradeGovToken() {
     --optimize --optimizer-runs 1000000
 }
 
+# @cmd check storage layout against the last storage layout
+# @alias check-storage
+# @arg contract-name![OrigamiGovernanceToken|OrigamiMembershipToken] the name of the contract to check
+checkStorage() {
+  FILE_BASE=".storage-layout/.$argc_contract_name"
+  forge inspect --pretty $argc_contract_name storage-layout >"$FILE_BASE.new"
+  if [ -f "$FILE_BASE.old" ]; then
+    diff -a --suppress-common-lines "$FILE_BASE.old" "$FILE_BASE.new"
+  else
+    echo "No previous storage layout found"
+  fi
+}
+
 # @cmd grant mint/revoke permissions to wallets
 # @alias grant-permissions
 # @arg contract! the address of the token contract

@@ -11,6 +11,9 @@ coverage/
 # slither-related files
 .venv/
 
+# storage layout comparison files
+.storage-layout/
+
 # governor configuration files
 configs/
 

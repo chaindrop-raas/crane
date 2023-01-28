@@ -1,0 +1,27 @@
+| Name                    | Type                                                         | Slot | Offset | Bytes | Contract                                              |
+|-------------------------|--------------------------------------------------------------|------|--------|-------|-------------------------------------------------------|
+| _initialized            | uint8                                                        | 0    | 0      | 1     | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _initializing           | bool                                                         | 0    | 1      | 1     | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| __gap                   | uint256[50]                                                  | 1    | 0      | 1600  | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| __gap                   | uint256[50]                                                  | 51   | 0      | 1600  | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _name                   | string                                                       | 101  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _symbol                 | string                                                       | 102  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _owners                 | mapping(uint256 => address)                                  | 103  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _balances               | mapping(address => uint256)                                  | 104  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _tokenApprovals         | mapping(uint256 => address)                                  | 105  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _operatorApprovals      | mapping(address => mapping(address => bool))                 | 106  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| __gap                   | uint256[44]                                                  | 107  | 0      | 1408  | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _ownedTokens            | mapping(address => mapping(uint256 => uint256))              | 151  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _ownedTokensIndex       | mapping(uint256 => uint256)                                  | 152  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _allTokens              | uint256[]                                                    | 153  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _allTokensIndex         | mapping(uint256 => uint256)                                  | 154  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| __gap                   | uint256[46]                                                  | 155  | 0      | 1472  | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _paused                 | bool                                                         | 201  | 0      | 1     | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| __gap                   | uint256[49]                                                  | 202  | 0      | 1568  | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _roles                  | mapping(bytes32 => struct AccessControlUpgradeable.RoleData) | 251  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| __gap                   | uint256[49]                                                  | 252  | 0      | 1568  | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| __gap                   | uint256[50]                                                  | 301  | 0      | 1600  | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _tokenIdCounter         | struct CountersUpgradeable.Counter                           | 351  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| tokenIdToBlockTimestamp | mapping(uint256 => uint256)                                  | 352  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _metadataBaseURI        | string                                                       | 353  | 0      | 32    | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
+| _transferEnabled        | bool                                                         | 354  | 0      | 1     | src/OrigamiMembershipToken.sol:OrigamiMembershipToken |
