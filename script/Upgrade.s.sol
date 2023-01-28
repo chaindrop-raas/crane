@@ -8,36 +8,80 @@ import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
 contract UpgradeScript is Script {
-    function upgradeGovernanceToken(address proxyAdmin, address payable transparentProxy) public {
-        OrigamiGovernanceToken newImpl;
-        TransparentUpgradeableProxy proxy;
-        ProxyAdmin admin;
-
+    /**
+     * @dev deploys a new governance token implementation and upgrades the proxy to it - use for first upgrade to a new implementation
+     * @param proxyAdmin address of the proxy admin
+     * @param transparentProxy address of the transparent proxy
+     */
+    function deployAndUpgradeGovernanceToken(address proxyAdmin, address payable transparentProxy) public {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        newImpl = new OrigamiGovernanceToken();
-        admin = ProxyAdmin(proxyAdmin);
-        proxy = TransparentUpgradeableProxy(transparentProxy);
-        admin.upgrade(proxy, address(newImpl));
+        OrigamiGovernanceToken impl = new OrigamiGovernanceToken();
+        ProxyAdmin admin = ProxyAdmin(proxyAdmin);
+        TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(transparentProxy);
+        admin.upgrade(proxy, address(impl));
 
         vm.stopBroadcast();
     }
 
-    function upgradeMembershipToken(address proxyAdmin, address payable transparentProxy) public {
-        OrigamiMembershipToken newImpl;
-        TransparentUpgradeableProxy proxy;
-        ProxyAdmin admin;
-
+    /**
+     * @dev upgrades the proxy to the specified implementation - use with previously deployed implementation
+     * @param proxyAdmin address of the proxy admin
+     * @param transparentProxy address of the transparent proxy
+     * @param implementation address of the implementation
+     */
+    function upgradeGovernanceToken(address proxyAdmin, address payable transparentProxy, address implementation)
+        public
+    {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        newImpl = new OrigamiMembershipToken();
-        admin = ProxyAdmin(proxyAdmin);
-        proxy = TransparentUpgradeableProxy(transparentProxy);
-        admin.upgrade(proxy, address(newImpl));
+        OrigamiGovernanceToken impl = OrigamiGovernanceToken(implementation);
+        ProxyAdmin admin = ProxyAdmin(proxyAdmin);
+        TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(transparentProxy);
+        admin.upgrade(proxy, address(impl));
+
+        vm.stopBroadcast();
+    }
+
+    /**
+     * @dev deploys a new membership token implementation and upgrades the proxy to it - use for first upgrade to a new implementation
+     * @param proxyAdmin address of the proxy admin
+     * @param transparentProxy address of the transparent proxy
+     */
+    function deployAndUpgradeMembershipToken(address payable transparentProxy, address proxyAdmin) public {
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+
+        vm.startBroadcast(deployerPrivateKey);
+
+        OrigamiMembershipToken impl = new OrigamiMembershipToken();
+        ProxyAdmin admin = ProxyAdmin(proxyAdmin);
+        TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(transparentProxy);
+        admin.upgrade(proxy, address(impl));
+
+        vm.stopBroadcast();
+    }
+
+    /**
+     * @dev upgrades the proxy to the specified implementation - use with previously deployed implementation
+     * @param proxyAdmin address of the proxy admin
+     * @param transparentProxy address of the transparent proxy
+     * @param implementation address of the implementation
+     */
+    function upgradeMembershipToken(address payable transparentProxy, address proxyAdmin, address implementation)
+        public
+    {
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+
+        vm.startBroadcast(deployerPrivateKey);
+
+        OrigamiMembershipToken impl = OrigamiMembershipToken(implementation);
+        ProxyAdmin admin = ProxyAdmin(proxyAdmin);
+        TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(transparentProxy);
+        admin.upgrade(proxy, address(impl));
 
         vm.stopBroadcast();
     }

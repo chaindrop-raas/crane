@@ -8,54 +8,105 @@ import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@oz/proxy/transparent/ProxyAdmin.sol";
 
 contract DeployScript is Script {
-
-
-    function deployMembershipToken(address owner, string calldata name, string calldata symbol, string calldata baseURI)
-        public
-    {
-        OrigamiMembershipToken impl;
-        TransparentUpgradeableProxy proxy;
-        OrigamiMembershipToken token;
-        ProxyAdmin admin;
-
+    /**
+     * @dev deploys a new proxy to the specified implementation
+     * @param proxyAdmin address of the proxy admin
+     * @param implementation address of the implementation
+     * @param contractAdmin address of the contract's administrative wallet
+     * @param name name of the token
+     * @param symbol symbol of the token
+     * @param baseURI base URI of the token
+     */
+    function deployMembershipToken(
+        address proxyAdmin,
+        address implementation,
+        address contractAdmin,
+        string calldata name,
+        string calldata symbol,
+        string calldata baseURI
+    ) public {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        admin = new ProxyAdmin();
-        impl = new OrigamiMembershipToken();
-        proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            address(admin),
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            implementation,
+            proxyAdmin,
             ""
         );
 
-        token = OrigamiMembershipToken(address(proxy));
-        token.initialize(owner, name, symbol, baseURI);
+        OrigamiMembershipToken token = OrigamiMembershipToken(address(proxy));
+        token.initialize(contractAdmin, name, symbol, baseURI);
 
         vm.stopBroadcast();
     }
 
-    function deployGovernanceToken(address owner, string calldata name, string calldata symbol, uint256 supplyCap)
-        public
-    {
-        OrigamiGovernanceToken impl;
-        TransparentUpgradeableProxy proxy;
-        OrigamiGovernanceToken token;
-        ProxyAdmin admin;
-
+    /**
+     * @dev deploys a new proxy to the specified implementation
+     * @param proxyAdmin address of the proxy admin
+     * @param implementation address of the implementation
+     * @param contractAdmin address of the contract's administrative wallet
+     * @param name name of the token
+     * @param symbol symbol of the token
+     * @param supplyCap supply cap of the token
+     */
+    function deployGovernanceToken(
+        address proxyAdmin,
+        address implementation,
+        address contractAdmin,
+        string calldata name,
+        string calldata symbol,
+        uint256 supplyCap
+    ) public {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        admin = new ProxyAdmin();
-        impl = new OrigamiGovernanceToken();
-        proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            address(admin),
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            implementation,
+            proxyAdmin,
             ""
         );
 
-        token = OrigamiGovernanceToken(address(proxy));
-        token.initialize(owner, name, symbol, supplyCap);
+        OrigamiGovernanceToken token = OrigamiGovernanceToken(address(proxy));
+        token.initialize(contractAdmin, name, symbol, supplyCap);
+
+        vm.stopBroadcast();
+    }
+
+    /**
+     * @dev deploys a new proxy admin - this can be reused for multiple proxies
+     */
+    function deployProxyAdmin() public {
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+
+        ProxyAdmin admin = new ProxyAdmin();
+        console2.log("ProxyAdmin deployed at", address(admin));
+
+        vm.stopBroadcast();
+    }
+
+    /**
+     * @dev deploys a new implementation of the OrigamiGovernanceToken contract - this should be used for upgrades of the existing proxies
+     */
+    function deployGovernanceTokenImpl() public {
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+
+        OrigamiGovernanceToken token = new OrigamiGovernanceToken();
+        console2.log("OrigamiGovernanceToken deployed at", address(token));
+
+        vm.stopBroadcast();
+    }
+
+    /**
+     * @dev deploys a new implementation of the OrigamiMembershipToken contract - this should be used for upgrades of the existing proxies
+     */
+    function deployMembershipTokenImpl() public {
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+
+        OrigamiMembershipToken token = new OrigamiMembershipToken();
+        console2.log("OrigamiMembershipToken deployed at", address(token));
 
         vm.stopBroadcast();
     }

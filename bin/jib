@@ -1,113 +1,135 @@
 # @describe Jib helps the crane hoist the cargo.
-# @version 0.1.0
+# @version 0.1.1
 
-# @cmd deploy an instance of the governance token - PREFER CLONING WHENEVER POSSIBLE
-# @option --admin! the address entitled to call admin functions on the clone
-# @option --name! the name of the token
-# @option --symbol! the symbol for the token
-# @option --cap! the maximum supply of the token
+# @cmd deploy a proxy admin contract
+# @alias dpa
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @flag --ignore-deploy-warning
+deployProxyAdmin() {
+  forge script script/Deploy.s.sol:DeployScript \
+    --sig "deployProxyAdmin()" \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+}
+
+# @cmd deploy a governance token implementation contract
+# @alias dgi
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+deployGovTokenImpl() {
+  forge script script/Deploy.s.sol:DeployScript \
+    --sig "deployGovernanceTokenImpl()" \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+}
+
+# @cmd deploy a membership token implementation contract
+# @alias dmi
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+deployMemTokenImpl() {
+  forge script script/Deploy.s.sol:DeployScript \
+    --sig "deployMembershipTokenImpl()" \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+}
+
+# @cmd deploy an instance of the governance token
+# @alias dgt
+# @arg proxy-admin! the address of the proxy admin contract
+# @arg implementation! the address of the implementation contract
+# @arg contract-admin! the address entitled to call admin functions
+# @option -n --name! the name of the token
+# @option -s --symbol! the symbol for the token
+# @option -c --supply-cap! the maximum supply of the token
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
 deployGovToken() {
-  if [ $argc_ignore_deploy_warning ]; then
-    forge script script/Deploy.s.sol:DeployScript \
-      --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-      --optimize --optimizer-runs 1000000 \
-      --sig "deployGovernanceToken(address,string,string,uint256)" \
-      -- $argc_admin "$argc_name" $argc_symbol $argc_cap
-  else
-    echo
-    echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-    echo "!! WARNING: This will deploy a new Governance Token contract !!"
-    echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-    echo
-    echo " This is much more expensive than cloning. Avoid if possible."
-    echo " If you are sure you want to deploy a new token, re-run this"
-    echo " command with the --ignore-deploy-warning flag."
-    echo
-  fi
+  forge script script/Deploy.s.sol:DeployScript \
+    $argc_proxy_admin $argc_implementation $argc_contract_admin \
+    "$argc_name" $argc_symbol $argc_supply_cap \
+    --sig "deployGovernanceToken(address,address,address,string,string,uint256)" \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
+    --etherscan-api-key "${!argc_block_explorer_api_key}" \
+    --optimize --optimizer-runs 1000000
+
 }
 
-# @cmd deploy an instance of the membership token - PREFER CLONING WHENEVER POSSIBLE
-# @option --admin! the address entitled to call admin functions on the clone
-# @option --name! the name of the token
-# @option --symbol! the symbol for the token
-# @option --base-uri! the base uri for the token metadata
+# @cmd deploy an instance of the membership token
+# @alias dmt
+# @arg proxy-admin! the address of the proxy admin contract
+# @arg implementation! the address of the implementation contract
+# @arg contract-admin! the address entitled to call admin functions
+# @option -n --name! the name of the token
+# @option -s --symbol! the symbol for the token
+# @option -u --base-uri! the base uri for the token metadata
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @flag --ignore-deploy-warning
+# @option --block-explorer-api-key=POLYGONSCAN_API_KEY the api key for the block explorer
 deployMemToken() {
-  if [ $argc_ignore_deploy_warning ]; then
-    forge script script/Deploy.s.sol:DeployScript \
-      --rpc-url $argc_rpc_url --broadcast -vvvv \
-      --optimize --optimizer-runs 1000000 \
-      --sig "deployMembershipToken(address,string,string,string)" \
-      -- $argc_admin "$argc_name" $argc_symbol $argc_base_uri
-  else
-    echo
-    echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-    echo "!! WARNING: This will deploy a new Membership Token contract !!"
-    echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-    echo
-    echo " This is much more expensive than cloning. Avoid if possible."
-    echo " If you are sure you want to deploy a new token, re-run this"
-    echo " command with the --ignore-deploy-warning flag."
-    echo
-  fi
-}
-
-jqSelector() {
-  echo "(.transactions[]|select(.contractName == \"$1\")|select(.transactionType == \"CREATE\")).contractAddress"
-}
-
-# @cmd verify the last membership token broadcast transaction
-# @alias vmt
-# @arg block-explorer-api-key! the api key for the block explorer
-verifyLastMemToken() {
-  BROADCAST_FILE=$(find broadcast -type f -print0 | xargs -0 stat --format '%Y :%y %n' | sort -nr | cut -d ' ' -f 5 | head -1)
-  PROXY_ADMIN=$(jq -r "$(jqSelector ProxyAdmin)" $BROADCAST_FILE)
-  TRANSPARENT_PROXY=$(jq -r "$(jqSelector TransparentUpgradeableProxy)" $BROADCAST_FILE)
-  MEM_TOKEN=$(jq -r "$(jqSelector OrigamiMembershipToken)" $BROADCAST_FILE)
-  CHAIN_ID=$(jq -r ".chain" $BROADCAST_FILE)
-  forge verify-contract --chain-id $CHAIN_ID --num-of-optimizations 1000000 \
-    --compiler-version v0.8.16+commit.07a7930e --watch \
-    $PROXY_ADMIN ProxyAdmin $argc_block_explorer_api_key
-  forge verify-contract --chain-id $CHAIN_ID --num-of-optimizations 1000000 \
-    --compiler-version v0.8.16+commit.07a7930e --watch \
-    $MEM_TOKEN OrigamiMembershipToken $argc_block_explorer_api_key
-  forge verify-contract --chain-id $CHAIN_ID --num-of-optimizations 1000000 \
-    --compiler-version v0.8.16+commit.07a7930e --watch \
-    --constructor-args $(cast abi-encode "constructor(address,address,bytes)" $MEM_TOKEN $PROXY_ADMIN 0x) \
-    $TRANSPARENT_PROXY TransparentUpgradeableProxy $argc_block_explorer_api_key
+  forge script script/Deploy.s.sol:DeployScript \
+    $argc_proxy_admin $argc_implementation $argc_contract_admin \
+    "$argc_name" $argc_symbol $argc_base_uri \
+    --sig "deployMembershipToken(address,address,address,string,string,string)" \
+    --rpc-url $argc_rpc_url --verify --broadcast -vvvv \
+    --etherscan-api-key "${!argc_block_explorer_api_key}" \
+    --optimize --optimizer-runs 1000000
 }
 
 # @cmd upgrade a governance token
 # @alias ugt
-# @arg admin! the address of the proxy admin contract for the token
-# @arg token! the address of the token to upgrade
+# @arg proxy-admin! the address of the proxy admin
+# @arg transparent-proxy! the address of the transparent proxy to upgrade
+# @arg implementation! the address of the implementation to upgrade to
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 upgradeGovToken() {
-  forge script script/Upgrade.s.sol:UpgradeScript $argc_admin $argc_token \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-    --sig "upgradeGovernanceToken(address,address)" \
-    --optimize --optimizer-runs 1000000
+  forge script script/Upgrade.s.sol:UpgradeScript \
+    $argc_proxy_admin $argc_transparent_proxy $argc_implementation \
+    --sig "upgradeGovernanceToken(address,address,address)" \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
 }
 
 # @cmd upgrade a membership token
 # @alias umt
-# @arg admin! the address of the proxy admin contract for the token
-# @arg token! the address of the token to upgrade
+# @arg proxy-admin! the address of the proxy admin
+# @arg transparent-proxy! the address of the transparent proxy to upgrade
+# @arg implementation! the address of the implementation to upgrade to
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 upgradeMemToken() {
-  forge script script/Upgrade.s.sol:UpgradeScript $argc_admin $argc_token \
+  forge script script/Upgrade.s.sol:UpgradeScript \
+    $argc_proxy_admin $argc_transparent_proxy $argc_implementation \
+    --sig "upgradeMembershipToken(address,address,address)" \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+}
+
+# @cmd deploy and upgrade a membership token
+# @alias dumt
+# @arg proxy-admin! the address of the proxy admin
+# @arg transparent-proxy! the address of the transparent proxy to upgrade
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option --block-explorer-api-key=POLYGONSCAN_API_KEY the api key for the block explorer
+deployAndUpgradeMemToken() {
+  forge script script/Upgrade.s.sol:UpgradeScript \
+    $argc_proxy_admin $argc_transparent_proxy \
+    --sig "deployAndUpgradeMembershipToken(address,address)" \
     --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-    --sig "upgradeMembershipToken(address,address)" \
+    --etherscan-api-key "${!argc_block_explorer_api_key}" \
     --optimize --optimizer-runs 17500
 }
 
-# @cmd grant permissions to wallets in the specified file (one address per line) on the specified contract necessary to mint and revoke tokens
+# @cmd deploy and upgrade a governance token
+# @alias dugt
+# @arg proxy-admin! the address of the proxy admin
+# @arg transparent-proxy! the address of the transparent proxy to upgrade
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
+deployAndUpgradeGovToken() {
+  forge script script/Upgrade.s.sol:UpgradeScript \
+    $argc_proxy_admin $argc_transparent_proxy \
+    --sig "deployAndUpgradeGovernanceToken(address,address)" \
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
+    --etherscan-api-key "${!argc_block_explorer_api_key}" \
+    --optimize --optimizer-runs 1000000
+}
+
+# @cmd grant mint/revoke permissions to wallets
 # @alias grant-permissions
 # @arg contract! the address of the token contract
-# @arg file! the path to the file containing the addresses to grant permissions to
+# @arg file! the path to the file containing the addresses to grant permissions to (one per line)
+# @option --gas-price Override the gas price to use for the transaction.
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 grantPermissions() {
   REVOKER_ROLE="0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30"
@@ -115,9 +137,39 @@ grantPermissions() {
 
   while read -r address; do
     cast send --rpc-url $argc_rpc_url --private-key $ADMIN_PRIVATE_KEY \
+      ${argc_gas_price:+--gas-price "$argc_gas_price"} \
       $argc_contract "grantRole(bytes32,address)" $REVOKER_ROLE $address
     cast send --rpc-url $argc_rpc_url --private-key $ADMIN_PRIVATE_KEY \
-      $argc_contract "grantRole(bytes32,address)" $MINTER_ROLE $address
+      ${argc_gas_price:+--gas-price "$argc_gas_price"} \
+      $argc_contract "grantRole(bytes32,address)" $REVOKER_ROLE $address
+  done <$argc_file
+}
+
+# @cmd check for mint/revoke permissions for wallets
+# @alias check-permissions
+# @arg contract! the address of the token contract
+# @arg file! the path to the file containing the addresses to check permissions for (one per line)
+# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @flag --verbose print the addresses that have the permissions
+checkPermissions() {
+  REVOKER_ROLE="0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30"
+  MINTER_ROLE="0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6"
+  FALSE="0x0000000000000000000000000000000000000000000000000000000000000000"
+
+  while read -r address; do
+    local REVOKER="$(cast call --rpc-url $argc_rpc_url $argc_contract "hasRole(bytes32,address)" $REVOKER_ROLE $address)"
+    if [ $REVOKER = $FALSE ]; then
+      echo "$address does not have the revoker role"
+    elif [ $argc_verbose ]; then
+      echo "$address has the revoker role"
+    fi
+
+    local MINTER="$(cast call --rpc-url $argc_rpc_url $argc_contract "hasRole(bytes32,address)" $MINTER_ROLE $address)"
+    if [ $REVOKER = $FALSE ]; then
+      echo "$address does not have the minter role"
+    elif [ $argc_verbose ]; then
+      echo "$address has the minter role"
+    fi
   done <$argc_file
 }
 
