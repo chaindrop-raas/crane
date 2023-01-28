@@ -1,33 +1,6 @@
 # @describe Jib helps the crane hoist the cargo.
 # @version 0.1.0
 
-# TODO: add upgrade commands for the factories
-# TODO: add a command to set the factory implementations
-# TODO: add upgrade commands for the tokens
-
-# @cmd deploy the governance token factory
-# @alias dgtf
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-deployGovTokenFactory() {
-  forge script script/Deploy.s.sol\:DeployScript \
-    --rpc-url $argc_rpc_url --broadcast -vvvv --verify \
-    --optimize --optimizer-runs 1000000 \
-    --sig "deployGovernanceTokenFactory()"
-}
-
-# @cmd deploy the membership token factory
-# @alias dmtf
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @flag --resume attempt to resume the deployment
-deployMemTokenFactory() {
-  # 17,500 runs seems to be about as many as we can use in this contract and still keep the bytecode under 24kb
-  forge script script/Deploy.s.sol\:DeployScript \
-    --rpc-url $argc_rpc_url --broadcast -vvvv --verify \
-    --optimize --optimizer-runs 17500 \
-    ${argc_resume:+--resume} \
-    --sig "deployMembershipTokenFactory()"
-}
-
 # @cmd deploy an instance of the governance token - PREFER CLONING WHENEVER POSSIBLE
 # @option --admin! the address entitled to call admin functions on the clone
 # @option --name! the name of the token
@@ -105,36 +78,6 @@ verifyLastMemToken() {
     --compiler-version v0.8.16+commit.07a7930e --watch \
     --constructor-args $(cast abi-encode "constructor(address,address,bytes)" $MEM_TOKEN $PROXY_ADMIN 0x) \
     $TRANSPARENT_PROXY TransparentUpgradeableProxy $argc_block_explorer_api_key
-}
-
-# @cmd deploy a clone of the governance token
-# @alias cgt
-# @arg factory! the address of the factory to deploy the clone from
-# @option -a --admin! the address entitled to call admin functions on the clone
-# @option -n --name! the name of the token
-# @option -s --symbol! the symbol for the token
-# @option -c --cap! the maximum supply of the token
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-cloneGovToken() {
-  forge script script/Clone.s.sol:Clone \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-    --sig "cloneGovernanceToken(address,address,string,string,uint256)" \
-    -- $argc_factory $argc_admin "$argc_name" $argc_symbol $argc_cap
-}
-
-# @cmd deploy a clone of the membership token
-# @alias cmt
-# @arg factory! the address of the factory to deploy the clone from
-# @option -a --admin! the address entitled to call admin functions on the clone
-# @option -n --name! the name of the token
-# @option -s --symbol! the symbol for the token
-# @option -u --base-uri! the base uri for the token metadata
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-cloneMemToken() {
-  forge script script/Clone.s.sol:Clone \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-    --sig 'cloneMembershipToken(address,address,string,string,string)' \
-    -- $argc_factory $argc_admin "$argc_name" $argc_symbol $argc_base_uri
 }
 
 # @cmd upgrade a governance token

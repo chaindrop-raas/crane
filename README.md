@@ -4,15 +4,13 @@
 
 ## Synopsis of contracts
 
-| Contract                        | Purpose                                                        |
-| :------------------------------ | :------------------------------------------------------------- |
-| `OrigamiMembershipToken`        | A membership NFT issued to DAO members                         |
-| `OrigamiMembershipTokenFactory` | A factory contract for cheaply deploying new membership tokens |
-| `OrigamiGovernanceToken`        | An ERC20 token appropriate for use in governance               |
-| `OrigamiGovernanceTokenFactory` | A factory contract for cheaply deploying new governance tokens |
-| `OrigamiGovernorDiamond`        | The EIP-2535 Diamond interface to the governor facets          |
-| `OrigamiTimelockController`     | Part of a given DAO's governor deploy                          |
-| `AccessControl`                 | A re-implementation of OZ AccessControl using Diamond Storage  |
+| Contract                    | Purpose                                                       |
+| :---------------------------| :-------------------------------------------------------------|
+| `OrigamiMembershipToken`    | A membership NFT issued to DAO members                        |
+| `OrigamiGovernanceToken`    | An ERC20 token appropriate for use in governance              |
+| `OrigamiGovernorDiamond`    | The EIP-2535 Diamond interface to the governor facets         |
+| `OrigamiTimelockController` | Part of a given DAO's governor deploy                         |
+| `AccessControl`             | A re-implementation of OZ AccessControl using Diamond Storage |
 
 ### Governor Implementation
 
