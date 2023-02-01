@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "@oz/governance/utils/IVotes.sol";
-
 library GovernorStorage {
     bytes32 public constant CONFIG_STORAGE_POSITION = keccak256("com.origami.governor.configStorage");
     bytes32 public constant PROPOSAL_STORAGE_POSITION = keccak256("com.origami.governor.proposalStorage");

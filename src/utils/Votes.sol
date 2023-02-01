@@ -2,8 +2,8 @@
 pragma solidity 0.8.16;
 
 import "src/utils/Checkpoints.sol";
+import "src/interfaces/IVotes.sol";
 
-import "@oz/governance/utils/IVotes.sol";
 import "@oz/utils/cryptography/ECDSA.sol";
 
 interface IVotesToken {

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "src/interfaces/IVotes.sol";
 import "src/utils/GovernorStorage.sol";
-
-import "@oz/governance/utils/IVotes.sol";
 
 /**
  * @title Origami Governor Quorum shared functions
