@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "src/utils/Checkpoints.sol";
+import "src/utils/Votes.sol";
+
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
 import "@oz-upgradeable/security/PausableUpgradeable.sol";
 import "@oz-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@oz-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
 import "@oz-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import "@oz-upgradeable/token/ERC721/extensions/draft-ERC721VotesUpgradeable.sol";
 import "@oz-upgradeable/utils/CountersUpgradeable.sol";
-import "@oz-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
-import "@oz/governance/utils/IVotes.sol";
 
 /// @title Origami Membership Token
 /// @author Stephen Caudill
@@ -23,8 +23,7 @@ contract OrigamiMembershipToken is
     PausableUpgradeable,
     AccessControlUpgradeable,
     ERC721BurnableUpgradeable,
-    EIP712Upgradeable,
-    ERC721VotesUpgradeable
+    Votes
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
@@ -92,6 +91,23 @@ contract OrigamiMembershipToken is
     /// @dev this overrides the ERC721Upgradeable's function to return our internal base URI variable. It is called by `super.tokenURI`.
     function _baseURI() internal view override returns (string memory) {
         return _metadataBaseURI;
+    }
+
+    function name() public view virtual override(ERC721Upgradeable, IVotesToken) returns (string memory) {
+        return super.name();
+    }
+
+    function version() public pure returns (string memory) {
+        return "1.0.0";
+    }
+
+    function balanceOf(address owner)
+        public
+        view
+        override(ERC721Upgradeable, IERC721Upgradeable, IVotesToken)
+        returns (uint256)
+    {
+        return super.balanceOf(owner);
     }
 
     /// @dev this is only callable by the contract admin.
@@ -219,13 +235,9 @@ contract OrigamiMembershipToken is
 
     function _afterTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
         internal
-        override(ERC721Upgradeable, ERC721VotesUpgradeable)
+        override(ERC721Upgradeable, Votes)
     {
         super._afterTokenTransfer(from, to, tokenId, batchSize);
-    }
-
-    function _burn(uint256 tokenId) internal override(ERC721Upgradeable) {
-        super._burn(tokenId);
     }
 
     /// @inheritdoc ERC721Upgradeable

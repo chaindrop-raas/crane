@@ -505,7 +505,7 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
         // check that mintee has no votes
         assertEq(token.getVotes(mintee), 0);
 
-        // delegate and then check again
+        // self-delegate and then check again
         vm.prank(mintee);
         token.delegate(mintee);
         assertEq(token.getVotes(mintee), 1);
@@ -523,20 +523,20 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
         vm.stopPrank();
 
         // delegate to self
-        vm.roll(42);
+        vm.warp(42);
         vm.prank(mintee);
         token.delegate(mintee);
 
         // mint some more tokens as owner
-        vm.roll(43);
+        vm.warp(43);
         vm.prank(owner);
         token.revoke(mintee);
 
         // visit the next block and make assertions
-        vm.roll(44);
-        assertEq(token.getPastVotes(mintee, 41), 0); // minting happened in block 1 but delegation hasn't happened yet
-        assertEq(token.getPastVotes(mintee, 42), 1); // delegation happened in block 42
-        assertEq(token.getPastVotes(mintee, 43), 0); // more minting happened in block 43
+        vm.warp(44);
+        assertEq(token.getPastVotes(mintee, 41), 0); // minting happened at timestamp 1 but delegation hasn't happened yet
+        assertEq(token.getPastVotes(mintee, 42), 1); // delegation happened at timestamp 42
+        assertEq(token.getPastVotes(mintee, 43), 0); // more minting happened at timestamp 43
     }
 
     function testGetPastTotalSupplySnapshotsByBlock() public {
@@ -546,20 +546,20 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
         vm.stopPrank();
 
         // delegate to self
-        vm.roll(42);
+        vm.warp(42);
         vm.prank(mintee);
         token.delegate(mintee);
 
         // mint another token as owner
-        vm.roll(43);
+        vm.warp(43);
         vm.prank(owner);
         token.safeMint(recipient);
 
         // visit the next block and make assertions
-        vm.roll(44);
+        vm.warp(44);
         assertEq(token.getPastTotalSupply(41), 1); // total supply is calc'd regardless of delegation
-        assertEq(token.getPastTotalSupply(42), 1); // delegation happened in block 42
-        assertEq(token.getPastTotalSupply(43), 2); // more minting happened in block 43
+        assertEq(token.getPastTotalSupply(42), 1); // delegation happened at timestamp 42
+        assertEq(token.getPastTotalSupply(43), 2); // more minting happened at timestamp 43
     }
 
     function testDelegatesReturnsDelegateOf(address delegatee) public {
