@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/AccessControl.sol";
 import "src/interfaces/utils/IERC721Receiver.sol";
 import "src/interfaces/utils/IERC1155Receiver.sol";
 import "src/interfaces/ITimelockController.sol";
+import "src/utils/AccessControl.sol";
+
 import "@diamond/interfaces/IERC165.sol";
 
 /**

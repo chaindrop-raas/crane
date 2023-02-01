@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.16;
 
-import "src/AccessControl.sol";
+import "src/utils/AccessControl.sol";
 
 import "@std/Test.sol";
 import "@oz/utils/Strings.sol";
