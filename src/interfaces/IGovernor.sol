@@ -83,19 +83,19 @@ interface IGovernor {
      * @notice module:user-config
      * @dev Minimum number of cast voted required for a proposal to be successful.
      *
-     * Note: The `blockNumber` parameter corresponds to the snapshot used for counting vote. This allows to scale the
-     * quorum depending on values such as the totalSupply of a token at this block (see {ERC20Votes}).
+     * Note: The timestamp parameter corresponds to the snapshot used for counting vote. This allows to scale the
+     * quorum depending on values such as the totalSupply of a token as of the corresponding block's timestamp (see {Votes}).
      */
-    function quorum(uint256 blockNumber) external view returns (uint256);
+    function quorum(uint256 timestamp) external view returns (uint256);
 
     /**
      * @notice module:reputation
-     * @dev Voting power of an `account` at a specific `blockNumber`.
+     * @dev Voting power of an `account` at a specific `timestamp`.
      *
      * Note: this can be implemented in a number of ways, for example by reading the delegated balance from one (or
      * multiple), {ERC20Votes} tokens.
      */
-    function getVotes(address account, uint256 blockNumber, address proposalToken) external view returns (uint256);
+    function getVotes(address account, uint256 timestamp, address proposalToken) external view returns (uint256);
 
     /**
      * @notice module:voting
