@@ -93,16 +93,16 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
-     * @notice returns the snapshot block for a proposal.
+     * @notice returns the snapshot timestamp for a proposal.
      * @param proposalId the id of the proposal.
-     * @return the snapshot block.
+     * @return the snapshot timestamp.
      */
     function proposalSnapshot(uint256 proposalId) public view returns (uint256) {
         return GovernorStorage.proposalStorage().proposals[proposalId].snapshot;
     }
 
     /**
-     * @notice returns the deadline block for a proposal.
+     * @notice returns the deadline timestamp for a proposal.
      * @param proposalId the id of the proposal.
      * @return the deadline block.
      */
@@ -121,13 +121,13 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
-     * @dev Get votes for the given account at the given block number using proposal token.
+     * @dev Get votes for the given account at the given timestamp using proposal token.
      * @param account the account to get the vote weight for.
-     * @param blockNumber the block number the snapshot was taken at.
+     * @param timestamp the block timestamp the snapshot is needed for.
      * @param proposalToken the token to use for counting votes.
      */
-    function getVotes(address account, uint256 blockNumber, address proposalToken) public view returns (uint256) {
-        uint256 pastVotes = IVotes(proposalToken).getPastVotes(account, blockNumber);
+    function getVotes(address account, uint256 timestamp, address proposalToken) public view returns (uint256) {
+        uint256 pastVotes = IVotes(proposalToken).getPastVotes(account, timestamp);
         return pastVotes;
     }
 
@@ -524,7 +524,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     modifier onlyThresholdTokenHolder(address account) {
         GovernorStorage.GovernorConfig storage cs = GovernorStorage.configStorage();
         require(
-            getVotes(account, block.number - 1, cs.proposalThresholdToken) >= cs.proposalThreshold,
+            getVotes(account, block.timestamp, cs.proposalThresholdToken) >= cs.proposalThreshold,
             "Governor: proposer votes below proposal threshold"
         );
         _;

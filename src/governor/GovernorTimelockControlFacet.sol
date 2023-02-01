@@ -59,7 +59,7 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl, AccessControl
             GovernorCommon.state(proposalId) == IGovernor.ProposalState.Succeeded, "Governor: proposal not successful"
         );
 
-        uint256 delay = GovernorStorage.configStorage().votingDelay;
+        uint256 delay = timelock().getMinDelay();
         GovernorStorage.proposalStorage().timelockQueue[proposalId].timestamp = block.timestamp + delay;
 
         timelock().scheduleBatch(targets, values, calldatas, 0, descriptionHash, delay);

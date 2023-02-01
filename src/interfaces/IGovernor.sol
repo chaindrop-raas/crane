@@ -26,8 +26,8 @@ interface IGovernor {
         uint256[] values,
         string[] signatures,
         bytes[] calldatas,
-        uint256 startBlock,
-        uint256 endBlock,
+        uint256 startTimestamp,
+        uint256 endTimestamp,
         string description
     );
 
@@ -67,7 +67,7 @@ interface IGovernor {
 
     /**
      * @notice module:core
-     * @dev Block number used to retrieve user's votes and quorum. As per Compound's Comp and OpenZeppelin's
+     * @dev block timestamp used to retrieve user's votes and quorum. As per Compound's Comp and OpenZeppelin's
      * ERC20Votes, the snapshot is performed at the end of this block. Hence, voting for this proposal starts at the
      * beginning of the following block.
      */
@@ -75,8 +75,7 @@ interface IGovernor {
 
     /**
      * @notice module:core
-     * @dev Block number at which votes close. Votes close at the end of this block, so it is possible to cast a vote
-     * during this block.
+     * @dev Block timestamp at which votes close. Votes close after this block's timestamp, so it is possible to cast a vote during this block.
      */
     function proposalDeadline(uint256 proposalId) external view returns (uint256);
 

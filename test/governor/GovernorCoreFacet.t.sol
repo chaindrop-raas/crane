@@ -75,11 +75,11 @@ contract OrigamiGovernorCoreTest is GovernorDiamondHelper {
     }
 
     function testProposalSnapshot() public {
-        assertEq(coreFacet.proposalSnapshot(proposalId), 604_842);
+        assertEq(coreFacet.proposalSnapshot(proposalId), 604_801);
     }
 
     function testProposalDeadline() public {
-        assertEq(coreFacet.proposalDeadline(proposalId), 1_209_642);
+        assertEq(coreFacet.proposalDeadline(proposalId), 1_209_601);
     }
 
     function testSimpleWeight() public {
@@ -138,8 +138,8 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
             values,
             signatures,
             calldatas,
-            604842,
-            1209642,
+            604801,
+            1209601,
             description
             );
         coreFacet.proposeBySig(targets, values, calldatas, description, 0, v, r, s);
@@ -154,8 +154,8 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
             values,
             signatures,
             calldatas,
-            604842,
-            1209642,
+            604801,
+            1209601,
             description
             );
         coreFacet.proposeWithParamsBySig(targets, values, calldatas, description, "", nonce, v, r, s);
@@ -170,8 +170,8 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
             values,
             signatures,
             calldatas,
-            604842,
-            1209642,
+            604801,
+            1209601,
             description
             );
         coreFacet.proposeWithTokenAndCountingStrategyBySig(
@@ -195,7 +195,7 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
         );
 
         // cannot re-submit votes by signature
-        vm.roll(block.number + 1);
+        vm.warp(block.timestamp + 1);
         vm.expectRevert("OrigamiGovernor: invalid nonce");
         coreFacet.proposeWithTokenAndCountingStrategyBySig(
             targets, values, calldatas, description, address(govToken), weighting, nonce, v, r, s
@@ -203,7 +203,7 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
 
         // just incrementing the nonce won't work either
         // cannot re-submit votes by signature
-        vm.roll(block.number + 1);
+        vm.warp(block.timestamp + 1);
         vm.expectRevert("OrigamiGovernor: invalid nonce");
         coreFacet.proposeWithTokenAndCountingStrategyBySig(
             targets, values, calldatas, description, address(govToken), weighting, nonce + 1, v, r, s
@@ -254,8 +254,8 @@ contract OrigamiGovernorProposalVoteBySignatureTest is GovernorDiamondHelper {
     }
 
     function testCanVoteOnProposalWithReasonBySig() public {
-        // roll the block number forward to voting period
-        vm.roll(604_843);
+        // warp forward to voting period
+        vm.warp(block.timestamp + 7 days + 1);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit VoteCast(signingVoter, proposalId, FOR, 100000000, "I like it");
         coreFacet.castVoteWithReasonBySig(proposalId, FOR, "I like it", nonce, v, r, s);
@@ -267,22 +267,22 @@ contract OrigamiGovernorProposalVoteBySignatureTest is GovernorDiamondHelper {
         bytes32 newR = 0x28ddce5ed6018161b74a41314e1e97ac39e18f2b06d2af01020430d4a5d12423;
         bytes32 newS = 0x41d1ecf448b2c62fc807b9e412a81a04dc440e8bd360c9054b50f3e166f69cb5;
 
-        // roll the block number forward to voting period
-        vm.roll(604_843);
+        // warp forward to voting period
+        vm.warp(block.timestamp + 7 days + 1);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit VoteCast(signingVoter, proposalId, FOR, 100000000, "");
         coreFacet.castVoteBySig(proposalId, FOR, nonce, newV, newR, newS);
     }
 
     function testCanUpdateVoteOnProposalWithParamsBySignature() public {
-        // roll the block number forward to voting period
-        vm.roll(604_843);
+        // warp forward to voting period
+        vm.warp(block.timestamp + 7 days + 1);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit VoteCast(signingVoter, proposalId, FOR, 100000000, "I like it");
         coreFacet.castVoteWithReasonBySig(proposalId, FOR, "I like it", nonce, v, r, s);
 
-        // roll forward to the next block
-        vm.roll(604_844);
+        // warp forward
+        vm.warp(block.timestamp + 1);
         // signature updated to reflect new nonce and changed vote/reason
         uint8 newV = 27;
         bytes32 newR = 0x4551adb0883cc8316d33a1b7899e03da39d0dcf13cca960264f933cd10b48d21;
@@ -293,35 +293,35 @@ contract OrigamiGovernorProposalVoteBySignatureTest is GovernorDiamondHelper {
     }
 
     function testCannotVoteBySigWithBadR() public {
-        // roll the block number forward to voting period
-        vm.roll(604_843);
+        // warp forward to voting period
+        vm.warp(block.timestamp + 7 days + 1);
         bytes32 newR = 0x0000000000000000000000000000000000000000000000000000000000000000;
         vm.expectRevert("ECDSA: invalid signature");
         coreFacet.castVoteWithReasonBySig(proposalId, FOR, "I like it", nonce, v, newR, s);
     }
 
     function testCannotVoteBySigWithBadS() public {
-        // roll the block number forward to voting period
-        vm.roll(604_843);
+        // warp forward to voting period
+        vm.warp(block.timestamp + 7 days + 1);
         bytes32 newS = 0x0000000000000000000000000000000000000000000000000000000000000000;
         vm.expectRevert("ECDSA: invalid signature");
         coreFacet.castVoteWithReasonBySig(proposalId, FOR, "I like it", nonce, v, r, newS);
     }
 
     function testCannotVoteBySigWithBadV() public {
-        // roll the block number forward to voting period
-        vm.roll(604_843);
+        // warp forward to voting period
+        vm.warp(block.timestamp + 7 days + 1);
         vm.expectRevert("OrigamiGovernor: only members may vote");
         coreFacet.castVoteWithReasonBySig(proposalId, FOR, "I like it", nonce, 27, r, s);
     }
 
     function testCannotReplayVote() public {
-        // roll the block number forward to voting period
-        vm.roll(604_843);
+        // warp forward to voting period
+        vm.warp(block.timestamp + 7 days + 1);
         coreFacet.castVoteWithReasonBySig(proposalId, FOR, "I like it", nonce, v, r, s);
 
         // cannot re-submit votes by signature
-        vm.roll(604_844);
+        vm.warp(block.timestamp + 1);
         vm.expectRevert("OrigamiGovernor: invalid nonce");
         coreFacet.castVoteWithReasonBySig(proposalId, FOR, "I like it", nonce, v, r, s);
     }
@@ -359,7 +359,7 @@ contract OrigamiGovernorProposalQuadraticVoteTest is GovernorDiamondHelper {
         vm.startPrank(voter);
         govToken.delegate(voter);
 
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit VoteCast(voter, proposalId, FOR, 100000000, "I like it!");
         coreFacet.castVoteWithReason(proposalId, FOR, "I like it!");
@@ -371,7 +371,7 @@ contract OrigamiGovernorProposalQuadraticVoteTest is GovernorDiamondHelper {
         govToken.delegate(voter);
 
         // set block to first eligible voting block
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
 
         // voter and voter2 collectively have fewer tokens than voter3 by
         // themselves, but quadratic weighting has the effect of making them
@@ -389,7 +389,7 @@ contract OrigamiGovernorProposalQuadraticVoteTest is GovernorDiamondHelper {
         vm.prank(voter4);
         coreFacet.castVoteWithReason(proposalId, ABSTAIN, "I have no opinion.");
 
-        vm.roll(640_483 + 604_800);
+        vm.warp(block.timestamp + 7 days);
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
 
         (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes) = coreFacet.proposalVotes(proposalId);

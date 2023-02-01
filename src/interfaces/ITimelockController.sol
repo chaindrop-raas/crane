@@ -2,6 +2,8 @@
 pragma solidity 0.8.16;
 
 interface ITimelockController {
+    function getMinDelay() external view returns (uint256);
+
     function scheduleBatch(
         address[] calldata targets,
         uint256[] calldata values,

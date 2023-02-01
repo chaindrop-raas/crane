@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/utils/Checkpoints.sol";
 import "src/utils/Votes.sol";
 
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";

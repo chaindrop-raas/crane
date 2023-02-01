@@ -37,7 +37,6 @@ contract OrigamiGovernorProposalTest is GovernorDiamondHelper {
     function testCanSubmitProposal() public {
         targets[0] = address(0xbeef);
         values[0] = uint256(0xdead);
-
         vm.prank(voter2);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit ProposalCreated(
@@ -47,8 +46,8 @@ contract OrigamiGovernorProposalTest is GovernorDiamondHelper {
             values,
             signatures,
             calldatas,
-            604842,
-            1209642,
+            604801,
+            1209601,
             "New proposal"
             );
         coreFacet.propose(targets, values, calldatas, "New proposal");
@@ -169,7 +168,7 @@ contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {
     function testCanVoteOnProposalWithDefaultParams() public {
         vm.startPrank(voter);
         proposalId = coreFacet.propose(targets, values, calldatas, "Simple Voting Proposal");
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         // our voting weight is 1 here, since this vote uses the membership token
         emit VoteCast(voter, proposalId, AGAINST, 1, "");
@@ -181,7 +180,7 @@ contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {
         vm.prank(voter);
         govToken.delegate(voter);
 
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.prank(voter);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit VoteCast(voter, proposalId, FOR, 100000000, "I like it");
@@ -193,7 +192,7 @@ contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {
         vm.prank(nonMember);
         govToken.delegate(newVoter);
 
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.prank(newVoter);
 
         // newVoter has the weight of nonMember's delegated tokens
@@ -208,17 +207,17 @@ contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {
         govToken.delegate(voter2);
 
         // voter2 votes with delegated power
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.prank(voter2);
         coreFacet.castVoteWithReason(proposalId, FOR, "I like it");
 
         // voter Redelegates to self
-        vm.roll(604_844);
+        vm.warp(block.timestamp + 1);
         vm.prank(voter);
         govToken.delegate(voter);
 
         // voter attempts to vote with their own power
-        vm.roll(604_845);
+        vm.warp(block.timestamp + 1);
         vm.prank(voter);
         vm.expectRevert("Governor: only accounts with delegated voting power can vote");
         coreFacet.castVoteWithReason(proposalId, AGAINST, "I don't like it");
@@ -229,7 +228,7 @@ contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {
         vm.prank(newVoter);
         govToken.delegate(newVoter);
 
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.prank(newVoter);
 
         // newVoter has correctly self-delegated, but their weight is zero
@@ -238,7 +237,7 @@ contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {
     }
 
     function testCanLimitVotingToMembershipTokenHolders() public {
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.prank(address(0x2a23));
 
         vm.expectRevert("OrigamiGovernor: only members may vote");
@@ -250,7 +249,7 @@ contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {
         vm.prank(voter);
         govToken.delegate(voter);
 
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.prank(voter);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit VoteCast(voter, proposalId, FOR, 100000000, "I like it");
@@ -260,7 +259,7 @@ contract OrigamiGovernorProposalVoteTest is GovernorDiamondHelper {
         // regardless of the value of hasVoted
         assertEq(coreFacet.hasVoted(proposalId, voter), true);
 
-        vm.roll(604_844);
+        vm.warp(block.timestamp + 1);
         vm.prank(voter);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit VoteCast(voter, proposalId, AGAINST, 100000000, "I no longer like it");
@@ -309,7 +308,7 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
 
         // advance to the voting period
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.prank(voter);
         coreFacet.castVoteWithReason(proposalId, 1, "I like it");
 
@@ -317,7 +316,7 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
 
         // advance to the voting deadline
-        vm.roll(604_843 + 604_800);
+        vm.warp(block.timestamp + 7 days + 1);
 
         // proposal is in the succeeded state
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
@@ -328,15 +327,13 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         timelockControlFacet.queue(targets, values, calldatas, proposalHash);
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
 
-        // the TimelockController cares about the block timestamp, so we need to warp in addition to roll
-        // advance block timestamp so that it's after the proposal's required queuing time
-        vm.warp(604_801);
+        vm.warp(block.timestamp + 1 days);
         vm.expectEmit(true, true, true, true, address(origamiGovernorDiamond));
         emit ProposalExecuted(proposalId);
         timelockControlFacet.execute(targets, values, calldatas, proposalHash);
 
         // advance to the the next block
-        vm.roll(604_843 + 604_801);
+        vm.warp(block.timestamp + 1);
 
         // proposal is in the executed state
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Executed));
@@ -351,7 +348,7 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
 
         // advance to the voting period
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.prank(voter);
         coreFacet.castVoteWithReason(proposalId, 1, "I like it");
 
@@ -359,7 +356,7 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
 
         // advance to the voting deadline
-        vm.roll(604_843 + 604_800);
+        vm.warp(block.timestamp + 7 days + 1);
 
         // proposal is in the succeeded state
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
@@ -382,7 +379,7 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         vm.stopPrank();
 
         // advance to the the next block
-        vm.roll(604_843 + 604_801);
+        vm.warp(block.timestamp + 1);
 
         // proposal is in the canceled state
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Canceled));
@@ -397,7 +394,7 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
 
         // advance to the voting period
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.prank(voter);
         coreFacet.castVoteWithReason(proposalId, 0, "I Don't like it");
 
@@ -405,7 +402,7 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
 
         // advance to the voting deadline
-        vm.roll(604_843 + 604_800);
+        vm.warp(block.timestamp + 7 days + 1);
 
         // proposal is in the succeeded state
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
@@ -443,7 +440,7 @@ contract OrigamiGovernorProposalQuorumTest is GovernorDiamondHelper {
 
     function testUnreachedQuorumDefeatsProposal() public {
         // travel to proposal voting period completion
-        vm.roll(604_843 + 604_800);
+        vm.warp(block.timestamp + 14 days + 1);
         assertEq(coreFacet.quorum(proposalId), 84375000);
         // there have been no votes, so quorum will not be reached and state will be Defeated
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
@@ -455,14 +452,14 @@ contract OrigamiGovernorProposalQuorumTest is GovernorDiamondHelper {
         govToken.delegate(voter);
 
         // travel to proposal voting period
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
 
         // vote against the proposal - voter weight exceeds quorum
         vm.prank(voter);
         coreFacet.castVoteWithReason(proposalId, AGAINST, "I don't like it.");
 
         // travel to proposal voting period completion
-        vm.roll(604_843 + 604_800);
+        vm.warp(block.timestamp + 7 days + 1);
 
         // assert vote failed
         (uint256 againstVotes, uint256 forVotes,) = coreFacet.proposalVotes(proposalId);
@@ -478,14 +475,14 @@ contract OrigamiGovernorProposalQuorumTest is GovernorDiamondHelper {
         govToken.delegate(voter);
 
         // travel to proposal voting period
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
 
         // vote against the proposal - voter weight exceeds quorum
         vm.prank(voter);
         coreFacet.castVoteWithReason(proposalId, FOR, "I like it.");
 
         // travel to proposal voting period completion
-        vm.roll(604_843 + 604_800);
+        vm.warp(block.timestamp + 7 days + 1);
 
         // assert vote failed
         (uint256 againstVotes, uint256 forVotes,) = coreFacet.proposalVotes(proposalId);

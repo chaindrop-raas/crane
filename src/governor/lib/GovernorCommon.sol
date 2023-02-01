@@ -67,11 +67,11 @@ library GovernorCommon {
             revert("Governor: unknown proposal id");
         }
 
-        if (proposal.snapshot >= block.number) {
+        if (proposal.snapshot >= block.timestamp) {
             return IGovernor.ProposalState.Pending;
         }
 
-        if (proposal.deadline >= block.number) {
+        if (proposal.deadline >= block.timestamp) {
             return IGovernor.ProposalState.Active;
         }
 

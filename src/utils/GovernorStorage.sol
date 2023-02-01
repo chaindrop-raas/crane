@@ -74,8 +74,8 @@ library GovernorStorage {
         address proposalToken;
         bytes4 countingStrategy;
         uint128 quorumNumerator;
-        uint64 snapshot;
-        uint64 deadline;
+        uint256 snapshot;
+        uint256 deadline;
         bytes params;
         bool canceled;
         bool executed;
@@ -278,7 +278,7 @@ library GovernorStorage {
         ps.countingStrategy = countingStrategy;
         ps.quorumNumerator = cs.quorumNumerator;
         // An epoch exceeding max UINT64 is 584,942,417,355 years from now.
-        ps.snapshot = uint64(block.number) + cs.votingDelay;
+        ps.snapshot = uint64(block.timestamp + cs.votingDelay);
         ps.deadline = ps.snapshot + cs.votingPeriod;
 
         return ps;

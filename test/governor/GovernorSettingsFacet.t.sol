@@ -177,7 +177,7 @@ contract OrigamiGovernorUpdateSettingsViaProposal is GovernorDiamondHelper {
         govToken.delegate(voter);
 
         // advance to the voting period
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
         vm.prank(voter);
         coreFacet.castVoteWithReason(proposalId, 1, "I like it");
 
@@ -185,7 +185,7 @@ contract OrigamiGovernorUpdateSettingsViaProposal is GovernorDiamondHelper {
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
 
         // advance to the voting deadline
-        vm.roll(604_843 + 604_800);
+        vm.warp(block.timestamp + 7 days);
 
         // proposal is in the succeeded state
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
@@ -194,9 +194,8 @@ contract OrigamiGovernorUpdateSettingsViaProposal is GovernorDiamondHelper {
         timelockControlFacet.queue(targets, values, calldatas, proposalHash);
         assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
 
-        // the TimelockController cares about the block timestamp, so we need to warp in addition to roll
-        // advance block timestamp so that it's after the proposal's required queuing time
-        vm.warp(604_801);
+        // wait a day, then execute the proposal
+        vm.warp(block.timestamp + 1 days);
         timelockControlFacet.execute(targets, values, calldatas, proposalHash);
 
         // advance past the execution delay

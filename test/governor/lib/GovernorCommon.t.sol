@@ -74,7 +74,7 @@ contract CommonContractTest is GovernorDiamondHelper {
     }
 
     function testStateActive() public {
-        vm.roll(block.number + 1 days + 1);
+        vm.warp(block.timestamp + 1 days + 1);
         assertEq(uint8(commonContract.state(1)), uint8(IGovernor.ProposalState.Active));
     }
 
@@ -89,14 +89,14 @@ contract CommonContractTest is GovernorDiamondHelper {
     }
 
     function testStateDefeated() public {
-        vm.roll(block.number + 7 days + 1);
+        vm.warp(block.timestamp + 7 days + 1);
         assertEq(uint8(commonContract.state(1)), uint8(IGovernor.ProposalState.Defeated));
     }
 
     function testStateSucceeded() public {
         vm.prank(voter4);
         commonContract.setVote(1, voter4, 1, 306250000);
-        vm.roll(block.number + 7 days + 1);
+        vm.warp(block.timestamp + 7 days + 1);
         assertEq(uint8(commonContract.state(1)), uint8(IGovernor.ProposalState.Succeeded));
     }
 }

@@ -72,6 +72,8 @@ abstract contract Votes is IVotes, IVotesToken {
         Checkpoints.delegate(delegator, delegatee);
     }
 
+    // support minting and burning? does _afterTokenTransfer cover those cases?
+
     function _afterTokenTransfer(address from, address to, uint256, uint256 batchSize)
         virtual
         internal

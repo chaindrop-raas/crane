@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import "src/utils/Checkpoints.sol";
+import "src/utils/Votes.sol";
+
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
 import "@oz-upgradeable/proxy/utils/Initializable.sol";
 import "@oz-upgradeable/security/PausableUpgradeable.sol";
 import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
-import "@oz-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
-import "@oz/governance/utils/IVotes.sol";
 
 /**
  * @title Origami Governance Token
@@ -23,7 +24,7 @@ contract OrigamiGovernanceToken is
     PausableUpgradeable,
     AccessControlUpgradeable,
     ERC20CappedUpgradeable,
-    ERC20VotesUpgradeable
+    Votes
 {
     /**
      * @notice the role hash for granting the ability to pause the contract. By default, this role is granted to the contract admin.
@@ -98,7 +99,6 @@ contract OrigamiGovernanceToken is
         __AccessControl_init();
         __ERC20Burnable_init();
         __ERC20Capped_init(_supplyCap);
-        __ERC20Votes_init();
         __ERC20_init(_name, _symbol);
         __Pausable_init();
 
@@ -110,6 +110,23 @@ contract OrigamiGovernanceToken is
 
         _burnEnabled = false;
         _transferEnabled = false;
+    }
+
+    function name() public view virtual override(ERC20Upgradeable, IVotesToken) returns (string memory) {
+        return super.name();
+    }
+
+    function version() public pure returns (string memory) {
+        return "1.0.0";
+    }
+
+    function balanceOf(address owner)
+        public
+        view
+        override(ERC20Upgradeable, IVotesToken)
+        returns (uint256)
+    {
+        return super.balanceOf(owner);
     }
 
     /**
@@ -253,21 +270,22 @@ contract OrigamiGovernanceToken is
 
     function _afterTokenTransfer(address from, address to, uint256 amount)
         internal
-        override(ERC20Upgradeable, ERC20VotesUpgradeable)
+        override(ERC20Upgradeable)
     {
         super._afterTokenTransfer(from, to, amount);
     }
 
     function _mint(address to, uint256 amount)
         internal
-        override(ERC20Upgradeable, ERC20CappedUpgradeable, ERC20VotesUpgradeable)
+        override(ERC20Upgradeable, ERC20CappedUpgradeable)
     {
+        Checkpoints.transferVotingUnits(address(0), to, amount);
         super._mint(to, amount);
     }
 
     function _burn(address account, uint256 amount)
         internal
-        override(ERC20Upgradeable, ERC20VotesUpgradeable)
+        override(ERC20Upgradeable)
         whenNotPaused
         whenBurnable
     {

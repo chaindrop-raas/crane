@@ -34,7 +34,7 @@ contract TimelockControlFacetTest is GovernorDiamondHelper {
         assertEq(timelockControlFacet.proposalEta(proposalId), 0);
 
         // wait til active, then vote in support to exceed the quorum
-        vm.roll(604_843);
+        vm.warp(block.timestamp + 7 days + 1);
 
         vm.prank(voter2);
         coreFacet.castVote(proposalId, 1);
@@ -45,10 +45,10 @@ contract TimelockControlFacetTest is GovernorDiamondHelper {
 
         // travel to the future and queue the proposal
 
-        vm.roll(block.number + 604_800);
+        vm.warp(block.timestamp + 7 days);
 
         timelockControlFacet.queue(targets, values, calldatas, descriptionHash);
-        assertEq(timelockControlFacet.proposalEta(proposalId), 604801);
+        assertEq(timelockControlFacet.proposalEta(proposalId), block.timestamp + 1 days);
     }
 
     function testCannotDirectlyUpdateTimelock() public {
