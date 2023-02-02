@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "@std/console2.sol";
-
 /**
  * @title CheckpointVoteStorage
  * @dev This contract is used to store the checkpoints for votes and delegates
