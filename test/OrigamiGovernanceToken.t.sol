@@ -15,6 +15,7 @@ abstract contract OGTAddressHelper {
     address public mintee = address(0x3);
     address public pauser = address(0x4);
     address public transferrer = address(0x5);
+    address public signer = address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
 }
 
 abstract contract OGTHelper is OGTAddressHelper, Test {
@@ -573,42 +574,66 @@ contract TransferGovernanceTokenTest is OGTHelper {
 }
 
 contract GovernanceTokenVotingPowerTest is OGTHelper {
+    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
+
     function setUp() public {
         vm.startPrank(owner);
         token.grantRole(token.TRANSFERRER_ROLE(), transferrer);
+
+        // mint some tokens as owner
+        token.enableTransfer();
+        token.mint(mintee, 100);
+        vm.stopPrank();
+
+        // warp to a new timestamp
+        vm.warp(42);
+
+        // delegate to self
+        vm.prank(mintee);
+        token.delegate(mintee);
+
+        // warp to a new timestamp
+        vm.warp(43);
+    }
+
+    function testDelegateEmitsDelegateChanged() public {
+        address other = address(0x7);
+        vm.prank(mintee);
+        vm.expectEmit(true, true, true, true, address(token));
+        emit DelegateChanged(mintee, mintee, other);
+        token.delegate(other);
+    }
+
+    function testDelegateEmitsDelegateVotesChanged() public {
+        address other = address(0x7);
+        vm.prank(mintee);
+        vm.expectEmit(true, true, true, true, address(token));
+        emit DelegateVotesChanged(other, 0, 100);
+        token.delegate(other);
     }
 
     function testGetVotesIsZeroBeforeDelegation() public {
-        // mint some tokens as owner
-        token.enableTransfer();
-        token.mint(mintee, 100);
-        vm.stopPrank();
+        address other = address(0x7);
 
-        // check that mintee has no votes
-        assertEq(token.getVotes(mintee), 0);
+        vm.prank(owner);
+        token.mint(other, 100);
+
+        // check that other has no votes
+        assertEq(token.getVotes(other), 0);
 
         // delegate and then check again
-        vm.prank(mintee);
-        token.delegate(mintee);
-        assertEq(token.getVotes(mintee), 100);
+        vm.prank(other);
+        token.delegate(other);
+        assertEq(token.getVotes(other), 100);
 
         // mint and check updated balance
         vm.prank(owner);
-        token.mint(mintee, 100);
-        assertEq(token.getVotes(mintee), 200);
+        token.mint(other, 100);
+        assertEq(token.getVotes(other), 200);
     }
 
     function testGetPastVotesSnapshotsAtTimestamp() public {
-        // mint some tokens as owner
-        token.enableTransfer();
-        token.mint(mintee, 100);
-        vm.stopPrank();
-
-        // delegate to self
-        vm.warp(42);
-        vm.prank(mintee);
-        token.delegate(mintee);
-
         // mint some more tokens as owner
         vm.warp(43);
         vm.prank(owner);
@@ -622,16 +647,6 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
     }
 
     function testGetPastTotalSupplySnapshotsAtTimestamp() public {
-        // mint some tokens as owner
-        token.enableTransfer();
-        token.mint(mintee, 100);
-        vm.stopPrank();
-
-        // delegate to self
-        vm.warp(42);
-        vm.prank(mintee);
-        token.delegate(mintee);
-
         // mint some more tokens as owner
         vm.warp(43);
         vm.prank(owner);
@@ -645,17 +660,85 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
     }
 
     function testDelegatesReturnsDelegateOf(address delegatee) public {
-        // mint some tokens as owner
-        token.enableTransfer();
-        token.mint(mintee, 100);
-        vm.stopPrank();
-
-        // delegate to self
         vm.prank(mintee);
         token.delegate(delegatee);
-
-        // visit the next block and make assertions
         assertEq(token.delegates(mintee), delegatee);
+    }
+
+    function testTransferVotingPower() public {
+        address other = address(0x7);
+
+        // mint some more tokens as owner
+        vm.warp(43);
+        vm.prank(owner);
+        token.mint(other, 100);
+
+        // self-delegate
+        vm.prank(other);
+        token.delegate(other);
+
+        assertEq(token.getVotes(mintee), 100);
+        assertEq(token.getVotes(other), 100);
+
+        // transfer 10 tokens to mintee
+        vm.prank(other);
+        token.transfer(mintee, 10);
+
+        // check that mintee has 110 votes
+        assertEq(token.getVotes(mintee), 110);
+
+        // check that other has 90 votes
+        assertEq(token.getVotes(other), 90);
+    }
+
+    function testBurnAndMintPastSupplyAndPastVotesInteractions() public {
+        vm.prank(owner);
+        token.enableBurn();
+
+        // mint some more tokens as owner
+        vm.warp(43);
+        vm.prank(owner);
+        token.mint(mintee, 100);
+
+        // burn some tokens
+        vm.warp(44);
+        vm.prank(mintee);
+        token.burn(10);
+
+        // check that mintee has 90 votes
+        assertEq(token.getVotes(mintee), 190);
+
+        // check that total supply is 190
+        assertEq(token.totalSupply(), 190);
+
+        // check that mintee has 100 votes at timestamp 42
+        assertEq(token.getPastVotes(mintee, 42), 100);
+
+        // check that total supply is 100 at timestamp 42
+        assertEq(token.getPastTotalSupply(42), 100);
+
+        // check that mintee has 200 votes at timestamp 43
+        assertEq(token.getPastVotes(mintee, 43), 200);
+
+        // check that total supply is 200 at timestamp 43
+        assertEq(token.getPastTotalSupply(43), 200);
+
+        // check that mintee has 190 votes at timestamp 44
+        assertEq(token.getPastVotes(mintee, 44), 190);
+
+        // check that total supply is 190 at timestamp 44
+        assertEq(token.getPastTotalSupply(44), 190);
+    }
+
+    function testDelegateBySig() public {
+        bytes32 r = 0x269626c92cabf71b49d866b0e09f35882d08a260bdb59a67fae51a1ceabc7757;
+        bytes32 s = 0x0935d9b1ba980a1df5943b4cf597d72e1f6256cdaabe310251e55d5bbfdf51d6;
+        uint8 v = 27;
+
+        // delegate to self
+        vm.expectEmit(true, true, true, true, address(token));
+        emit DelegateChanged(signer, address(0), mintee);
+        token.delegateBySig(mintee, 0, 242, v, r, s);
     }
 }
 

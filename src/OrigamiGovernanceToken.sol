@@ -120,12 +120,7 @@ contract OrigamiGovernanceToken is
         return "1.0.0";
     }
 
-    function balanceOf(address owner)
-        public
-        view
-        override(ERC20Upgradeable, IVotesToken)
-        returns (uint256)
-    {
+    function balanceOf(address owner) public view override(ERC20Upgradeable, IVotesToken) returns (uint256) {
         return super.balanceOf(owner);
     }
 
@@ -268,27 +263,16 @@ contract OrigamiGovernanceToken is
      * The following are overrides for the openzeppelin hooks called by their ERC20 implementation. *
      */
 
-    function _afterTokenTransfer(address from, address to, uint256 amount)
-        internal
-        override(ERC20Upgradeable)
-    {
+    function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20Upgradeable) {
+        Checkpoints.transferVotingUnits(from, to, amount);
         super._afterTokenTransfer(from, to, amount);
     }
 
-    function _mint(address to, uint256 amount)
-        internal
-        override(ERC20Upgradeable, ERC20CappedUpgradeable)
-    {
-        Checkpoints.transferVotingUnits(address(0), to, amount);
+    function _mint(address to, uint256 amount) internal override(ERC20Upgradeable, ERC20CappedUpgradeable) {
         super._mint(to, amount);
     }
 
-    function _burn(address account, uint256 amount)
-        internal
-        override(ERC20Upgradeable)
-        whenNotPaused
-        whenBurnable
-    {
+    function _burn(address account, uint256 amount) internal override(ERC20Upgradeable) whenNotPaused whenBurnable {
         super._burn(account, amount);
     }
 

@@ -234,8 +234,9 @@ contract OrigamiMembershipToken is
 
     function _afterTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
         internal
-        override(ERC721Upgradeable, Votes)
+        override(ERC721Upgradeable)
     {
+        Checkpoints.transferVotingUnits(from, to, batchSize);
         super._afterTokenTransfer(from, to, tokenId, batchSize);
     }
 

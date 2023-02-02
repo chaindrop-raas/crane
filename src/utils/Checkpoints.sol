@@ -148,11 +148,7 @@ library Checkpoints {
         return ds.delegates[account];
     }
 
-    function writeCheckpoint(
-        address delegatee,
-        uint256 oldVotes,
-        uint256 newVotes
-    ) internal {
+    function writeCheckpoint(address delegatee, uint256 oldVotes, uint256 newVotes) internal {
         CheckpointStorage storage cs = checkpointStorage();
         uint32 checkpointCount = cs.voterCheckpointsCount[delegatee];
         cs.voterCheckpoints[delegatee][checkpointCount] = Checkpoint(block.timestamp, newVotes);
@@ -165,20 +161,6 @@ library Checkpoints {
         uint32 checkpointCount = cs.supplyCheckpointsCount;
         cs.supplyCheckpoints[checkpointCount] = Checkpoint(block.timestamp, newSupply);
         cs.supplyCheckpointsCount = checkpointCount + 1;
-    }
-
-    function transferVotingUnits(
-        address from,
-        address to,
-        uint256 amount
-    ) internal {
-        if (from == address(0)) {
-            writeSupplyCheckpoint(getTotalSupply() + amount);
-        }
-        if (to == address(0)) {
-            writeSupplyCheckpoint(getTotalSupply() - amount);
-        }
-        moveDelegation(delegates(from), delegates(to), amount);
     }
 
     function moveDelegation(address oldDelegate, address newDelegate, uint256 amount) internal {
@@ -197,6 +179,16 @@ library Checkpoints {
                 writeCheckpoint(newDelegate, oldVotes, newVotes);
             }
         }
+    }
+
+    function transferVotingUnits(address from, address to, uint256 amount) internal {
+        if (from == address(0)) {
+            writeSupplyCheckpoint(getTotalSupply() + amount);
+        }
+        if (to == address(0)) {
+            writeSupplyCheckpoint(getTotalSupply() - amount);
+        }
+        moveDelegation(delegates(from), delegates(to), amount);
     }
 
     function delegate(address delegator, address delegatee) internal {

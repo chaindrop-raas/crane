@@ -44,22 +44,25 @@ abstract contract Votes is IVotes, IVotesToken {
         Checkpoints.moveDelegation(oldDelegate, delegatee, IVotesToken(this).balanceOf(msg.sender));
     }
 
+    function domainSeparatorV4() public view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                EIP712_TYPEHASH,
+                keccak256(bytes(IVotesToken(this).name())),
+                keccak256(bytes(IVotesToken(this).version())),
+                block.chainid,
+                address(this)
+            )
+        );
+    }
+
     function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external {
         require(block.timestamp <= expiry, "Signature expired");
 
         Checkpoints.DelegateStorage storage ds = Checkpoints.delegateStorage();
         address delegator = ECDSA.recover(
             ECDSA.toTypedDataHash(
-                keccak256(
-                    abi.encode(
-                        EIP712_TYPEHASH,
-                        keccak256(bytes(IVotesToken(this).name())),
-                        IVotesToken(this).version(),
-                        block.chainid,
-                        address(this)
-                    )
-                ),
-                keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry))
+                domainSeparatorV4(), keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry))
             ),
             v,
             r,
@@ -70,14 +73,5 @@ abstract contract Votes is IVotes, IVotesToken {
 
         ds.nonces[delegator]++;
         Checkpoints.delegate(delegator, delegatee);
-    }
-
-    // support minting and burning? does _afterTokenTransfer cover those cases?
-
-    function _afterTokenTransfer(address from, address to, uint256, uint256 batchSize)
-        virtual
-        internal
-    {
-        Checkpoints.transferVotingUnits(from, to, batchSize);
     }
 }
