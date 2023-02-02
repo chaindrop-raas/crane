@@ -10,6 +10,7 @@ import "@oz-upgradeable/security/PausableUpgradeable.sol";
 import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "@oz-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
+import "@oz-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 
 /**
  * @title Origami Governance Token
@@ -24,6 +25,7 @@ contract OrigamiGovernanceToken is
     PausableUpgradeable,
     AccessControlUpgradeable,
     ERC20CappedUpgradeable,
+    ERC20PermitUpgradeable,
     Votes
 {
     /**
