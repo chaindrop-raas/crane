@@ -1,21 +1,22 @@
-| Name             | Type                                                         | Slot | Offset | Bytes | Contract                                                 |
-|------------------|--------------------------------------------------------------|------|--------|-------|----------------------------------------------------------|
-| _initialized     | uint8                                                        | 0    | 0      | 1     | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _initializing    | bool                                                         | 0    | 1      | 1     | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| __gap            | uint256[50]                                                  | 1    | 0      | 1600  | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _balances        | mapping(address => uint256)                                  | 51   | 0      | 32    | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _allowances      | mapping(address => mapping(address => uint256))              | 52   | 0      | 32    | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _totalSupply     | uint256                                                      | 53   | 0      | 32    | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _name            | string                                                       | 54   | 0      | 32    | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _symbol          | string                                                       | 55   | 0      | 32    | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| __gap            | uint256[45]                                                  | 56   | 0      | 1440  | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| __gap            | uint256[50]                                                  | 101  | 0      | 1600  | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _paused          | bool                                                         | 151  | 0      | 1     | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| __gap            | uint256[49]                                                  | 152  | 0      | 1568  | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| __gap            | uint256[50]                                                  | 201  | 0      | 1600  | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _roles           | mapping(bytes32 => struct AccessControlUpgradeable.RoleData) | 251  | 0      | 32    | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| __gap            | uint256[49]                                                  | 252  | 0      | 1568  | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _cap             | uint256                                                      | 301  | 0      | 32    | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| __gap            | uint256[50]                                                  | 302  | 0      | 1600  | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _burnEnabled     | bool                                                         | 352  | 0      | 1     | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
-| _transferEnabled | bool                                                         | 352  | 1      | 1     | src/OldOrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| Name             | Type                                                           | Slot | Offset | Bytes | Contract                                              |
+|------------------|----------------------------------------------------------------|------|--------|-------|-------------------------------------------------------|
+| _initialized     | uint8                                                          | 0    | 0      | 1     | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _initializing    | bool                                                           | 0    | 1      | 1     | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| __gap            | uint256[50]                                                    | 1    | 0      | 1600  | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _balances        | mapping(address => uint256)                                    | 51   | 0      | 32    | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _allowances      | mapping(address => mapping(address => uint256))                | 52   | 0      | 32    | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _totalSupply     | uint256                                                        | 53   | 0      | 32    | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _name            | string                                                         | 54   | 0      | 32    | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _symbol          | string                                                         | 55   | 0      | 32    | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| __gap            | uint256[45]                                                    | 56   | 0      | 1440  | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| __gap            | uint256[50]                                                    | 101  | 0      | 1600  | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _paused          | bool                                                           | 151  | 0      | 1     | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| __gap            | uint256[49]                                                    | 152  | 0      | 1568  | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| __gap            | uint256[50]                                                    | 201  | 0      | 1600  | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _roles           | mapping(bytes32 => struct AccessControlUpgradeable.RoleData)   | 251  | 0      | 32    | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| __gap            | uint256[49]                                                    | 252  | 0      | 1568  | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _cap             | uint256                                                        | 301  | 0      | 32    | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| __gap            | uint256[50]                                                    | 302  | 0      | 1600  | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _burnEnabled     | bool                                                           | 352  | 0      | 1     | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _transferEnabled | bool                                                           | 352  | 1      | 1     | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| lockup           | mapping(address => struct OrigamiGovernanceToken.TransferLock) | 353  | 0      | 32    | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
