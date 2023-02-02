@@ -13,19 +13,25 @@ deployProxyAdmin() {
 # @cmd deploy a governance token implementation contract
 # @alias dgi
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
 deployGovTokenImpl() {
   forge script script/Deploy.s.sol:DeployScript \
     --sig "deployGovernanceTokenImpl()" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
+    --etherscan-api-key "${!argc_block_explorer_api_key}" \
+    --optimize --optimizer-runs 1000000
 }
 
 # @cmd deploy a membership token implementation contract
 # @alias dmi
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
 deployMemTokenImpl() {
   forge script script/Deploy.s.sol:DeployScript \
     --sig "deployMembershipTokenImpl()" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
+    --etherscan-api-key "${!argc_block_explorer_api_key}" \
+    --optimize --optimizer-runs 17500
 }
 
 # @cmd deploy an instance of the governance token
@@ -66,7 +72,7 @@ deployMemToken() {
     --sig "deployMembershipToken(address,address,address,string,string,string)" \
     --rpc-url $argc_rpc_url --verify --broadcast -vvvv \
     --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --optimize --optimizer-runs 1000000
+    --optimize --optimizer-runs 17500
 }
 
 # @cmd upgrade a governance token
