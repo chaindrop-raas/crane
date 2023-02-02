@@ -9,6 +9,7 @@ import "@oz-upgradeable/security/PausableUpgradeable.sol";
 import "@oz-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@oz-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
 import "@oz-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@oz-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import "@oz-upgradeable/utils/CountersUpgradeable.sol";
 
 /// @title Origami Membership Token
@@ -22,7 +23,8 @@ contract OrigamiMembershipToken is
     PausableUpgradeable,
     AccessControlUpgradeable,
     ERC721BurnableUpgradeable,
-    Votes
+    Votes,
+    EIP712Upgradeable
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
@@ -76,6 +78,7 @@ contract OrigamiMembershipToken is
         __Pausable_init();
         __AccessControl_init();
         __ERC721Burnable_init();
+        __EIP712_init(_name, version());
 
         // grant all roles to the admin
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
