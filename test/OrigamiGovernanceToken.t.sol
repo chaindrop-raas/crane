@@ -640,7 +640,6 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
         vm.expectEmit(true, true, true, true, address(token));
         emit DelegateVotesChanged(other, 200, 210);
         token.mint(mintee2, 10);
-
     }
 
     function testGetVotesIsZeroBeforeDelegation() public {
