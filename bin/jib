@@ -52,7 +52,6 @@ deployGovToken() {
     --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
     --etherscan-api-key "${!argc_block_explorer_api_key}" \
     --optimize --optimizer-runs 1000000
-
 }
 
 # @cmd deploy an instance of the membership token

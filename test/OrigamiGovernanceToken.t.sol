@@ -607,10 +607,40 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
 
     function testDelegateEmitsDelegateVotesChanged() public {
         address other = address(0x7);
+        address mintee2 = address(0x8);
+
+        vm.prank(other);
+        token.delegate(other);
+
         vm.prank(mintee);
         vm.expectEmit(true, true, true, true, address(token));
         emit DelegateVotesChanged(other, 0, 100);
         token.delegate(other);
+
+        // mint some more tokens to mintee
+        vm.prank(owner);
+        vm.expectEmit(true, true, true, true, address(token));
+        emit DelegateVotesChanged(other, 100, 200);
+        token.mint(mintee, 100);
+
+        // transfers from the delegator to the delegatee do not trigger a DelegateVotesChanged event, since the balance delegated would not change.
+        // vm.prank(mintee);
+        // vm.expectEmit(true, true, true, true, address(token));
+        // emit DelegateVotesChanged(other, 200, 200);
+        // token.transfer(other, 10);
+
+        // mintee2 delegates to other
+        vm.prank(mintee2);
+        vm.expectEmit(true, true, true, true, address(token));
+        emit DelegateChanged(mintee2, address(0), other);
+        token.delegate(other);
+
+        // mintee2 gets more tokens
+        vm.prank(owner);
+        vm.expectEmit(true, true, true, true, address(token));
+        emit DelegateVotesChanged(other, 200, 210);
+        token.mint(mintee2, 10);
+
     }
 
     function testGetVotesIsZeroBeforeDelegation() public {
