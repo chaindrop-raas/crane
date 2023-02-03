@@ -576,3 +576,27 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
         assertEq(token.delegates(mintee), delegatee);
     }
 }
+
+// This contract is stripped down as much as possible and intended to be used
+// for snapshotting estimated gas costs for functions used by holders. Each test
+// comes in a fuzzed and non-fuzzed version, providing multiple runs on a
+// variety of inputs versus a baseline.  This is not an accurate measurement of
+// gas costs, but can be a good way to ballpark gas consumption or to compare it
+// with snapshots to see how changes might impact gas costs.
+contract MembershipTokenHolderFunctionGasEstimateTests is OMTHelper {
+    function setUp() public {
+        vm.startPrank(owner);
+    }
+
+    function testMintGasCost() public {
+        token.safeMint(mintee);
+    }
+
+    function testSafeBatchMintGasCost() public {
+        address[] memory mintees = new address[](99);
+        for (uint256 i = 0; i < mintees.length; i++) {
+            mintees[i] = address(uint160(i + 42));
+        }
+        token.safeBatchMint(mintees);
+    }
+}
