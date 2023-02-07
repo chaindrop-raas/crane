@@ -10,8 +10,7 @@
   "i.proposalToken": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
   "j.proposalThresholdToken": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
   "k.proposalThreshold": 1,
-  "l.timelockDelay": 86400,
-  "m.votingPeriod": 604800,
-  "n.votingDelay": 604800,
-  "o.quorumPercentage": 10
+  "l.votingPeriod": 604800,
+  "m.votingDelay": 604800,
+  "n.quorumPercentage": 10
 }

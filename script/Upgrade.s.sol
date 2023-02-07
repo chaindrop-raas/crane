@@ -14,7 +14,7 @@ contract UpgradeScript is Script {
      * @param transparentProxy address of the transparent proxy
      */
     function deployAndUpgradeGovernanceToken(address proxyAdmin, address payable transparentProxy) public {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -35,7 +35,7 @@ contract UpgradeScript is Script {
     function upgradeGovernanceToken(address proxyAdmin, address payable transparentProxy, address implementation)
         public
     {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -53,7 +53,7 @@ contract UpgradeScript is Script {
      * @param transparentProxy address of the transparent proxy
      */
     function deployAndUpgradeMembershipToken(address payable transparentProxy, address proxyAdmin) public {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -74,7 +74,7 @@ contract UpgradeScript is Script {
     function upgradeMembershipToken(address payable transparentProxy, address proxyAdmin, address implementation)
         public
     {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
 

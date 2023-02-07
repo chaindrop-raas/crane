@@ -25,7 +25,7 @@ contract DeployScript is Script {
         string calldata symbol,
         string calldata baseURI
     ) public {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
@@ -57,7 +57,7 @@ contract DeployScript is Script {
         string calldata symbol,
         uint256 supplyCap
     ) public {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
@@ -76,7 +76,7 @@ contract DeployScript is Script {
      * @dev deploys a new proxy admin - this can be reused for multiple proxies
      */
     function deployProxyAdmin() public {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         ProxyAdmin admin = new ProxyAdmin();
@@ -89,7 +89,7 @@ contract DeployScript is Script {
      * @dev deploys a new implementation of the OrigamiGovernanceToken contract - this should be used for upgrades of the existing proxies
      */
     function deployGovernanceTokenImpl() public {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         OrigamiGovernanceToken token = new OrigamiGovernanceToken();
@@ -102,7 +102,7 @@ contract DeployScript is Script {
      * @dev deploys a new implementation of the OrigamiMembershipToken contract - this should be used for upgrades of the existing proxies
      */
     function deployMembershipTokenImpl() public {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         OrigamiMembershipToken token = new OrigamiMembershipToken();

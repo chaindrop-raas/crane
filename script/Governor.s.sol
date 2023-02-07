@@ -10,7 +10,7 @@ import "@diamond/Diamond.sol";
 
 contract DeployGovernorFacets is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
@@ -37,7 +37,7 @@ contract DeployGovernorFacets is Script {
 
 contract DeployGovernorDiamondInit is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         GovernorDiamondInit diamondInit = new GovernorDiamondInit();
@@ -46,10 +46,33 @@ contract DeployGovernorDiamondInit is Script {
     }
 }
 
-contract DeployGovernorInstance is Script {
+contract DeployGovernorDiamond is Script {
+    function run(address admin, address diamondCutFacet) external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+
+        vm.startBroadcast(deployerPrivateKey);
+        Diamond governor = new Diamond(admin, diamondCutFacet);
+        console2.log("GovernorDiamond deployed at:", address(governor));
+        vm.stopBroadcast();
+    }
+}
+
+contract DeployGovernorTimelockController is Script {
+    function run(address governor, uint256 timelockDelay) external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address[] memory operators = new address[](1);
+        operators[0] = governor;
+
+        vm.startBroadcast(deployerPrivateKey);
+        OrigamiTimelockController timelock = new OrigamiTimelockController(timelockDelay, operators, operators);
+        console2.log("TimelockController deployed at:", address(timelock));
+        vm.stopBroadcast();
+    }
+}
+
+contract GovernorInstance is Script {
     struct GovernorConfig {
         string name;
-        address diamondCutFacet;
         address diamondLoupeFacet;
         address ownershipFacet;
         address governorCoreFacet;
@@ -59,7 +82,6 @@ contract DeployGovernorInstance is Script {
         address proposalToken;
         address proposalThresholdToken;
         uint256 proposalThreshold;
-        uint256 timelockDelay;
         uint256 votingPeriod;
         uint256 votingDelay;
         uint256 quorumPercentage;
@@ -86,13 +108,6 @@ contract DeployGovernorInstance is Script {
         return cuts;
     }
 
-    function timelockController(uint256 delay, address operator) public returns (OrigamiTimelockController) {
-        address[] memory operators = new address[](1);
-        operators[0] = operator;
-        OrigamiTimelockController timelock = new OrigamiTimelockController(delay, operators, operators);
-        return timelock;
-    }
-
     function encodeConfig(address admin, address timelock, GovernorConfig memory config)
         public
         pure
@@ -113,24 +128,20 @@ contract DeployGovernorInstance is Script {
         );
     }
 
-    function run(address governorDiamondInit, string calldata relativeConfigPath) external {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        uint256 adminPrivateKey = vm.envUint("ADMIN_PRIVATE_KEY");
+    function configure(
+        address governorDiamondInit,
+        address governorDiamond,
+        address timelock,
+        string calldata relativeConfigPath
+    ) external {
+        uint256 adminPrivateKey = vm.envUint("PRIVATE_KEY");
         address admin = vm.addr(adminPrivateKey);
 
         GovernorConfig memory config = parseGovernorConfig(relativeConfigPath);
 
-        vm.startBroadcast(deployerPrivateKey);
-        Diamond governor = new Diamond(admin, config.diamondCutFacet);
-        IDiamondCut.FacetCut[] memory cuts = facetCuts(config);
-        vm.stopBroadcast();
-
         vm.startBroadcast(adminPrivateKey);
-        OrigamiTimelockController timelock = timelockController(config.timelockDelay, address(governor));
-
-        DiamondCutFacet(address(governor)).diamondCut(
-            cuts, governorDiamondInit, encodeConfig(admin, address(timelock), config)
-        );
+        IDiamondCut.FacetCut[] memory cuts = facetCuts(config);
+        DiamondCutFacet(governorDiamond).diamondCut(cuts, governorDiamondInit, encodeConfig(admin, timelock, config));
         vm.stopBroadcast();
     }
 }
