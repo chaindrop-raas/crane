@@ -4,10 +4,13 @@
 # @cmd deploy a proxy admin contract
 # @alias dpa
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
 deployProxyAdmin() {
   forge script script/Deploy.s.sol:DeployScript \
     --sig "deployProxyAdmin()" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
+    --etherscan-api-key "${!argc_block_explorer_api_key}" \
+    --optimize --optimizer-runs 1000000
 }
 
 # @cmd deploy a governance token implementation contract
