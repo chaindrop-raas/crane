@@ -208,7 +208,7 @@ checkPermissions() {
     fi
 
     local MINTER="$(cast call --rpc-url $argc_rpc_url $argc_contract "hasRole(bytes32,address)" $MINTER_ROLE $address)"
-    if [ $REVOKER = $FALSE ]; then
+    if [ $MINTER = $FALSE ]; then
       echo "$address does not have the minter role"
     elif [ $argc_verbose ]; then
       echo "$address has the minter role"
