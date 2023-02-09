@@ -316,9 +316,7 @@ configureGovernor() {
     script/Governor.s.sol:GovernorInstance \
     $argc_init $argc_diamond $argc_timelock $argc_path \
     --sig "configure(address,address,address,string)" \
-    --optimize --optimizer-runs 1000000 \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+    --rpc-url $argc_rpc_url --broadcast
 }
 
 eval $(argc "$0" "$@")
