@@ -26,53 +26,33 @@ contract OrigamiGovernanceToken is
     ERC20CappedUpgradeable,
     Votes
 {
-    /**
-     * @notice the role hash for granting the ability to pause the contract. By default, this role is granted to the contract admin.
-     */
+    /// @notice the role hash for granting the ability to pause the contract. By default, this role is granted to the contract admin.
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    /**
-     * @notice the role hash for granting the ability to mint new governance tokens. By default, this role is granted to the contract admin.
-     */
+    /// @notice the role hash for granting the ability to mint new governance tokens. By default, this role is granted to the contract admin.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    /**
-     * @notice the role has for granting the ability to transfer governance tokens. By default, this role is granted to the contract admin. This is also typically granted to the DAO's treaury multisig for distributing compensation in the form of governance tokens.
-     */
+    /// @notice the role hash for granting the ability to burn governance tokens.
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+    /// @notice the role has for granting the ability to transfer governance tokens. By default, this role is granted to the contract admin. This is also typically granted to the DAO's treaury multisig for distributing compensation in the form of governance tokens.
     bytes32 public constant TRANSFERRER_ROLE = keccak256("TRANSFERRER_ROLE");
 
-    /**
-     * @dev Denotes whether or not the contract allows buring tokens. By default, this is disabled.
-     */
+    /// @dev Denotes whether or not the contract allows buring tokens. By default, this is disabled.
     bool private _burnEnabled;
-    /**
-     * @notice Denotes whether or not the contract allows token transfers. By default, this is disabled.
-     */
+    /// @notice Denotes whether or not the contract allows token transfers. By default, this is disabled.
     bool private _transferEnabled;
 
-    /**
-     * @dev struct to store the transfer lock details for a given address.
-     */
+    /// @dev struct to store the transfer lock details for a given address.
     struct TransferLock {
         uint256 amount;
         uint256 deadline;
     }
 
-    /**
-     * @dev time-locked address => TransferLock (amount, deadline)
-     */
+    /// @dev time-locked address => TransferLock (amount, deadline)
     mapping(address => TransferLock) public lockup;
 
-    /**
-     * @dev monitoring: this is fired when the transferEnabled state is changed.
-     */
+    /// @dev monitoring: this is fired when the transferEnabled state is changed.
     event TransferEnabled(address indexed caller, bool value);
-    /**
-     * @dev monitoring: this is fired when the burnEnabled state is changed.
-     */
+    /// @dev monitoring: this is fired when the burnEnabled state is changed.
     event BurnEnabled(address indexed caller, bool value);
-    /**
-     * @dev monitoring: this is fired when governance tokens are minted.
-     */
-    event GovernanceTokensMinted(address indexed caller, address indexed to, uint256 amount);
 
     /**
      * @notice the constructor is not used since the contract is upgradeable except to disable initializers in the implementations that are deployed.
@@ -223,7 +203,16 @@ contract OrigamiGovernanceToken is
      */
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         _mint(to, amount);
-        emit GovernanceTokensMinted(_msgSender(), to, amount);
+    }
+
+    /**
+     * @notice this function burns governance tokens from the sender's wallet. An event is fired whenever tokens are burned indicating where they were burned from and how many tokens were burned.
+     * @dev this is only callable by an address that has the BURNER_ROLE.
+     * @param account the address of the account to burn tokens from.
+     * @param amount the amount of tokens to burn.
+     */
+    function burn(address account, uint256 amount) public whenNotPaused whenBurnable {
+        super._burn(account, amount);
     }
 
     /**
@@ -272,10 +261,6 @@ contract OrigamiGovernanceToken is
         super._mint(to, amount);
     }
 
-    function _burn(address account, uint256 amount) internal override(ERC20Upgradeable) whenNotPaused whenBurnable {
-        super._burn(account, amount);
-    }
-
     /**
      * @dev this modifier allows us to ensure that something may only occur when burning is disabled
      */
@@ -288,7 +273,7 @@ contract OrigamiGovernanceToken is
      * @dev this modifier allows us to ensure that something may only occur when burning is enabled
      */
     modifier whenBurnable() {
-        require(burnable(), "Burnable: burning is disabled");
+        require(hasRole(BURNER_ROLE, _msgSender()) || burnable(), "Burnable: burning is disabled");
         _;
     }
 

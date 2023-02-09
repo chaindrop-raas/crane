@@ -20,3 +20,4 @@
 | _burnEnabled     | bool                                                           | 352  | 0      | 1     | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
 | _transferEnabled | bool                                                           | 352  | 1      | 1     | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
 | lockup           | mapping(address => struct OrigamiGovernanceToken.TransferLock) | 353  | 0      | 32    | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |
+| _l1Token         | address                                                        | 354  | 0      | 20    | src/OrigamiGovernanceToken.sol:OrigamiGovernanceToken |

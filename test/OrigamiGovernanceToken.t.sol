@@ -20,22 +20,29 @@ abstract contract OGTAddressHelper {
 
 abstract contract OGTHelper is OGTAddressHelper, Test {
     OrigamiGovernanceToken public impl;
-    TransparentUpgradeableProxy public proxy;
+    ProxyAdmin public proxyAdmin;
     OrigamiGovernanceToken public token;
-    ProxyAdmin public admin;
 
     constructor() {
         vm.startPrank(deployer);
-        admin = new ProxyAdmin();
         impl = new OrigamiGovernanceToken();
+        proxyAdmin = new ProxyAdmin();
+        token = deployNewToken(owner, "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
+        vm.stopPrank();
+    }
+
+    function deployNewToken(address _owner, string memory _name, string memory _symbol, uint256 _cap)
+        public
+        returns (OrigamiGovernanceToken _token)
+    {
+        TransparentUpgradeableProxy proxy;
         proxy = new TransparentUpgradeableProxy(
             address(impl),
-            address(admin),
+            address(proxyAdmin),
             ""
         );
-        token = OrigamiGovernanceToken(address(proxy));
-        token.initialize(owner, "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
-        vm.stopPrank();
+        _token = OrigamiGovernanceToken(address(proxy));
+        _token.initialize(_owner, _name, _symbol, _cap);
     }
 }
 
@@ -119,7 +126,7 @@ contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
 }
 
 contract MintingGovernanceTokenTest is OGTHelper {
-    event GovernanceTokensMinted(address indexed caller, address indexed to, uint256 amount);
+    event Transfer(address indexed from, address indexed to, uint256 amount);
 
     function setUp() public {
         vm.startPrank(owner);
@@ -174,7 +181,7 @@ contract MintingGovernanceTokenTest is OGTHelper {
 
     function testEmitsAnEventWhenMinting() public {
         vm.expectEmit(true, true, true, true, address(token));
-        emit GovernanceTokensMinted(minter, mintee, 100);
+        emit Transfer(address(0), mintee, 100);
         token.mint(mintee, 100);
     }
 }
@@ -219,7 +226,7 @@ contract BurnGovernanceTokenTest is OGTHelper {
 
     function testRevertsWhenNonAdminAttemptsToEnableBurn(address nonAdmin) public {
         vm.assume(nonAdmin != owner);
-        vm.assume(nonAdmin != address(admin));
+        vm.assume(nonAdmin != address(proxyAdmin));
         vm.stopPrank();
         vm.startPrank(nonAdmin);
         vm.expectRevert(
@@ -234,7 +241,7 @@ contract BurnGovernanceTokenTest is OGTHelper {
 
     function testRevertsWhenNonAdminAttemptsToDisableBurn(address nonAdmin) public {
         vm.assume(nonAdmin != owner);
-        vm.assume(nonAdmin != address(admin));
+        vm.assume(nonAdmin != address(proxyAdmin));
         vm.stopPrank();
         vm.startPrank(nonAdmin);
         vm.expectRevert(
@@ -337,7 +344,7 @@ contract PauseGovernanceTokenTest is OGTHelper {
     function testCannotPauseAsNonPauser(address nonPauser) public {
         vm.assume(nonPauser != owner);
         vm.assume(nonPauser != pauser);
-        vm.assume(nonPauser != address(admin));
+        vm.assume(nonPauser != address(proxyAdmin));
 
         vm.stopPrank();
         vm.prank(nonPauser);
@@ -366,7 +373,7 @@ contract PauseGovernanceTokenTest is OGTHelper {
     function testCannotUnpauseAsNonPauser(address nonPauser) public {
         vm.assume(nonPauser != owner);
         vm.assume(nonPauser != pauser);
-        vm.assume(nonPauser != address(admin));
+        vm.assume(nonPauser != address(proxyAdmin));
 
         token.pause();
         vm.stopPrank();
@@ -471,7 +478,7 @@ contract TransferGovernanceTokenTest is OGTHelper {
 
     function testCanOnlyEnableTransferAsAdmin(address nonAdmin) public {
         vm.assume(nonAdmin != owner);
-        vm.assume(nonAdmin != address(admin));
+        vm.assume(nonAdmin != address(proxyAdmin));
         vm.stopPrank();
         vm.prank(nonAdmin);
         vm.expectRevert(
@@ -489,7 +496,7 @@ contract TransferGovernanceTokenTest is OGTHelper {
 
     function testCanOnlyDisableTransferAsAdmin(address nonAdmin) public {
         vm.assume(nonAdmin != owner);
-        vm.assume(nonAdmin != address(admin));
+        vm.assume(nonAdmin != address(proxyAdmin));
         token.enableTransfer();
         vm.stopPrank();
         vm.prank(nonAdmin);
