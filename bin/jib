@@ -1,43 +1,64 @@
 # @describe Jib helps the crane hoist the cargo.
 # @version 0.1.1
 
+createOptions() {
+  options=(
+    --broadcast
+    --rpc-url $1
+    --optimize
+    --optimizer-runs $2
+    -vvvv
+  )
+  if [[ $1 != "http://localhost:8545" ]]; then
+    # require block explorer api key if using a remote network
+    if [[ -z $3 ]]; then
+      echo "Error: block explorer api key is required for remote networks"
+      exit 1
+    fi
+    options+=(--verify)
+    options+=(--etherscan-api-key $3)
+  fi
+  echo ${options[@]}
+}
+
 # @cmd deploy a proxy admin contract
 # @alias dpa
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployProxyAdmin() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
   PRIVATE_KEY=$argc_private_key forge script \
-    script/Deploy.s.sol:DeployScript --sig "deployProxyAdmin()" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --optimize --optimizer-runs 1000000
+    script/Deploy.s.sol:DeployScript \
+    ${options[@]} --sig "deployProxyAdmin()"
+
 }
 
 # @cmd deploy a governance token implementation contract
 # @alias dgi
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployGovTokenImpl() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
   PRIVATE_KEY=$argc_private_key forge script \
-    script/Deploy.s.sol:DeployScript --sig "deployGovernanceTokenImpl()" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --optimize --optimizer-runs 1000000
+    script/Deploy.s.sol:DeployScript \
+    ${options[@]} --sig "deployGovernanceTokenImpl()"
 }
 
 # @cmd deploy a membership token implementation contract
 # @alias dmi
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployMemTokenImpl() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 17500 $argc_block_explorer_api_key)
   PRIVATE_KEY=$argc_private_key forge script \
-    script/Deploy.s.sol:DeployScript --sig "deployMembershipTokenImpl()" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --optimize --optimizer-runs 17500
+    script/Deploy.s.sol:DeployScript \
+    ${options[@]} --sig "deployMembershipTokenImpl()"
 }
 
 # @cmd deploy an instance of the governance token
@@ -48,17 +69,16 @@ deployMemTokenImpl() {
 # @option -n --name! the name of the token
 # @option -s --symbol! the symbol for the token
 # @option -c --supply-cap! the maximum supply of the token
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployGovToken() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
   PRIVATE_KEY=$argc_private_key forge script \
     script/Deploy.s.sol:DeployScript $argc_proxy_admin $argc_implementation \
     $argc_contract_admin "$argc_name" $argc_symbol $argc_supply_cap \
-    --sig "deployGovernanceToken(address,address,address,string,string,uint256)" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --optimize --optimizer-runs 1000000
+    ${options[@]} --sig "deployGovernanceToken(address,address,address,string,string,uint256)"
 }
 
 # @cmd deploy an instance of the membership token
@@ -73,13 +93,12 @@ deployGovToken() {
 # @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 # @option --block-explorer-api-key=POLYGONSCAN_API_KEY the api key for the block explorer
 deployMemToken() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
   PRIVATE_KEY=$argc_private_key forge script \
     script/Deploy.s.sol:DeployScript $argc_proxy_admin $argc_implementation \
     $argc_contract_admin "$argc_name" $argc_symbol $argc_base_uri \
-    --sig "deployMembershipToken(address,address,address,string,string,string)" \
-    --rpc-url $argc_rpc_url --verify --broadcast -vvvv \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --optimize --optimizer-runs 17500
+    ${options[@]} --sig "deployMembershipToken(address,address,address,string,string,string)"
 }
 
 # @cmd upgrade a governance token
@@ -87,8 +106,8 @@ deployMemToken() {
 # @arg proxy-admin! the address of the proxy admin
 # @arg transparent-proxy! the address of the transparent proxy to upgrade
 # @arg implementation! the address of the implementation to upgrade to
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option -p --private-key!
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 upgradeGovToken() {
   PRIVATE_KEY=$argc_private_key forge script \
     script/Upgrade.s.sol:UpgradeScript $argc_proxy_admin \
@@ -102,8 +121,8 @@ upgradeGovToken() {
 # @arg proxy-admin! the address of the proxy admin
 # @arg transparent-proxy! the address of the transparent proxy to upgrade
 # @arg implementation! the address of the implementation to upgrade to
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option -p --private-key!
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 upgradeMemToken() {
   PRIVATE_KEY=$argc_private_key forge script \
     script/Upgrade.s.sol:UpgradeScript \
@@ -116,33 +135,31 @@ upgradeMemToken() {
 # @alias dumt
 # @arg proxy-admin! the address of the proxy admin
 # @arg transparent-proxy! the address of the transparent proxy to upgrade
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=POLYGONSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployAndUpgradeMemToken() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
   PRIVATE_KEY=$argc_private_key forge script \
     script/Upgrade.s.sol:UpgradeScript \
     $argc_proxy_admin $argc_transparent_proxy \
-    --sig "deployAndUpgradeMembershipToken(address,address)" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --optimize --optimizer-runs 17500
+    ${options[@]} --sig "deployAndUpgradeMembershipToken(address,address)"
 }
 
 # @cmd deploy and upgrade a governance token
 # @alias dugt
 # @arg proxy-admin! the address of the proxy admin
 # @arg transparent-proxy! the address of the transparent proxy to upgrade
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployAndUpgradeGovToken() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
   PRIVATE_KEY=$argc_private_key forge script \
     script/Upgrade.s.sol:UpgradeScript $argc_proxy_admin $argc_transparent_proxy \
-    --sig "deployAndUpgradeGovernanceToken(address,address)" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --optimize --optimizer-runs 1000000
+    ${options[@]} --sig "deployAndUpgradeGovernanceToken(address,address)"
 }
 
 # @cmd output test coverage data for the contracts
@@ -175,9 +192,9 @@ checkStorage() {
 # @alias grant-permissions
 # @arg contract! the address of the token contract
 # @arg file! the path to the file containing the addresses to grant permissions to (one per line)
-# @option --private-key!
+# @option -p --private-key!
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 # @option --gas-price Override the gas price to use for the transaction.
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 grantPermissions() {
   ADDRESS_ARRAY=$(awk 'BEGIN { printf "[" } { if (NR == 1) printf "%s", $0; else printf ",%s", $0; } END { printf "]" }' $argc_file)
   PRIVATE_KEY=$argc_private_key forge script \
@@ -192,7 +209,7 @@ grantPermissions() {
 # @alias check-permissions
 # @arg contract! the address of the token contract
 # @arg file! the path to the file containing the addresses to check permissions for (one per line)
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 # @flag --verbose print the addresses that have the permissions
 checkPermissions() {
   REVOKER_ROLE="0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30"
@@ -219,7 +236,7 @@ checkPermissions() {
 # @cmd check balances of wallets
 # @alias check-balances
 # @arg file! the path to the file containing the addresses to check balances for (one per line)
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 checkBalances() {
   while read -r address; do
     local BALANCE="$(cast balance --rpc-url $argc_rpc_url $address)"
@@ -229,17 +246,17 @@ checkBalances() {
 
 # @cmd deploy all current governor diamond facets
 # @alias deploy-facets
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 # @flag --ignore-deploy-warning ignore the warning about deploying all facets
-# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
 deployFacets() {
   if [ $argc_ignore_deploy_warning ]; then
+    declare -a options=()
+    options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
     PRIVATE_KEY=$argc_private_key forge script \
       script/Governor.s.sol:DeployGovernorFacets \
-      --etherscan-api-key "${!argc_block_explorer_api_key}" \
-      --optimize --optimizer-runs 1000000 \
-      --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+      ${options[@]}
   else
     echo
     echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
@@ -257,49 +274,47 @@ deployFacets() {
 
 # @cmd deploy the governor diamond init contract
 # @alias dgdi,deploy-governor-diamond-init
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployGovernorDiamondInit() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
   PRIVATE_KEY=$argc_private_key forge script \
     script/Governor.s.sol:DeployGovernorDiamondInit \
-    --optimize --optimizer-runs 1000000 \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+    ${options[@]}
 }
 
 # @cmd deploy a governor diamond contract
 # @alias dgd,deploy-governor-diamond
 # @arg admin! the address of the admin
 # @arg diamond-cut-facet! the address of the diamond cut facet
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployGovernorDiamond() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
   PRIVATE_KEY=$argc_private_key forge script \
     script/Governor.s.sol:DeployGovernorDiamond \
     $argc_admin $argc_diamond_cut_facet \
-    --sig "run(address,address)" \
-    --optimize --optimizer-runs 1000000 \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+    ${options[@]} --sig "run(address,address)"
 }
 
 # @cmd deploy a governor timelock controller
 # @alias dgtc,deploy-governor-timelock-controller
 # @arg governor-diamond! the address of the governor diamond
 # @arg timelock-delay the initial delay for the timelock, in seconds
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployGovernorTimelockController() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
   PRIVATE_KEY=$argc_private_key forge script \
     script/Governor.s.sol:DeployGovernorTimelockController \
     $argc_governor_diamond $argc_timelock_delay \
-    --sig "run(address,uint256)" \
-    --optimize --optimizer-runs 1000000 \
-    --etherscan-api-key "${!argc_block_explorer_api_key}" \
-    --rpc-url $argc_rpc_url --broadcast --verify -vvvv
+    ${options[@]} --sig "run(address,uint256)"
 }
 
 # @cmd apply local configuration to deployed governor and timelock instances
@@ -308,9 +323,9 @@ deployGovernorTimelockController() {
 # @arg diamond! the address of the governor diamond
 # @arg timelock! the address of the timelock controller
 # @arg path! the path to the governor diamond config
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=ETHERSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 configureGovernor() {
   PRIVATE_KEY=$argc_private_key forge script \
     script/Governor.s.sol:GovernorInstance \
