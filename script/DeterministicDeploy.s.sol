@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.16;
 
-import "@std/Script.sol";
 import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiMembershipToken.sol";
-import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@oz/proxy/transparent/ProxyAdmin.sol";
 
-import {CREATE3, CREATE3Factory} from "@create3/Create3Factory.sol";
+import "@std/Script.sol";
+import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "@create3/CREATE3Factory.sol";
 
 contract DeterministicDeploy is Script {
     function transparentProxyByteCode(address implementation, address proxyAdmin) public pure returns (bytes memory) {
