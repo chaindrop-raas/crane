@@ -380,4 +380,27 @@ deployGovernanceTokenProxy() {
     --sig "deployGovernanceTokenProxy(address,string,address,address,address,string,string,uint256)"
 }
 
+# @cmd deploy a membership token proxy
+# @alias dmtp,deploy-membership-token-proxy
+# @arg proxy-admin! the address of the proxy admin
+# @arg implementation! the address of the implementation
+# @arg contract-admin! the address of the contract admin
+# @arg salt! the salt to use
+# @arg name! the name of the token
+# @arg symbol! the symbol of the token
+# @arg base-uri! the base uri of the token
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option --c3f=0xE21f6b2A09bB27149E1afec31D05675bcf581FEd the address of the create3 factory
+deployMembershipTokenProxy() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
+  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy $argc_c3f \
+    $argc_salt $argc_implementation $argc_proxy_admin $argc_contract_admin \
+    "$argc_name" $argc_symbol $argc_base_uri ${options[@]} \
+    --private-key $argc_private_key \
+    --sig "deployMembershipTokenProxy(address,string,address,address,address,string,string,string)"
+}
+
 eval $(argc "$0" "$@")

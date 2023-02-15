@@ -51,4 +51,25 @@ contract DeterministicDeploy is Script {
         token.initialize(contractAdmin, name, symbol, supplyCap);
         vm.stopBroadcast();
     }
+
+    function deployMembershipTokenProxy(
+        address create3Factory,
+        string calldata orgSnowflake,
+        address implementation,
+        address proxyAdmin,
+        address contractAdmin,
+        string calldata name,
+        string calldata symbol,
+        string calldata baseUri
+    ) public {
+        CREATE3Factory c3 = CREATE3Factory(create3Factory);
+        bytes memory bytecode = transparentProxyByteCode(implementation, proxyAdmin);
+        string memory salt = string.concat("membership-token-", orgSnowflake);
+
+        vm.startBroadcast();
+        address memTokenProxy = c3.deploy(bytes32(bytes(salt)), bytecode);
+        OrigamiMembershipToken token = OrigamiMembershipToken(memTokenProxy);
+        token.initialize(contractAdmin, name, symbol, baseUri);
+        vm.stopBroadcast();
+    }
 }
