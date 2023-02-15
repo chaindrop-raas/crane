@@ -11,12 +11,13 @@ createOptions() {
   )
   if [[ $1 != "http://localhost:8545" ]]; then
     # require block explorer api key if using a remote network
-    if [[ -z $3 ]]; then
+    if [[ -n $3 ]]; then
+      options+=(--etherscan-api-key $3)
+      options+=(--verify)
+    else
       echo "Error: block explorer api key is required for remote networks"
       exit 1
     fi
-    options+=(--verify)
-    options+=(--etherscan-api-key $3)
   fi
   echo ${options[@]}
 }
@@ -332,6 +333,51 @@ configureGovernor() {
     $argc_init $argc_diamond $argc_timelock $argc_path \
     --sig "configure(address,address,address,string)" \
     --rpc-url $argc_rpc_url --broadcast
+}
+
+# @cmd deploy a create3 factory contract
+# @alias dc3f
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+deployCreate3Factory() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
+  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
+    ${options[@]} --private-key $argc_private_key --sig "deployCreate3Factory()"
+}
+
+# @cmd get the create3 deterministic address for a deployer and salt
+# @alias create3-address
+# @arg create3-factory! the address of the create3 factory
+# @arg deployer! the address of the deployer
+# @arg salt! the salt to use
+create3Address() {
+  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
+    --sig "getDeterministicAddress(address,address,string)" $argc_create3_factory $argc_deployer $argc_salt
+}
+
+# @cmd deploy a governance token proxy
+# @alias dgtp,deploy-governance-token-proxy
+# @arg proxy-admin! the address of the proxy admin
+# @arg implementation! the address of the implementation
+# @arg contract-admin! the address of the contract admin
+# @arg salt! the salt to use
+# @arg name! the name of the token
+# @arg symbol! the symbol of the token
+# @arg supply-cap! the supply cap of the token
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option --c3f=0xE21f6b2A09bB27149E1afec31D05675bcf581FEd the address of the create3 factory
+deployGovernanceTokenProxy() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
+  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy $argc_c3f \
+    $argc_salt $argc_implementation $argc_proxy_admin $argc_contract_admin \
+    "$argc_name" $argc_symbol $argc_supply_cap ${options[@]} \
+    --private-key $argc_private_key \
+    --sig "deployGovernanceTokenProxy(address,string,address,address,address,string,string,uint256)"
 }
 
 eval $(argc "$0" "$@")
