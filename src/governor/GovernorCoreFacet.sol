@@ -66,7 +66,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public pure returns (uint256) {
+    ) external pure returns (uint256) {
         return GovernorCommon.hashProposal(targets, values, calldatas, descriptionHash);
     }
 
@@ -77,12 +77,12 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /// @inheritdoc IGovernor
-    function proposalSnapshot(uint256 proposalId) public view returns (uint256) {
+    function proposalSnapshot(uint256 proposalId) external view returns (uint256) {
         return GovernorStorage.proposalStorage().proposals[proposalId].snapshot;
     }
 
     /// @inheritdoc IGovernor
-    function proposalDeadline(uint256 proposalId) public view returns (uint256) {
+    function proposalDeadline(uint256 proposalId) external view returns (uint256) {
         return GovernorStorage.proposalStorage().proposals[proposalId].deadline;
     }
 
@@ -107,7 +107,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
      * @return forVotes - the number of votes for the proposal.
      * @return abstainVotes - the number of votes abstaining from the vote.
      */
-    function proposalVotes(uint256 proposalId) public view virtual returns (uint256, uint256, uint256) {
+    function proposalVotes(uint256 proposalId) external view virtual returns (uint256, uint256, uint256) {
         return SimpleCounting.simpleProposalVotes(proposalId);
     }
 
@@ -118,7 +118,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /// @inheritdoc IGovernor
-    function hasVoted(uint256 proposalId, address account) public view returns (bool) {
+    function hasVoted(uint256 proposalId, address account) external view returns (bool) {
         return GovernorStorage.proposalHasVoted(proposalId, account);
     }
 
@@ -172,7 +172,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public returns (uint256) {
+    ) external returns (uint256) {
         (address proposalToken, bytes4 countingStrategy) = decodeParams(params);
         return proposeWithTokenAndCountingStrategyBySig(
             targets, values, calldatas, description, proposalToken, countingStrategy, nonce, v, r, s
@@ -186,7 +186,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         bytes[] memory calldatas,
         string memory description,
         bytes memory params
-    ) public returns (uint256) {
+    ) external returns (uint256) {
         (address proposalToken, bytes4 countingStrategy) = decodeParams(params);
         return proposeWithTokenAndCountingStrategy(
             targets, values, calldatas, description, proposalToken, countingStrategy
@@ -236,7 +236,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /// @inheritdoc IGovernor
-    function quorum(uint256 proposalId) public view returns (uint256) {
+    function quorum(uint256 proposalId) external view returns (uint256) {
         return GovernorQuorum.quorum(proposalId);
     }
 
