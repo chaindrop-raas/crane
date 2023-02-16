@@ -123,6 +123,11 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /// @inheritdoc IGovernor
+    function getAccountNonce(address account) public view returns (uint256) {
+        return GovernorStorage.getAccountNonce(account);
+    }
+
+    /// @inheritdoc IGovernor
     function proposeWithTokenAndCountingStrategyBySig(
         address[] memory targets,
         uint256[] memory values,
@@ -137,7 +142,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     ) public returns (uint256 proposalId) {
         address proposer = recoverProposer(targets, values, calldatas, description, nonce, v, r, s);
 
-        require(GovernorStorage.getAccountNonce(proposer) == nonce, "OrigamiGovernor: invalid nonce");
+        require(getAccountNonce(proposer) == nonce, "OrigamiGovernor: invalid nonce");
 
         proposalId = createProposal(proposer, targets, values, calldatas, description, proposalToken, countingStrategy);
 
@@ -265,7 +270,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             s
         );
 
-        require(GovernorStorage.getAccountNonce(voter) == nonce, "OrigamiGovernor: invalid nonce");
+        require(getAccountNonce(voter) == nonce, "OrigamiGovernor: invalid nonce");
 
         weight = _castVote(proposalId, voter, support, reason);
 

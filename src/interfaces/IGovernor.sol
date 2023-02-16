@@ -113,6 +113,12 @@ interface IGovernor {
     function hasVoted(uint256 proposalId, address account) external view returns (bool);
 
     /**
+     * @notice The current nonce for a given account.
+     * @dev we use these nonces to prevent replay attacks.
+     */
+    function getAccountNonce(address account) external view returns (uint256);
+
+    /**
      * @notice Propose a new action to be performed by the governor, specifying the proposal's counting strategy and voting token.
      * @param targets The ordered list of target addresses for calls to be made on.
      * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
