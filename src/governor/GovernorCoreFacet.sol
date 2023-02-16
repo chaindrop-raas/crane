@@ -38,25 +38,20 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         "IdempotentProposal(address[] targets,uint256[] values,bytes[] calldatas,string description,uint256 nonce)"
     );
 
-    /**
-     * @notice Name of the governor instance (used in building the ERC712 domain separator).
-     */
+    /// @inheritdoc IEIP712
     function name() public view returns (string memory) {
         return GovernorStorage.configStorage().name;
     }
 
     /**
-     * @notice Version of the governor instance (used in building the ERC712 domain separator).
-     * @dev Indicate v1.1.0 so it's understood we have diverged from strict Governor Bravo compliance.
-     * @return The semantic version.
+     * @inheritdoc IEIP712
+     * @dev Indicate v1.1.0 so it's understood we have diverged from Governor Bravo.
      */
     function version() public pure returns (string memory) {
         return "1.1.0";
     }
 
-    /**
-     * @notice the EIP712 domain separator for this contract.
-     */
+    /// @inheritdoc IEIP712
     function domainSeparatorV4() public view returns (bytes32) {
         return keccak256(
             abi.encode(
@@ -65,14 +60,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         );
     }
 
-    /**
-     * @notice hashes proposal params to create a proposalId.
-     * @param targets the targets of the proposal.
-     * @param values the values of the proposal.
-     * @param calldatas the calldatas of the proposal.
-     * @param descriptionHash the hash of the description of the proposal.
-     * @return the proposalId.
-     */
+    /// @inheritdoc IGovernor
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
@@ -82,35 +70,24 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return GovernorCommon.hashProposal(targets, values, calldatas, descriptionHash);
     }
 
-    /**
-     * @notice returns the current ProposalState for a proposal.
-     * @param proposalId the id of the proposal.
-     * @return the ProposalState.
-     */
+    /// @inheritdoc IGovernor
     function state(uint256 proposalId) public view returns (IGovernor.ProposalState) {
         IGovernor.ProposalState status = GovernorCommon.state(proposalId);
         return GovernorCommon.succededState(proposalId, status);
     }
 
-    /**
-     * @notice returns the snapshot timestamp for a proposal.
-     * @param proposalId the id of the proposal.
-     * @return the snapshot timestamp.
-     */
+    /// @inheritdoc IGovernor
     function proposalSnapshot(uint256 proposalId) public view returns (uint256) {
         return GovernorStorage.proposalStorage().proposals[proposalId].snapshot;
     }
 
-    /**
-     * @notice returns the deadline timestamp for a proposal.
-     * @param proposalId the id of the proposal.
-     * @return the deadline block.
-     */
+    /// @inheritdoc IGovernor
     function proposalDeadline(uint256 proposalId) public view returns (uint256) {
         return GovernorStorage.proposalStorage().proposals[proposalId].deadline;
     }
 
     /**
+     * @notice Strategy for deriving the proposal-specific voting weight. Returns the weight unchanged.
      * @dev this is a shim for configuring the default counting strategy with a
      * concrete selector. We can't use the lib directly or else its functions
      * won't all be internal and would cause a separate contract deploy, as
@@ -120,40 +97,32 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return TokenWeightStrategy.simpleWeight(weight);
     }
 
+    // TODO: this return type is specific to SimpleCounting, which probably
+    // means it's not generic enough to be in the public interface
     /**
-     * @dev Get votes for the given account at the given timestamp using proposal token.
-     * @param account the account to get the vote weight for.
-     * @param timestamp the block timestamp the snapshot is needed for.
-     * @param proposalToken the token to use for counting votes.
+     * @notice returns the current votes for, against, or abstaining for a given proposal. Once the voting period has lapsed, this is used to determine the outcome.
+     * @dev this delegates weight calculation to the strategy specified in the params
+     * @param proposalId the id of the proposal to get the votes for.
+     * @return againstVotes - the number of votes against the proposal.
+     * @return forVotes - the number of votes for the proposal.
+     * @return abstainVotes - the number of votes abstaining from the vote.
      */
+    function proposalVotes(uint256 proposalId) public view virtual returns (uint256, uint256, uint256) {
+        return SimpleCounting.simpleProposalVotes(proposalId);
+    }
+
+    /// @inheritdoc IGovernor
     function getVotes(address account, uint256 timestamp, address proposalToken) public view returns (uint256) {
         uint256 pastVotes = IVotes(proposalToken).getPastVotes(account, timestamp);
         return pastVotes;
     }
 
-    /**
-     * @notice Indicates whether or not an account has voted on a proposal.
-     * @dev See {IGovernor-_hasVoted}. Note that we differ from the base implementation in that we don't want to prevent multiple votes, we instead update their previous vote.
-     * @return true if the account has voted on the proposal, false otherwise.
-     */
+    /// @inheritdoc IGovernor
     function hasVoted(uint256 proposalId, address account) public view returns (bool) {
         return GovernorStorage.proposalHasVoted(proposalId, account);
     }
 
-    /**
-     * @notice Propose a new action to be performed by the governor, specifying the proposal's counting strategy and voting token. This method supports EIP-712 signed data structures, enabling gasless proposals.
-     * @param targets The ordered list of target addresses for calls to be made on the proposal.
-     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made on the proposal.
-     * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made on the proposal.
-     * @param description The description of the proposal.
-     * @param proposalToken The token to use for counting votes.
-     * @param countingStrategy The strategy to use for counting votes.
-     * @param nonce The nonce of the proposer.
-     * @param v The recovery byte of the signature.
-     * @param r Half of the ECDSA signature pair.
-     * @param s Half of the ECDSA signature pair.
-     * @return proposalId The id of the newly created proposal.
-     */
+    /// @inheritdoc IGovernor
     function proposeWithTokenAndCountingStrategyBySig(
         address[] memory targets,
         uint256[] memory values,
@@ -175,16 +144,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         GovernorStorage.incrementAccountNonce(proposer);
     }
 
-    /**
-     * @notice Propose a new action to be performed by the governor, specifying the proposal's counting strategy and voting token.
-     * @param targets The ordered list of target addresses for calls to be made on.
-     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
-     * @param calldatas The ordered list of calldata to be passed to each call.
-     * @param description The description of the proposal.
-     * @param proposalToken The token to use for counting votes.
-     * @param countingStrategy The strategy to use for counting votes.
-     * @return proposalId The id of the newly created proposal.
-     */
+    /// @inheritdoc IGovernor
     function proposeWithTokenAndCountingStrategy(
         address[] memory targets,
         uint256[] memory values,
@@ -196,19 +156,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return createProposal(msg.sender, targets, values, calldatas, description, proposalToken, countingStrategy);
     }
 
-    /**
-     * @notice Propose a new action to be performed by the governor, with params specifying proposal token and counting strategy. This method supports EIP-712 signed data structures, enabling gasless proposals.
-     * @param targets The ordered list of target addresses for calls to be made on.
-     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
-     * @param calldatas The ordered list of calldata to be passed to each call.
-     * @param description The description of the proposal.
-     * @param params The parameters of the proposal, encoded as a tuple of (proposalToken, countingStrategy).
-     * @param nonce The nonce of the proposer.
-     * @param v The recovery byte of the signature.
-     * @param r Half of the ECDSA signature pair.
-     * @param s Half of the ECDSA signature pair.
-     * @return proposalId The id of the newly created proposal.
-     */
+    /// @inheritdoc IGovernor
     function proposeWithParamsBySig(
         address[] memory targets,
         uint256[] memory values,
@@ -226,15 +174,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         );
     }
 
-    /**
-     * @notice Propose a new action to be performed by the governor, specifying the proposal's counting strategy.
-     * @dev See {GovernorUpgradeable-_propose}.
-     * @param targets The ordered list of target addresses for calls to be made on.
-     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
-     * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made.
-     * @param params the encoded bytes that specify the proposal's counting strategy and the token to use for counting.
-     * @return proposalId The id of the newly created proposal.
-     */
+    /// @inheritdoc IGovernor
     function proposeWithParams(
         address[] memory targets,
         uint256[] memory values,
@@ -248,18 +188,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         );
     }
 
-    /**
-     * @notice Propose a new action to be performed by the governor. This method supports EIP-712 signed data structures, enabling gasless proposals.
-     * @param targets The ordered list of target addresses for calls to be made on.
-     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
-     * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made.
-     * @param description The description of the proposal.
-     * @param nonce The nonce of the proposer.
-     * @param v The recovery byte of the signature.
-     * @param r Half of the ECDSA signature pair.
-     * @param s Half of the ECDSA signature pair.
-     * @return proposalId The id of the newly created proposal.
-     */
+    /// @inheritdoc IGovernor
     function proposeBySig(
         address[] memory targets,
         uint256[] memory values,
@@ -284,14 +213,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         );
     }
 
-    /**
-     * @notice propose a new action to be performed by the governor.
-     * @param targets The ordered list of target addresses for calls to be made on.
-     * @param values The ordered list of values (i.e. msg.value) to be passed to the calls to be made.
-     * @param calldatas The ordered list of function signatures and arguments to be passed to the calls to be made.
-     * @param description The description of the proposal.
-     * @return proposalId The id of the newly created proposal.
-     */
+    /// @inheritdoc IGovernor
     function propose(
         address[] memory targets,
         uint256[] memory values,
@@ -308,61 +230,22 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         );
     }
 
-    /**
-     * @notice Get the configured quorum for a proposal.
-     * @param proposalId The id of the proposal to get the quorum for.
-     * @return The quorum for the given proposal.
-     */
+    /// @inheritdoc IGovernor
     function quorum(uint256 proposalId) public view returns (uint256) {
         return GovernorQuorum.quorum(proposalId);
     }
 
-    // TODO: this return type is specific to SimpleCounting, which probably
-    // means it's not generic enough to be in the public interface
-    /**
-     * @notice returns the current votes for, against, or abstaining for a given proposal. Once the voting period has lapsed, this is used to determine the outcome.
-     * @dev this delegates weight calculation to the strategy specified in the params
-     * @param proposalId the id of the proposal to get the votes for.
-     * @return againstVotes - the number of votes against the proposal.
-     * @return forVotes - the number of votes for the proposal.
-     * @return abstainVotes - the number of votes abstaining from the vote.
-     */
-    function proposalVotes(uint256 proposalId) public view virtual returns (uint256, uint256, uint256) {
-        return SimpleCounting.simpleProposalVotes(proposalId);
-    }
-
-    /**
-     * @notice Cast a vote on a proposal.
-     * @param proposalId The id of the proposal to cast a vote on.
-     * @param support The support value for the vote.
-     * @return weight The weight of the vote.
-     */
+    /// @inheritdoc IGovernor
     function castVote(uint256 proposalId, uint8 support) external returns (uint256) {
         return _castVote(proposalId, msg.sender, support, "");
     }
 
-    /**
-     * @notice Cast a vote on a proposal with a reason.
-     * @param proposalId The id of the proposal to cast a vote on.
-     * @param support The support value for the vote.
-     * @param reason The reason for the vote.
-     * @return weight The weight of the vote.
-     */
+    /// @inheritdoc IGovernor
     function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason) external returns (uint256) {
         return _castVote(proposalId, msg.sender, support, reason);
     }
 
-    /**
-     * @notice Cast a vote on a proposal with a reason by signature. This is useful in allowing another address to pay for gas.
-     * @param proposalId The id of the proposal to cast a vote on.
-     * @param support The support value for the vote.
-     * @param reason The reason for the vote.
-     * @param nonce The nonce to use for this vote.
-     * @param v The recovery byte of the signature.
-     * @param r Half of the ECDSA signature pair.
-     * @param s Half of the ECDSA signature pair.
-     * @return weight The weight of the vote.
-     */
+    /// @inheritdoc IGovernor
     function castVoteWithReasonBySig(
         uint256 proposalId,
         uint8 support,
@@ -389,16 +272,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         GovernorStorage.incrementAccountNonce(voter);
     }
 
-    /**
-     * @notice Cast a vote on a proposal by signature. This is useful in allowing another address to pay for gas.
-     * @param proposalId The id of the proposal to cast a vote on.
-     * @param support The support value for the vote.
-     * @param nonce The nonce to use for this vote.
-     * @param v The recovery byte of the signature.
-     * @param r Half of the ECDSA signature pair.
-     * @param s Half of the ECDSA signature pair.
-     * @return weight The weight of the vote.
-     */
+    /// @inheritdoc IGovernor
     function castVoteBySig(uint256 proposalId, uint8 support, uint256 nonce, uint8 v, bytes32 r, bytes32 s)
         external
         returns (uint256 weight)
@@ -406,9 +280,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return castVoteWithReasonBySig(proposalId, support, "", nonce, v, r, s);
     }
 
-    /**
-     * @dev internal function to create a proposal.
-     */
+    /// @dev internal function to create a proposal.
     function createProposal(
         address proposer,
         address[] memory targets,
@@ -445,10 +317,8 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             );
     }
 
-    /**
-     * @dev internal function to cast a vote on a proposal; restricts voting to members
-     * TODO: the cast vote functions really should be part of the counting strategy, since they couple to the support type
-     */
+    /// @dev internal function to cast a vote on a proposal; restricts voting to members
+    /// TODO: the cast vote functions really should be part of the counting strategy, since they couple to the support type
     function _castVote(uint256 proposalId, address account, uint8 support, string memory reason)
         internal
         onlyMember(account)
@@ -465,9 +335,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         emit VoteCast(account, proposalId, support, weight, reason);
     }
 
-    /**
-     * @dev recover the proposer address from signed proposal data
-     */
+    /// @dev recover the proposer address from signed proposal data
     function recoverProposer(
         address[] memory targets,
         uint256[] memory values,
@@ -495,9 +363,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         return ECDSA.recover(ECDSA.toTypedDataHash(domainSeparatorV4(), structHash), v, r, s);
     }
 
-    /**
-     * @dev decode the bytes param format into the proposal token and counting strategy.
-     */
+    /// @dev decode the bytes param format into the proposal token and counting strategy.
     function decodeParams(bytes memory params) internal view returns (address proposalToken, bytes4 countingStrategy) {
         if (keccak256(params) == keccak256("")) {
             proposalToken = GovernorStorage.configStorage().defaultProposalToken;
@@ -507,9 +373,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         }
     }
 
-    /**
-     * @dev restricts calling functions with this modifier to holders of the membership token.
-     */
+    /// @dev restricts calling functions with this modifier to holders of the membership token.
     modifier onlyMember(address account) {
         require(
             BalanceToken(GovernorStorage.configStorage().membershipToken).balanceOf(account) > 0,
@@ -518,9 +382,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         _;
     }
 
-    /**
-     * @dev restricts calling functions with this modifier to those who hold at least the threshold amount of the threshold token.
-     */
+    /// @dev restricts calling functions with this modifier to those who hold at least the threshold amount of the threshold token.
     modifier onlyThresholdTokenHolder(address account) {
         GovernorStorage.GovernorConfig storage cs = GovernorStorage.configStorage();
         require(
