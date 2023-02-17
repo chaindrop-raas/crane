@@ -20,30 +20,39 @@ abstract contract Votes is IVotes, IVotesToken {
     bytes32 public constant DELEGATION_TYPEHASH =
         keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
 
-    // Implement the IVotes interface
-
+    /// @inheritdoc IVotes
     function getVotes(address account) public view returns (uint256) {
         return Checkpoints.getVotes(account);
     }
 
+    /// @inheritdoc IVotes
     function getPastVotes(address account, uint256 timestamp) public view returns (uint256) {
         return Checkpoints.getPastVotes(account, timestamp);
     }
 
+    /// @inheritdoc IVotes
     function getPastTotalSupply(uint256 timestamp) external view returns (uint256) {
         return Checkpoints.getPastTotalSupply(timestamp);
     }
 
+    /// @inheritdoc IVotes
     function delegates(address delegator) external view returns (address) {
         return Checkpoints.delegates(delegator);
     }
 
+    /// @inheritdoc IVotes
     function delegate(address delegatee) external {
         address oldDelegate = Checkpoints.delegates(msg.sender);
         Checkpoints.delegate(msg.sender, delegatee);
         Checkpoints.moveDelegation(oldDelegate, delegatee, IVotesToken(this).balanceOf(msg.sender));
     }
 
+    /// @inheritdoc IVotes
+    function getDelegatorNonce(address delegator) external view returns (uint256) {
+        return Checkpoints.delegateStorage().nonces[delegator];
+    }
+
+    /// @inheritdoc IVotes
     function domainSeparatorV4() public view returns (bytes32) {
         return keccak256(
             abi.encode(
@@ -56,6 +65,7 @@ abstract contract Votes is IVotes, IVotesToken {
         );
     }
 
+    /// @inheritdoc IVotes
     function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external {
         require(block.timestamp <= expiry, "Signature expired");
 

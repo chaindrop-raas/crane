@@ -3,31 +3,23 @@
 pragma solidity 0.8.16;
 
 /**
- * @dev Common interface for {ERC20Votes}, {ERC721Votes}, and other {Votes}-enabled contracts.
+ * @notice Common interface for {ERC20Votes}, {ERC721Votes}, and other {Votes}-enabled contracts.
  */
 interface IVotes {
-    /**
-     * @dev Emitted when an account changes their delegate.
-     */
+    /// @dev Emitted when an account changes their delegate.
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
 
-    /**
-     * @dev Emitted when a token transfer or delegate change results in changes to a delegate's number of votes.
-     */
+    /// @dev Emitted when a token transfer or delegate change results in changes to a delegate's number of votes.
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
 
-    /**
-     * @dev Returns the current amount of votes that `account` has.
-     */
+    /// @dev Returns the current amount of votes that `account` has.
     function getVotes(address account) external view returns (uint256);
 
-    /**
-     * @dev Returns the amount of votes that `account` had at the end of a past block's timestamp.
-     */
+    /// @notice Returns the amount of votes that `account` had at the end of a past block's timestamp.
     function getPastVotes(address account, uint256 timestamp) external view returns (uint256);
 
     /**
-     * @dev Returns the total supply of votes available at the end of a past block's timestamp.
+     * @notice Returns the total supply of votes available at the end of a past block's timestamp.
      *
      * NOTE: This value is the sum of all available votes, which is not necessarily the sum of all delegated votes.
      * Votes that have not been delegated are still part of total supply, even though they would not participate in a
@@ -35,18 +27,18 @@ interface IVotes {
      */
     function getPastTotalSupply(uint256 timestamp) external view returns (uint256);
 
-    /**
-     * @dev Returns the delegate that `account` has chosen.
-     */
+    /// @notice Returns the EIP712 domain separator for this contract.
+    function domainSeparatorV4() external view returns (bytes32);
+
+    /// @notice Returns the nonce for `delegator`. Used to validate signatures.
+    function getDelegatorNonce(address delegator) external view returns (uint256);
+
+    /// @notice Returns the delegate that `account` has chosen.
     function delegates(address account) external view returns (address);
 
-    /**
-     * @dev Delegates votes from the sender to `delegatee`.
-     */
+    /// @notice Delegates votes from the sender to `delegatee`.
     function delegate(address delegatee) external;
 
-    /**
-     * @dev Delegates votes from signer to `delegatee`.
-     */
+    /// @notice Delegates votes from signer to `delegatee`.
     function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external;
 }
