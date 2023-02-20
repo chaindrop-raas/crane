@@ -3,6 +3,7 @@ pragma solidity 0.8.16;
 
 import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiMembershipToken.sol";
+import "src/utils/L2StandardERC20.sol";
 
 import "@std/Script.sol";
 import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
@@ -48,6 +49,28 @@ contract DeterministicDeploy is Script {
         address govTokenProxy = c3.deploy(bytes32(bytes(salt)), bytecode);
         OrigamiGovernanceToken token = OrigamiGovernanceToken(govTokenProxy);
         token.initialize(contractAdmin, name, symbol, supplyCap);
+        vm.stopBroadcast();
+    }
+
+    function configureGovernanceTokenProxyForL2(address govTokenProxy, address l2Bridge) public {
+        vm.startBroadcast();
+        L2StandardERC20 token = L2StandardERC20(govTokenProxy);
+        token.setL1Token(govTokenProxy); // relies on CREATE3Factory to deploy to same address on L1 and L2
+        token.setL2Bridge(l2Bridge);
+
+        OrigamiGovernanceToken govToken = OrigamiGovernanceToken(govTokenProxy);
+        govToken.enableTransfer();
+        govToken.enableBurn();
+        govToken.grantRole(govToken.MINTER_ROLE(), l2Bridge);
+        govToken.grantRole(govToken.BURNER_ROLE(), l2Bridge);
+        vm.stopBroadcast();
+    }
+
+    function configureGovernanceTokenProxyForL1(address govTokenProxy) public {
+        vm.startBroadcast();
+        OrigamiGovernanceToken govToken = OrigamiGovernanceToken(govTokenProxy);
+        govToken.enableTransfer();
+        govToken.enableBurn();
         vm.stopBroadcast();
     }
 

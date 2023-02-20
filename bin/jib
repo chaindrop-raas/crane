@@ -380,6 +380,31 @@ deployGovernanceTokenProxy() {
     --sig "deployGovernanceTokenProxy(address,string,address,address,address,string,string,uint256)"
 }
 
+# @cmd configure governance token proxy for L2
+# @alias cgtpl2,configure-governance-token-proxy-l2
+# @arg governance-token-proxy! the address of the governance token proxy
+# @arg l2-bridge! the address of the L2 bridge
+# @option -p --private-key!
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+configureGovernanceTokenProxyL2() {
+  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
+    $argc_governance_token_proxy $argc_l2_bridge \
+    --private-key $argc_private_key --rpc-url $argc_rpc_url --broadcast \
+    --sig "configureGovernanceTokenProxyForL2(address,address)"
+}
+
+# @cmd configure governance token proxy for L1
+# @alias cgtpl1,configure-governance-token-proxy-l1
+# @arg governance-token-proxy! the address of the governance token proxy
+# @option -p --private-key!
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+configureGovernanceTokenProxyL1() {
+  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
+    $argc_governance_token_proxy \
+    --private-key $argc_private_key --rpc-url $argc_rpc_url --broadcast \
+    --sig "configureGovernanceTokenProxyForL1(address)"
+}
+
 # @cmd deploy a membership token proxy
 # @alias dmtp,deploy-membership-token-proxy
 # @arg proxy-admin! the address of the proxy admin
