@@ -84,4 +84,8 @@ abstract contract Votes is IVotes, IVotesToken {
         ds.nonces[delegator]++;
         Checkpoints.delegate(delegator, delegatee);
     }
+
+    function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {
+        Checkpoints.transferVotingUnits(from, to, amount);
+    }
 }

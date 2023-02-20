@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/utils/Checkpoints.sol";
+import "src/utils/TransferLocks.sol";
 import "src/utils/Votes.sol";
 
 import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
@@ -252,8 +252,7 @@ contract OrigamiGovernanceToken is
      * The following are overrides for the openzeppelin hooks called by their ERC20 implementation. *
      */
 
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20Upgradeable) {
-        Checkpoints.transferVotingUnits(from, to, amount);
+    function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20Upgradeable, Votes) {
         super._afterTokenTransfer(from, to, amount);
     }
 
