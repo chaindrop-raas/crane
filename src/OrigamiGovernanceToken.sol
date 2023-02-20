@@ -24,6 +24,7 @@ contract OrigamiGovernanceToken is
     PausableUpgradeable,
     AccessControlUpgradeable,
     ERC20CappedUpgradeable,
+    TransferLocks,
     Votes
 {
     /// @notice the role hash for granting the ability to pause the contract. By default, this role is granted to the contract admin.
@@ -39,15 +40,6 @@ contract OrigamiGovernanceToken is
     bool private _burnEnabled;
     /// @notice Denotes whether or not the contract allows token transfers. By default, this is disabled.
     bool private _transferEnabled;
-
-    /// @dev struct to store the transfer lock details for a given address.
-    struct TransferLock {
-        uint256 amount;
-        uint256 deadline;
-    }
-
-    /// @dev time-locked address => TransferLock (amount, deadline)
-    mapping(address => TransferLock) public lockup;
 
     /// @dev monitoring: this is fired when the transferEnabled state is changed.
     event TransferEnabled(address indexed caller, bool value);
@@ -157,29 +149,6 @@ contract OrigamiGovernanceToken is
     }
 
     /**
-     * @notice Used to voluntarily lock up `amount` tokens until a given time. Tokens in excess of `amount` may be transferred.
-     * @dev Block timestamp may be innaccurate by up to 15 minutes, but on a timescale of years this is negligible.
-     * @param amount the amount of tokens to restrict the transfer of.
-     * @param deadline the date (as a unix timestamp in UTC) until which amount will be untransferrable.
-     */
-    function setTransferLock(uint256 amount, uint256 deadline) public {
-        require(deadline > block.timestamp, "TransferLock: deadline must be in the future");
-        require(amount <= balanceOf(_msgSender()), "TransferLock: amount cannot exceed balance");
-        lockup[_msgSender()] = TransferLock(amount, deadline);
-    }
-
-    /**
-     * @notice Check the lockup details for an address. Returns 0, 0 if there is no registered lockup.
-     * @param account the address to check.
-     * @return amount the amount of tokens locked.
-     * @return deadline the date (as a unix timestamp in UTC) until which `amount` will be untransferrable.
-     */
-    function getTransferLock(address account) public view returns (uint256 amount, uint256 deadline) {
-        TransferLock memory lock = lockup[account];
-        (amount, deadline) = (lock.amount, lock.deadline);
-    }
-
-    /**
      * @notice this function pauses the contract, restricting mints, transfers and burns regardless of the independent state of other configurations.
      * @dev this is only callable by an address that has the PAUSER_ROLE
      */
@@ -240,11 +209,11 @@ contract OrigamiGovernanceToken is
     /**
      * @dev this is overridden so we can apply the `whenNotPaused` modifier
      */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override whenNotPaused {
-        (uint256 lockedAmount, uint256 deadline) = getTransferLock(from);
-        if (deadline > 0 && balanceOf(from) >= amount && balanceOf(from) - amount < lockedAmount) {
-            require(block.timestamp > deadline, "TransferLock: this exceeds your available balance while locked");
-        }
+    function _beforeTokenTransfer(address from, address to, uint256 amount)
+        internal
+        override(ERC20Upgradeable, TransferLocks)
+        whenNotPaused
+    {
         super._beforeTokenTransfer(from, to, amount);
     }
 
@@ -295,13 +264,8 @@ contract OrigamiGovernanceToken is
     /**
      * @notice declares supported interfaces for this contract.
      */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(AccessControlUpgradeable)
-        returns (bool)
-    {
-        return interfaceId == type(IVotes).interfaceId || super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == type(IVotes).interfaceId || interfaceId == type(ITransferLocks).interfaceId
+            || super.supportsInterface(interfaceId);
     }
 }

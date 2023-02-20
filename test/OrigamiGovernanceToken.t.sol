@@ -787,39 +787,37 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
     }
 
     function testEmptyTransferLock() public {
-        (uint256 amount, uint256 deadline) = token.getTransferLock(mintee);
+        uint256 amount = token.getTransferLockTotal(mintee);
         assertEq(amount, 0);
-        assertEq(deadline, 0);
     }
 
-    function testSetTransferLock() public {
+    function testAddTransferLock() public {
         assertEq(block.timestamp, 1);
         vm.prank(mintee);
-        token.setTransferLock(100, 1000);
-        (uint256 amount, uint256 deadline) = token.getTransferLock(mintee);
+        token.addTransferLock(100, 1000);
+        uint256 amount = token.getTransferLockTotal(mintee);
         assertEq(amount, 100);
-        assertEq(deadline, 1000);
     }
 
-    function testCannotSetTransferLockAmountHigherThanBalance() public {
+    function testCannotAddTransferLockAmountHigherThanBalance() public {
         vm.prank(mintee);
-        vm.expectRevert("TransferLock: amount cannot exceed balance");
-        token.setTransferLock(101, 1000);
+        vm.expectRevert("TransferLock: amount cannot exceed available balance");
+        token.addTransferLock(101, 1000);
     }
 
     function testCannotTransferWhileLocked() public {
         vm.warp(1673049600); // 2023-01-01
         vm.prank(mintee);
-        token.setTransferLock(100, 1704585600); // 2024-01-01
+        token.addTransferLock(100, 1704585600); // 2024-01-01
         vm.prank(mintee);
-        vm.expectRevert("TransferLock: this exceeds your available balance while locked");
+        vm.expectRevert("TransferLock: this exceeds your unlocked balance");
         token.transfer(minter, 10);
     }
 
     function testCanTransferSurplusWhileLocked() public {
         vm.warp(1673049600); // 2023-01-01
         vm.prank(mintee);
-        token.setTransferLock(90, 1704585600); // 2024-01-01
+        token.addTransferLock(90, 1704585600); // 2024-01-01
         vm.prank(mintee);
         token.transfer(minter, 10);
         assertEq(token.balanceOf(mintee), 90);
@@ -829,12 +827,12 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
     function testCanTransferAfterLockExpires() public {
         vm.warp(1673049600); // 2023-01-01
         vm.prank(mintee);
-        token.setTransferLock(100, 1704585600); // 2024-01-01
+        token.addTransferLock(100, 1704585600); // 2024-01-01
 
         // timelock date is inclusive, so an attempt to transfer at the exact timelock time will fail
         vm.warp(1704585600); // 2024-01-01
         vm.prank(mintee);
-        vm.expectRevert("TransferLock: this exceeds your available balance while locked");
+        vm.expectRevert("TransferLock: this exceeds your unlocked balance");
         token.transfer(mintee, 10);
 
         // warp to the second immediately after the timelock expires and try again
@@ -846,13 +844,51 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
 
     function testCannotUnderflowAmount() public {
         vm.prank(mintee);
-        token.setTransferLock(100, 1000);
+        token.addTransferLock(100, 1000);
         // we would get an underflow revert if we weren't checking the balance
         // exceeds the amount, since we do, we get the built-in revert about the
         // amount being too high
         vm.prank(mintee);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
         token.transfer(minter, 200);
+    }
+
+    function testCanSetMultipleLocks() public {
+        vm.startPrank(mintee);
+        token.addTransferLock(50, 1000);
+        token.addTransferLock(49, 2000);
+        assertEq(token.getTransferLockTotal(mintee), 99);
+
+        vm.warp(1001);
+        assertEq(token.getTransferLockTotal(mintee), 49);
+    }
+
+    function testGetTransferLockTotalAt() public {
+        vm.startPrank(mintee);
+        token.addTransferLock(50, 1000);
+        token.addTransferLock(25, 2000);
+        token.addTransferLock(25, 3000);
+        assertEq(token.getTransferLockTotalAt(mintee, 1), 100);
+        assertEq(token.getTransferLockTotalAt(mintee, 1000), 100);
+        assertEq(token.getTransferLockTotalAt(mintee, 1001), 50);
+        assertEq(token.getTransferLockTotalAt(mintee, 2000), 50);
+        assertEq(token.getTransferLockTotalAt(mintee, 2001), 25);
+        assertEq(token.getTransferLockTotalAt(mintee, 3000), 25);
+        assertEq(token.getTransferLockTotalAt(mintee, 3001), 0);
+    }
+
+    function testGetAvailableBalanceAt() public {
+        vm.startPrank(mintee);
+        token.addTransferLock(50, 1000);
+        token.addTransferLock(25, 2000);
+        token.addTransferLock(25, 3000);
+        assertEq(token.getAvailableBalanceAt(mintee, 1), 0);
+        assertEq(token.getAvailableBalanceAt(mintee, 1000), 0);
+        assertEq(token.getAvailableBalanceAt(mintee, 1001), 50);
+        assertEq(token.getAvailableBalanceAt(mintee, 2000), 50);
+        assertEq(token.getAvailableBalanceAt(mintee, 2001), 75);
+        assertEq(token.getAvailableBalanceAt(mintee, 3000), 75);
+        assertEq(token.getAvailableBalanceAt(mintee, 3001), 100);
     }
 }
 
