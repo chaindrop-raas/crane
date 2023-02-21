@@ -3,10 +3,11 @@ pragma solidity 0.8.16;
 
 import "src/utils/TransferLocksStorage.sol";
 import "src/interfaces/ITransferLocks.sol";
+import "@diamond/interfaces/IERC165.sol";
 
 import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-abstract contract TransferLocks is ERC20Upgradeable, ITransferLocks {
+abstract contract TransferLocks is ERC20Upgradeable, ITransferLocks, IERC165 {
     /// @inheritdoc ITransferLocks
     function addTransferLock(uint256 amount, uint256 deadline) public {
         require(deadline > block.timestamp, "TransferLock: deadline must be in the future");
@@ -40,5 +41,9 @@ abstract contract TransferLocks is ERC20Upgradeable, ITransferLocks {
             require(balanceOf(from) - amount >= lockedAmount, "TransferLock: this exceeds your unlocked balance");
         }
         super._beforeTokenTransfer(from, to, amount);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165) returns (bool) {
+        return interfaceId == type(ITransferLocks).interfaceId;
     }
 }
