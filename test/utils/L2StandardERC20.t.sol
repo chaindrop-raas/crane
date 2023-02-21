@@ -30,10 +30,6 @@ contract L2ChildContractHelper is L2StandardERC20Helper, Test {
         child = L2StandardERC20(address(proxy));
         child.initialize(owner, "Test", "TST", 1000);
         vm.stopPrank();
-        vm.startPrank(owner);
-        child.setL1Token(token);
-        child.setL2Bridge(bridge);
-        vm.stopPrank();
     }
 }
 
@@ -42,6 +38,16 @@ contract TestL2ChildContract is L2ChildContractHelper {
     event Burn(address indexed _account, uint256 _amount);
     event L1TokenUpdated(address indexed oldL1Token, address indexed newL1Token);
     event L2BridgeUpdated(address indexed oldL2Bridge, address indexed newL2Bridge);
+
+    function setUp() public {
+        vm.startPrank(owner);
+        child.grantRole(child.MINTER_ROLE(), bridge);
+        child.grantRole(child.BURNER_ROLE(), bridge);
+        child.revokeRole(child.MINTER_ROLE(), owner);
+        child.setL1Token(token);
+        child.setL2Bridge(bridge);
+        vm.stopPrank();
+    }
 
     function testL1Token() public {
         assertEq(child.l1Token(), token);
@@ -84,7 +90,9 @@ contract TestL2ChildContract is L2ChildContractHelper {
 
     function testNonBridgeMint() public {
         vm.prank(owner);
-        vm.expectRevert("L2StandardERC20: only L2 Bridge can mint and burn");
+        vm.expectRevert(
+            "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6"
+        );
         child.mint(owner, 100);
     }
 
@@ -92,7 +100,9 @@ contract TestL2ChildContract is L2ChildContractHelper {
         vm.prank(bridge);
         child.mint(owner, 100);
         vm.prank(owner);
-        vm.expectRevert("L2StandardERC20: only L2 Bridge can mint and burn");
+        vm.expectRevert(
+            "AccessControl: account 0x0000000000000000000000000000000000000002 is missing role 0x3c11d16cbaffd01df69ce1c404f6340ee057498f5f00246190ea54220576a848"
+        );
         child.burn(owner, 100);
     }
 

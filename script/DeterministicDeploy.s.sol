@@ -52,7 +52,9 @@ contract DeterministicDeploy is Script {
         vm.stopBroadcast();
     }
 
-    function configureGovernanceTokenProxyForL2(address govTokenProxy, address l2Bridge) public {
+    function configureGovernanceTokenProxyForL2(address govTokenProxy, address l2Bridge, address contractAdmin)
+        public
+    {
         vm.startBroadcast();
         L2StandardERC20 token = L2StandardERC20(govTokenProxy);
         token.setL1Token(govTokenProxy); // relies on CREATE3Factory to deploy to same address on L1 and L2
@@ -61,6 +63,7 @@ contract DeterministicDeploy is Script {
         OrigamiGovernanceToken govToken = OrigamiGovernanceToken(govTokenProxy);
         govToken.enableTransfer();
         govToken.enableBurn();
+        govToken.revokeRole(govToken.MINTER_ROLE(), contractAdmin);
         govToken.grantRole(govToken.MINTER_ROLE(), l2Bridge);
         govToken.grantRole(govToken.BURNER_ROLE(), l2Bridge);
         vm.stopBroadcast();

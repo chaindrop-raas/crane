@@ -11,7 +11,7 @@ import "@diamond/interfaces/IERC165.sol";
  * @dev TransferLocks are resilient to timestamp manipulation by using
  * block.timestamp, locks will typically be measured in months, not seconds.
  */
-abstract contract TransferLocks is ERC20Base, ITransferLocks, IERC165 {
+abstract contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
     /// @inheritdoc ITransferLocks
     function addTransferLock(uint256 amount, uint256 deadline) public {
         // slither-disable-next-line timestamp

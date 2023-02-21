@@ -384,11 +384,12 @@ deployGovernanceTokenProxy() {
 # @alias cgtpl2,configure-governance-token-proxy-l2
 # @arg governance-token-proxy! the address of the governance token proxy
 # @arg l2-bridge! the address of the L2 bridge
+# @arg contract-admin! the address of the contract admin
 # @option -p --private-key!
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 configureGovernanceTokenProxyL2() {
   forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
-    $argc_governance_token_proxy $argc_l2_bridge \
+    $argc_governance_token_proxy $argc_l2_bridge $argc_contract_admin \
     --private-key $argc_private_key --rpc-url $argc_rpc_url --broadcast \
     --sig "configureGovernanceTokenProxyForL2(address,address)"
 }

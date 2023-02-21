@@ -10,7 +10,7 @@ import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
  * @title L2StandardERC20
  * @notice an ERC20 extension that is compatible with the Optimism bridge
  */
-contract L2StandardERC20 is IL2StandardERC20, ERC20Base {
+contract L2StandardERC20 is ERC20Base, IL2StandardERC20 {
     bytes32 public constant L2BRIDGE_INFO_STORAGE_POSITION = keccak256("com.origami.l2bridge.info");
 
     /// @dev diamond storage for L2BridgeInfo so it's upgrade-compatible
@@ -80,7 +80,7 @@ contract L2StandardERC20 is IL2StandardERC20, ERC20Base {
      * @param amount amount of tokens to mint
      * @dev overriden so we can emit Mint, which is part of the IL2StandardERC20 interface
      */
-    function mint(address account, uint256 amount) public virtual override(ERC20Base, IL2StandardERC20) onlyL2Bridge {
+    function mint(address account, uint256 amount) public virtual override(ERC20Base, IL2StandardERC20) onlyRole(MINTER_ROLE) {
         super._mint(account, amount);
         emit Mint(account, amount);
     }
@@ -91,14 +91,8 @@ contract L2StandardERC20 is IL2StandardERC20, ERC20Base {
      * @param amount amount of tokens to burn
      * @dev overriden so we can emit Burn, which is part of the IL2StandardERC20 interface
      */
-    function burn(address account, uint256 amount) public virtual override onlyL2Bridge {
+    function burn(address account, uint256 amount) public virtual override  onlyRole(BURNER_ROLE) {
         super._burn(account, amount);
         emit Burn(account, amount);
-    }
-
-    /// @dev modifier to restrict minting and burning rights to only the L2 bridge
-    modifier onlyL2Bridge() {
-        require(msg.sender == l2Bridge(), "L2StandardERC20: only L2 Bridge can mint and burn");
-        _;
     }
 }
