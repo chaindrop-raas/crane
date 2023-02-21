@@ -70,7 +70,7 @@ contract L2StandardERC20 is ERC20Base, IL2StandardERC20 {
      * @dev the IERC165 and ILegacyMintableERC20interfaces interfaces are critical for compatiblity with the OP bridge
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC20Base, IERC165) returns (bool) {
-        return interfaceId == type(ILegacyMintableERC20).interfaceId
+        return interfaceId == type(ILegacyMintableERC20).interfaceId || interfaceId == type(IERC165).interfaceId
             || interfaceId == type(IL2StandardERC20).interfaceId || super.supportsInterface(interfaceId);
     }
 
@@ -80,7 +80,12 @@ contract L2StandardERC20 is ERC20Base, IL2StandardERC20 {
      * @param amount amount of tokens to mint
      * @dev overriden so we can emit Mint, which is part of the IL2StandardERC20 interface
      */
-    function mint(address account, uint256 amount) public virtual override(ERC20Base, IL2StandardERC20) onlyRole(MINTER_ROLE) {
+    function mint(address account, uint256 amount)
+        public
+        virtual
+        override(ERC20Base, IL2StandardERC20)
+        onlyRole(MINTER_ROLE)
+    {
         super._mint(account, amount);
         emit Mint(account, amount);
     }
@@ -91,7 +96,7 @@ contract L2StandardERC20 is ERC20Base, IL2StandardERC20 {
      * @param amount amount of tokens to burn
      * @dev overriden so we can emit Burn, which is part of the IL2StandardERC20 interface
      */
-    function burn(address account, uint256 amount) public virtual override  onlyRole(BURNER_ROLE) {
+    function burn(address account, uint256 amount) public virtual override onlyRole(BURNER_ROLE) {
         super._burn(account, amount);
         emit Burn(account, amount);
     }
