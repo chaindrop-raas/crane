@@ -10,6 +10,10 @@ interface ILegacyMintableERC20 is IERC165 {
 }
 
 interface IL2StandardERC20 is IERC165, ILegacyMintableERC20 {
+    /// @dev emitted when the L1 token address is updated
+    event L1TokenUpdated(address indexed oldL1Token, address indexed newL1Token);
+    /// @dev emitted when the L2 bridge address is updated
+    event L2BridgeUpdated(address indexed oldL2Bridge, address indexed newL2Bridge);
     /// @dev emitted when tokens are minted
     event Mint(address indexed _account, uint256 _amount);
     /// @dev emitted when tokens are burned

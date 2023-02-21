@@ -2,6 +2,7 @@
 pragma solidity 0.8.16;
 
 import "src/interfaces/utils/IL2StandardERC20.sol";
+import "src/token/governance/ERC20Base.sol";
 import "@diamond/interfaces/IERC165.sol";
 import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
@@ -9,7 +10,7 @@ import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
  * @title L2StandardERC20
  * @notice an ERC20 extension that is compatible with the Optimism bridge
  */
-abstract contract L2StandardERC20 is IL2StandardERC20, ERC20Upgradeable {
+contract L2StandardERC20 is IL2StandardERC20, ERC20Base {
     bytes32 public constant L2BRIDGE_INFO_STORAGE_POSITION = keccak256("com.origami.l2bridge.info");
 
     /// @dev diamond storage for L2BridgeInfo so it's upgrade-compatible
@@ -47,16 +48,20 @@ abstract contract L2StandardERC20 is IL2StandardERC20, ERC20Upgradeable {
      * @notice sets the address of the paired ERC20 token on L1
      * @param _l1Token address of the paired ERC20 token on L1
      */
-    function setL1Token(address _l1Token) public {
+    function setL1Token(address _l1Token) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        address oldL1Token = l2BridgeInfoStorage().l1Token;
         l2BridgeInfoStorage().l1Token = _l1Token;
+        emit L1TokenUpdated(oldL1Token, _l1Token);
     }
 
     /**
      * @notice sets the address of the bridge contract on L2
      * @param _l2Bridge address of the bridge contract on L2
      */
-    function setL2Bridge(address _l2Bridge) public {
+    function setL2Bridge(address _l2Bridge) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        address oldL2Bridge = l2BridgeInfoStorage().l2Bridge;
         l2BridgeInfoStorage().l2Bridge = _l2Bridge;
+        emit L2BridgeUpdated(oldL2Bridge, _l2Bridge);
     }
 
     /**
@@ -64,9 +69,9 @@ abstract contract L2StandardERC20 is IL2StandardERC20, ERC20Upgradeable {
      * @param interfaceId bytes4 of the interface
      * @dev the IERC165 and ILegacyMintableERC20interfaces interfaces are critical for compatiblity with the OP bridge
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
-        return interfaceId == type(ILegacyMintableERC20).interfaceId || interfaceId == type(IERC165).interfaceId
-            || interfaceId == type(IL2StandardERC20).interfaceId;
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC20Base, IERC165) returns (bool) {
+        return interfaceId == type(ILegacyMintableERC20).interfaceId
+            || interfaceId == type(IL2StandardERC20).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /**
@@ -75,7 +80,7 @@ abstract contract L2StandardERC20 is IL2StandardERC20, ERC20Upgradeable {
      * @param amount amount of tokens to mint
      * @dev overriden so we can emit Mint, which is part of the IL2StandardERC20 interface
      */
-    function mint(address account, uint256 amount) public virtual override onlyL2Bridge {
+    function mint(address account, uint256 amount) public virtual override(ERC20Base, IL2StandardERC20) onlyL2Bridge {
         super._mint(account, amount);
         emit Mint(account, amount);
     }

@@ -161,7 +161,7 @@ contract ERC20Base is
      * @param to the address of the recipient's wallet.
      * @param amount the amount of tokens to mint.
      */
-    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
+    function mint(address to, uint256 amount) public virtual onlyRole(MINTER_ROLE) {
         _mint(to, amount);
     }
 
