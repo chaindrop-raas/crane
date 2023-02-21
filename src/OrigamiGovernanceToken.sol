@@ -7,6 +7,7 @@ import {TransferLocks} from "src/utils/TransferLocks.sol";
 import {Votes} from "src/utils/Votes.sol";
 import {ERC20Base} from "src/token/governance/ERC20Base.sol";
 import {ERC20Upgradeable} from "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import {L2StandardERC20} from "src/utils/L2StandardERC20.sol";
 
 /**
  * @title Origami Governance Token
@@ -14,7 +15,7 @@ import {ERC20Upgradeable} from "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol
  * @notice This contract is an ERC20 token used for DAO governance functions and is supported and depended upon by the Origami platform and ecosystem.
  * @custom:security-contact contract-security@joinorigami.com
  */
-contract OrigamiGovernanceToken is ERC20Base, TransferLocks, Votes {
+contract OrigamiGovernanceToken is ERC20Base, TransferLocks, L2StandardERC20, Votes {
     /**
      * @notice the constructor is not used since the contract is upgradeable except to disable initializers in the implementations that are deployed.
      * @custom:oz-upgrades-unsafe-allow constructor
@@ -33,6 +34,16 @@ contract OrigamiGovernanceToken is ERC20Base, TransferLocks, Votes {
      */
     function version() public pure returns (string memory) {
         return "1.0.0";
+    }
+
+    /// @inheritdoc ERC20Base
+    function mint(address to, uint256 amount)
+        public
+        virtual
+        override(ERC20Base, L2StandardERC20)
+        onlyRole(MINTER_ROLE)
+    {
+        super.mint(to, amount);
     }
 
     /// @inheritdoc ERC20Upgradeable
@@ -67,7 +78,7 @@ contract OrigamiGovernanceToken is ERC20Base, TransferLocks, Votes {
         public
         view
         virtual
-        override(ERC20Base, TransferLocks)
+        override(ERC20Base, L2StandardERC20, TransferLocks)
         returns (bool)
     {
         return interfaceId == type(IVotes).interfaceId || super.supportsInterface(interfaceId);

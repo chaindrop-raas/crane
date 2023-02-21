@@ -3,6 +3,7 @@ pragma solidity 0.8.16;
 
 import {Test} from "@std/Test.sol";
 import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
+import {IL2StandardERC20,ILegacyMintableERC20,IERC165} from "src/interfaces/utils/IL2StandardERC20.sol";
 import {OrigamiGovernanceTokenTestVersion} from "test/versions/OrigamiGovernanceTokenTestVersion.sol";
 import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@oz/proxy/transparent/ProxyAdmin.sol";
@@ -408,5 +409,28 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
         vm.prank(mintee);
         vm.expectRevert("TransferLock: this exceeds your unlocked balance");
         token.transfer(minter, 10);
+    }
+}
+
+contract L2StandardERC20Test is OGTHelper {
+    function testRoundtripL1Token() public {
+        vm.prank(owner);
+        token.setL1Token(address(0x123));
+        assertEq(token.l1Token(), address(0x123));
+    }
+
+    function testRoundtripL2Bridge() public {
+        vm.prank(owner);
+        token.setL2Bridge(address(0x123));
+        assertEq(token.l2Bridge(), address(0x123));
+    }
+
+    function testSupportsIL2StandardERC20() public {
+        assertTrue(token.supportsInterface(type(IL2StandardERC20).interfaceId));
+        assertTrue(token.supportsInterface(type(IERC165).interfaceId));
+        assertTrue(token.supportsInterface(type(ILegacyMintableERC20).interfaceId));
+        // assert the bytes4 values of the interface ids since the bridge depends on them
+        assertTrue(token.supportsInterface(0x01ffc9a7)); // IERC165
+        assertTrue(token.supportsInterface(0x1d1d8b63)); // ILegacyMintableERC20
     }
 }
