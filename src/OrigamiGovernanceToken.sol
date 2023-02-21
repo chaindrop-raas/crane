@@ -175,16 +175,6 @@ contract OrigamiGovernanceToken is
     }
 
     /**
-     * @notice this function burns governance tokens from the sender's wallet. An event is fired whenever tokens are burned indicating where they were burned from and how many tokens were burned.
-     * @dev this is only callable by an address that has the BURNER_ROLE.
-     * @param account the address of the account to burn tokens from.
-     * @param amount the amount of tokens to burn.
-     */
-    function burn(address account, uint256 amount) public whenNotPaused whenBurnable {
-        super._burn(account, amount);
-    }
-
-    /**
      * @notice this allows transfers when the transferrable state is enabled.
      * @dev this is overridden so we can apply the `whenTransferrable` modifier
      */
