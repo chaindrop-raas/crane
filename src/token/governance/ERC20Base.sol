@@ -50,27 +50,27 @@ contract ERC20Base is
 
     /**
      * @notice Initialize the ERC20Base contract. It is called during contract deployment.
-     * @param _admin the address of the contract admin. This address receives all roles by default and should be used to delegate them to DAO committees and/or permanent members.
-     * @param _name the name of the token. Typically this is the name of the DAO.
-     * @param _symbol the symbol of the token. Typically this is a short abbreviation of the DAO's name.
-     * @param _supplyCap cap on the total supply mintable by this contract.
+     * @param admin the address of the contract admin. This address receives all roles by default and should be used to delegate them to DAO committees and/or permanent members.
+     * @param tokenName the name of the token. Typically this is the name of the DAO.
+     * @param tokenSymbol the symbol of the token. Typically this is a short abbreviation of the DAO's name.
+     * @param supplyCap cap on the total supply mintable by this contract.
      */
-    function initialize(address _admin, string memory _name, string memory _symbol, uint256 _supplyCap)
+    function initialize(address admin, string memory tokenName, string memory tokenSymbol, uint256 supplyCap)
         public
         initializer
     {
-        require(_admin != address(0), "Admin address cannot be zero");
+        require(admin != address(0), "Admin address cannot be zero");
 
         __AccessControl_init();
         __ERC20Burnable_init();
-        __ERC20Capped_init(_supplyCap);
-        __ERC20_init(_name, _symbol);
+        __ERC20Capped_init(supplyCap);
+        __ERC20_init(tokenName, tokenSymbol);
         __Pausable_init();
 
         // grant roles to the admin
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(MINTER_ROLE, _admin);
-        _grantRole(PAUSER_ROLE, _admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(MINTER_ROLE, admin);
+        _grantRole(PAUSER_ROLE, admin);
 
         // disable burning and transfers by default
         _burnEnabled = false;
@@ -202,6 +202,7 @@ contract ERC20Base is
      * @inheritdoc ERC20Upgradeable
      * @dev this is overridden so we can apply the `whenNotPaused` modifier
      */
+    // slither-disable-next-line dead-code
     function _beforeTokenTransfer(address from, address to, uint256 amount)
         internal
         virtual
@@ -209,11 +210,6 @@ contract ERC20Base is
         whenNotPaused
     {
         super._beforeTokenTransfer(from, to, amount);
-    }
-
-    /// @dev specify overrides
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual override(ERC20Upgradeable) {
-        super._afterTokenTransfer(from, to, amount);
     }
 
     /// @dev specify overrides

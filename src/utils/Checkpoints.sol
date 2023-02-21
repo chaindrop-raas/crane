@@ -54,10 +54,12 @@ library Checkpoints {
 
     function checkpointStorage() internal pure returns (CheckpointStorage storage cs) {
         bytes32 position = CHECKPOINT_STORAGE_POSITION;
-        //solhint-disable-next-line no-inline-assembly
+        // solhint-disable no-inline-assembly
+        // slither-disable-next-line assembly
         assembly {
             cs.slot := position
         }
+        // solhint-enable no-inline-assembly
     }
 
     function getWeight(mapping(uint32 => Checkpoint) storage checkpoints, uint32 count)
@@ -135,10 +137,12 @@ library Checkpoints {
 
     function delegateStorage() internal pure returns (DelegateStorage storage ds) {
         bytes32 position = DELEGATE_STORAGE_POSITION;
-        //solhint-disable-next-line no-inline-assembly
+        // solhint-disable no-inline-assembly
+        // slither-disable-next-line assembly
         assembly {
             ds.slot := position
         }
+        // solhint-enable no-inline-assembly
     }
 
     function delegates(address account) internal view returns (address) {

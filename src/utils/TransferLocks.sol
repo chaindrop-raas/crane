@@ -7,9 +7,15 @@ import "@diamond/interfaces/IERC165.sol";
 
 import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
+/**
+ * @notice this library enables time-locked transfers of ERC20 tokens.
+ * @dev TransferLocks are resilient to timestamp manipulation by using
+ * block.timestamp, locks will typically be measured in months, not seconds.
+ */
 abstract contract TransferLocks is ERC20Upgradeable, ITransferLocks, IERC165 {
     /// @inheritdoc ITransferLocks
     function addTransferLock(uint256 amount, uint256 deadline) public {
+        // slither-disable-next-line timestamp
         require(deadline > block.timestamp, "TransferLock: deadline must be in the future");
         require(
             amount <= getAvailableBalanceAt(msg.sender, deadline),
@@ -37,7 +43,9 @@ abstract contract TransferLocks is ERC20Upgradeable, ITransferLocks, IERC165 {
     /// @dev Override ERC20Upgradeable._beforeTokenTransfer to check for transfer locks.
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         uint256 lockedAmount = getTransferLockTotalAt(from, block.timestamp);
+        // slither-disable-next-line timestamp
         if (lockedAmount > 0 && balanceOf(from) >= amount) {
+            // slither-disable-next-line timestamp
             require(balanceOf(from) - amount >= lockedAmount, "TransferLock: this exceeds your unlocked balance");
         }
         super._beforeTokenTransfer(from, to, amount);

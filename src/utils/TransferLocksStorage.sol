@@ -15,10 +15,12 @@ library TransferLocksStorage {
 
     function transferLocksStorage() internal pure returns (TransferLocks storage tls) {
         bytes32 position = TRANSFER_LOCKS_STORAGE_POSITION;
-        //solhint-disable-next-line no-inline-assembly
+        // solhint-disable no-inline-assembly
+        // slither-disable-next-line assembly
         assembly {
             tls.slot := position
         }
+        // solhint-enable no-inline-assembly
     }
 
     function addTransferLock(address account, uint256 amount, uint256 deadline) internal {

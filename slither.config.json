@@ -1,0 +1,13 @@
+{
+  "filter_paths": "lib",
+    "solc_remaps": [
+      "ds-test/=lib/ds-test/src/",
+      "forge-std/=lib/forge-std/src/",
+      "@create3/=lib/create3-factory/src/",
+      "@diamond/=lib/diamond-2-hardhat/contracts/",
+      "@oz/=lib/openzeppelin-contracts/contracts/",
+      "@oz-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+      "@std/=lib/forge-std/src/",
+      "src/=src/"
+  ]
+}

@@ -83,20 +83,18 @@ contract OrigamiGovernanceToken is ERC20Base, TransferLocks, Votes {
 
     /**
      * @inheritdoc ERC20Upgradeable
-     * @dev this is overridden so we can apply the `whenNotPaused` modifier
      */
     function _beforeTokenTransfer(address from, address to, uint256 amount)
         internal
         override(ERC20Base, TransferLocks)
-        whenNotPaused
     {
         super._beforeTokenTransfer(from, to, amount);
     }
 
-    /// @inheritdoc ERC20Base
+    /// @inheritdoc ERC20Upgradeable
     function _afterTokenTransfer(address from, address to, uint256 amount)
         internal
-        override(ERC20Base, ERC20Upgradeable, Votes)
+        override(ERC20Upgradeable, Votes)
     {
         super._afterTokenTransfer(from, to, amount);
     }

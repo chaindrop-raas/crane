@@ -67,6 +67,7 @@ abstract contract Votes is IVotes, IVotesToken {
 
     /// @inheritdoc IVotes
     function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external {
+        // slither-disable-next-line timestamp
         require(block.timestamp <= expiry, "Signature expired");
 
         Checkpoints.DelegateStorage storage ds = Checkpoints.delegateStorage();
