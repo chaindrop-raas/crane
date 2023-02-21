@@ -21,7 +21,7 @@ contract OrigamiGovernanceToken is ERC20Base, TransferLocks, Votes {
     }
 
     /// @inheritdoc ERC20Base
-    function name() public view virtual override(ERC20Base, ERC20Upgradeable, IVotesToken) returns (string memory) {
+    function name() public view virtual override(ERC20Base, IVotesToken) returns (string memory) {
         return super.name();
     }
 
@@ -33,12 +33,7 @@ contract OrigamiGovernanceToken is ERC20Base, TransferLocks, Votes {
     }
 
     /// @inheritdoc ERC20Upgradeable
-    function balanceOf(address owner)
-        public
-        view
-        override(ERC20Base, ERC20Upgradeable, IVotesToken)
-        returns (uint256)
-    {
+    function balanceOf(address owner) public view override(ERC20Base, IVotesToken) returns (uint256) {
         return super.balanceOf(owner);
     }
 
@@ -49,7 +44,7 @@ contract OrigamiGovernanceToken is ERC20Base, TransferLocks, Votes {
     function transferFrom(address from, address to, uint256 amount)
         public
         virtual
-        override(ERC20Base, ERC20Upgradeable)
+        override(ERC20Base)
         whenTransferrable
         returns (bool)
     {
@@ -60,13 +55,7 @@ contract OrigamiGovernanceToken is ERC20Base, TransferLocks, Votes {
      * @inheritdoc ERC20Upgradeable
      * @dev this is overridden so we can apply the `whenTransferrable` modifier
      */
-    function transfer(address to, uint256 amount)
-        public
-        virtual
-        override(ERC20Base, ERC20Upgradeable)
-        whenTransferrable
-        returns (bool)
-    {
+    function transfer(address to, uint256 amount) public virtual override(ERC20Base) whenTransferrable returns (bool) {
         return super.transfer(to, amount);
     }
 
@@ -97,7 +86,7 @@ contract OrigamiGovernanceToken is ERC20Base, TransferLocks, Votes {
     }
 
     /// @inheritdoc ERC20Base
-    function _mint(address to, uint256 amount) internal override(ERC20Base, ERC20Upgradeable) {
+    function _mint(address to, uint256 amount) internal override(ERC20Base) {
         super._mint(to, amount);
     }
 }

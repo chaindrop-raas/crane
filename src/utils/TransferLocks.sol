@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/utils/TransferLocksStorage.sol";
 import "src/interfaces/ITransferLocks.sol";
+import "src/token/governance/ERC20Base.sol";
+import "src/utils/TransferLocksStorage.sol";
 import "@diamond/interfaces/IERC165.sol";
-
-import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 /**
  * @notice this library enables time-locked transfers of ERC20 tokens.
  * @dev TransferLocks are resilient to timestamp manipulation by using
  * block.timestamp, locks will typically be measured in months, not seconds.
  */
-abstract contract TransferLocks is ERC20Upgradeable, ITransferLocks, IERC165 {
+abstract contract TransferLocks is ERC20Base, ITransferLocks, IERC165 {
     /// @inheritdoc ITransferLocks
     function addTransferLock(uint256 amount, uint256 deadline) public {
         // slither-disable-next-line timestamp
@@ -51,7 +50,8 @@ abstract contract TransferLocks is ERC20Upgradeable, ITransferLocks, IERC165 {
         super._beforeTokenTransfer(from, to, amount);
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165) returns (bool) {
+    /// @inheritdoc IERC165
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC20Base, IERC165) returns (bool) {
         return interfaceId == type(ITransferLocks).interfaceId;
     }
 }
