@@ -13,13 +13,7 @@ import "@diamond/interfaces/IERC165.sol";
  */
 abstract contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
     /// @inheritdoc ITransferLocks
-    function addTransferLock(uint256 amount, uint256 deadline) public {
-        // slither-disable-next-line timestamp
-        require(deadline > block.timestamp, "TransferLock: deadline must be in the future");
-        require(
-            amount <= getAvailableBalanceAt(msg.sender, deadline),
-            "TransferLock: amount cannot exceed available balance"
-        );
+    function addTransferLock(uint256 amount, uint256 deadline) public whenValidLock(amount, deadline) {
         TransferLocksStorage.addTransferLock(msg.sender, amount, deadline);
     }
 
@@ -50,8 +44,40 @@ abstract contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
         super._beforeTokenTransfer(from, to, amount);
     }
 
+    /// @inheritdoc ITransferLocks
+    function transferWithLock(address recipient, uint256 amount, uint256 deadline)
+        public
+        whenValidLock(amount, deadline)
+    {
+        _transfer(msg.sender, recipient, amount);
+        TransferLocksStorage.addTransferLock(recipient, amount, deadline);
+    }
+
+    /// @inheritdoc ITransferLocks
+    function batchTransferWithLocks(
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        uint256[] calldata deadlines
+    ) external {
+        require(recipients.length == amounts.length, "TransferLock: recipients and amounts must be the same length");
+        require(recipients.length == deadlines.length, "TransferLock: recipients and deadlines must be the same length");
+        for (uint256 i = 0; i < recipients.length; i++) {
+            transferWithLock(recipients[i], amounts[i], deadlines[i]);
+        }
+    }
+
     /// @inheritdoc IERC165
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC20Base, IERC165) returns (bool) {
         return interfaceId == type(ITransferLocks).interfaceId;
+    }
+
+    modifier whenValidLock(uint256 amount, uint256 deadline) {
+        // slither-disable-next-line timestamp
+        require(deadline > block.timestamp, "TransferLock: deadline must be in the future");
+        require(
+            amount <= getAvailableBalanceAt(msg.sender, deadline),
+            "TransferLock: amount cannot exceed available balance"
+        );
+        _;
     }
 }

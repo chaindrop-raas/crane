@@ -435,4 +435,63 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
         assertEq(token.getAvailableBalanceAt(mintee, 3000), 75);
         assertEq(token.getAvailableBalanceAt(mintee, 3001), 100);
     }
+
+    function testTransferWithLock() public {
+        address recipient = address(0x42);
+        vm.startPrank(mintee);
+        token.transferWithLock(recipient, 10, 68);
+        token.transferWithLock(recipient, 10, 419);
+        vm.stopPrank();
+
+        assertEq(token.balanceOf(recipient), 20);
+        assertEq(token.getAvailableBalanceAt(recipient, 1), 0);
+        assertEq(token.getAvailableBalanceAt(recipient, 69), 10);
+        assertEq(token.getAvailableBalanceAt(recipient, 420), 20);
+    }
+
+    function testBatchTransferWithLocks() public {
+        address treasury = address(0x42);
+        vm.prank(owner);
+        token.mint(treasury, 1000000);
+
+        address[] memory recipients = new address[](10);
+        uint256[] memory amounts = new uint256[](10);
+        uint256[] memory timelocks = new uint256[](10);
+
+        for (uint256 i = 0; i < 10; i++) {
+            recipients[i] = (i % 2 == 0) ? address(0x42) : address(0x43);
+        }
+
+        for (uint256 i = 0; i < 10; i++) {
+            amounts[i] = 100000;
+        }
+
+        uint256 counter = 0;
+        for (uint256 i = 0; i < 10; i += 2) {
+            uint256 timelock = counter * 100 + 100;
+            timelocks[i] = timelock;
+            timelocks[i + 1] = timelock;
+            counter++;
+        }
+
+        vm.prank(treasury);
+        token.batchTransferWithLocks(recipients, amounts, timelocks);
+
+        assertEq(token.balanceOf(address(0x42)), 500000);
+        assertEq(token.balanceOf(address(0x43)), 500000);
+
+        assertEq(token.getAvailableBalanceAt(address(0x42), 1), 0);
+        assertEq(token.getAvailableBalanceAt(address(0x42), 101), 100000);
+        assertEq(token.getAvailableBalanceAt(address(0x42), 201), 200000);
+        assertEq(token.getAvailableBalanceAt(address(0x42), 301), 300000);
+        assertEq(token.getAvailableBalanceAt(address(0x42), 401), 400000);
+        assertEq(token.getAvailableBalanceAt(address(0x42), 501), 500000);
+
+        assertEq(token.getAvailableBalanceAt(address(0x43), 1), 0);
+        assertEq(token.getAvailableBalanceAt(address(0x43), 101), 100000);
+        assertEq(token.getAvailableBalanceAt(address(0x43), 201), 200000);
+        assertEq(token.getAvailableBalanceAt(address(0x43), 301), 300000);
+        assertEq(token.getAvailableBalanceAt(address(0x43), 401), 400000);
+        assertEq(token.getAvailableBalanceAt(address(0x43), 501), 500000);
+    }
 }

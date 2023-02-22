@@ -11,17 +11,17 @@ interface ITransferLocks {
     function addTransferLock(uint256 amount, uint256 deadline) external;
 
     /**
-     * @notice Check the lockup details for an address. Returns 0 if there is no registered lockup.
+     * @notice Returns the total amount locked up as of current block.timestamp. Returns 0 if there is no registered lockup.
      * @param account the address to check.
-     * @return amount the amount of tokens locked.
+     * @return amount the amount of tokens that are transfer-locked.
      */
     function getTransferLockTotal(address account) external view returns (uint256 amount);
 
     /**
-     * @notice Check the lockup details for an address as of a given timestamp. Returns 0 if there is no registered lockup.
+     * @notice Returns the total amount locked up as of the given timestamp. Returns 0 if there is no registered lockup.
      * @param account the address to check.
-     * @param timestamp the timestamp to check.
-     * @return amount the amount of tokens locked.
+     * @param timestamp the timestamp to check at.
+     * @return amount the amount of tokens that are transfer-locked.
      */
     function getTransferLockTotalAt(address account, uint256 timestamp) external view returns (uint256 amount);
 
@@ -32,4 +32,26 @@ interface ITransferLocks {
      * @return amount the amount of tokens that are not transfer-locked.
      */
     function getAvailableBalanceAt(address account, uint256 timestamp) external view returns (uint256 amount);
+
+    /**
+     * @notice Used to transfer tokens to an address and lock them up until a given time.
+     * @dev block timestamp may be innaccurate by up to 15 minutes, but on the expected timescales, this is negligible.
+     * @param recipient the address to transfer tokens to.
+     * @param amount the amount of tokens to transfer.
+     * @param deadline the date (as a unix timestamp in UTC) until which amount will be untransferrable.
+     */
+    function transferWithLock(address recipient, uint256 amount, uint256 deadline) external;
+
+    /**
+     * @notice Used to transfer tokens to multiple addresses and lock them up until a given time.
+     * @dev block timestamp may be innaccurate by up to 15 minutes, but on the expected timescales, this is negligible.
+     * @param recipients the addresses to transfer tokens to.
+     * @param amounts the amounts of tokens to transfer.
+     * @param deadlines the dates (as unix timestamps in UTC) until which amounts will be untransferrable.
+     */
+    function batchTransferWithLocks(
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        uint256[] calldata deadlines
+    ) external;
 }
