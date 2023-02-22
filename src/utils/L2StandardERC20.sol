@@ -22,10 +22,12 @@ contract L2StandardERC20 is ERC20Base, IL2StandardERC20 {
     /// @dev returns the storage pointer for the L2BridgeInfo struct
     function l2BridgeInfoStorage() internal pure returns (L2BridgeInfo storage l2bi) {
         bytes32 position = L2BRIDGE_INFO_STORAGE_POSITION;
-        //solhint-disable-next-line no-inline-assembly
+        // solhint-disable no-inline-assembly
+        // slither-disable-next-line assembly
         assembly {
             l2bi.slot := position
         }
+        // solhint-enable no-inline-assembly
     }
 
     /**
@@ -46,22 +48,22 @@ contract L2StandardERC20 is ERC20Base, IL2StandardERC20 {
 
     /**
      * @notice sets the address of the paired ERC20 token on L1
-     * @param _l1Token address of the paired ERC20 token on L1
+     * @param newL1Token address of the paired ERC20 token on L1
      */
-    function setL1Token(address _l1Token) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setL1Token(address newL1Token) public onlyRole(DEFAULT_ADMIN_ROLE) {
         address oldL1Token = l2BridgeInfoStorage().l1Token;
-        l2BridgeInfoStorage().l1Token = _l1Token;
-        emit L1TokenUpdated(oldL1Token, _l1Token);
+        l2BridgeInfoStorage().l1Token = newL1Token;
+        emit L1TokenUpdated(oldL1Token, newL1Token);
     }
 
     /**
      * @notice sets the address of the bridge contract on L2
-     * @param _l2Bridge address of the bridge contract on L2
+     * @param newL2Bridge address of the bridge contract on L2
      */
-    function setL2Bridge(address _l2Bridge) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setL2Bridge(address newL2Bridge) public onlyRole(DEFAULT_ADMIN_ROLE) {
         address oldL2Bridge = l2BridgeInfoStorage().l2Bridge;
-        l2BridgeInfoStorage().l2Bridge = _l2Bridge;
-        emit L2BridgeUpdated(oldL2Bridge, _l2Bridge);
+        l2BridgeInfoStorage().l2Bridge = newL2Bridge;
+        emit L2BridgeUpdated(oldL2Bridge, newL2Bridge);
     }
 
     /**
