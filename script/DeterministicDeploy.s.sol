@@ -109,4 +109,15 @@ contract DeterministicDeploy is Script {
         console2.log("ERC20Base deployed at", erc20Base);
         vm.stopBroadcast();
     }
+
+    function deployGovernanceTokenImpl(address create3Factory, string memory salt) public {
+        CREATE3Factory c3 = CREATE3Factory(create3Factory);
+        bytes memory bytecode = type(OrigamiGovernanceToken).creationCode;
+        salt = string.concat("gov-token-", salt);
+
+        vm.startBroadcast();
+        address govToken = c3.deploy(bytes32(bytes(salt)), bytecode);
+        console2.log("OrigamiGovernanceToken deployed at", govToken);
+        vm.stopBroadcast();
+    }
 }

@@ -64,6 +64,21 @@ deployERC20BaseImplementation() {
     --sig "deployERC20BaseImpl(address,string)"
 }
 
+# @cmd determinstically deploy a governance token implementation contract
+# @alias ddgi
+# @arg salt! the salt for the create3 address
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option --c3f=0xE21f6b2A09bB27149E1afec31D05675bcf581FEd the address of the create3 factory
+deterministicDeployGovTokenImpl() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
+  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
+    $argc_c3f $argc_salt ${options[@]} --private-key $argc_private_key \
+    --sig "deployGovernanceTokenImpl(address,string)"
+}
+
 # @cmd deploy a membership token implementation contract
 # @alias dmi
 # @option -p --private-key!
@@ -406,7 +421,7 @@ configureGovernanceTokenProxyL2() {
   forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
     $argc_governance_token_proxy $argc_l2_bridge $argc_contract_admin \
     --private-key $argc_private_key --rpc-url $argc_rpc_url --broadcast \
-    --sig "configureGovernanceTokenProxyForL2(address,address)"
+    --sig "configureGovernanceTokenProxyForL2(address,address,address)"
 }
 
 # @cmd configure governance token proxy for L1
