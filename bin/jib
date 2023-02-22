@@ -49,6 +49,21 @@ deployGovTokenImpl() {
     ${options[@]} --sig "deployGovernanceTokenImpl()"
 }
 
+# @cmd deploy an ERC20Base implementation contract
+# @alias deploy-erc20-base-impl
+# @arg salt! the salt for the create3 address
+# @option -p --private-key!
+# @option -b --block-explorer-api-key the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @option --c3f=0xE21f6b2A09bB27149E1afec31D05675bcf581FEd the address of the create3 factory
+deployERC20BaseImplementation() {
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
+  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
+    $argc_c3f $argc_salt ${options[@]} --private-key $argc_private_key \
+    --sig "deployERC20BaseImpl(address,string)"
+}
+
 # @cmd deploy a membership token implementation contract
 # @alias dmi
 # @option -p --private-key!

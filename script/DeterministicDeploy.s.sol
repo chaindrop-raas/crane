@@ -3,6 +3,7 @@ pragma solidity 0.8.16;
 
 import "src/OrigamiGovernanceToken.sol";
 import "src/OrigamiMembershipToken.sol";
+import "src/token/governance/ERC20Base.sol";
 import "src/utils/L2StandardERC20.sol";
 
 import "@std/Script.sol";
@@ -95,6 +96,17 @@ contract DeterministicDeploy is Script {
         address memTokenProxy = c3.deploy(bytes32(bytes(salt)), bytecode);
         OrigamiMembershipToken token = OrigamiMembershipToken(memTokenProxy);
         token.initialize(contractAdmin, name, symbol, baseUri);
+        vm.stopBroadcast();
+    }
+
+    function deployERC20BaseImpl(address create3Factory, string memory salt) public {
+        CREATE3Factory c3 = CREATE3Factory(create3Factory);
+        bytes memory bytecode = type(ERC20Base).creationCode;
+        salt = string.concat("erc20-base-", salt);
+
+        vm.startBroadcast();
+        address erc20Base = c3.deploy(bytes32(bytes(salt)), bytecode);
+        console2.log("ERC20Base deployed at", erc20Base);
         vm.stopBroadcast();
     }
 }
