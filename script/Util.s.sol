@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.16;
 
-import "@std/Script.sol";
 import "src/interfaces/IAccessControl.sol";
+import "src/OrigamiGovernanceToken.sol";
+import "src/utils/L2StandardERC20.sol";
+
+import "@std/Script.sol";
 
 contract GrantPermissions is Script {
     bytes32 internal constant REVOKER_ROLE = 0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30;
@@ -19,6 +22,33 @@ contract GrantPermissions is Script {
             accessControl.grantRole(MINTER_ROLE, accounts[i]);
         }
 
+        vm.stopBroadcast();
+    }
+}
+
+contract ConfigureContractsForBridge is Script {
+    function configureGovernanceTokenProxyForL2(address govTokenProxy, address l2Bridge, address contractAdmin)
+        public
+    {
+        vm.startBroadcast();
+        L2StandardERC20 token = L2StandardERC20(govTokenProxy);
+        token.setL1Token(govTokenProxy); // relies on CREATE3Factory to deploy to same address on L1 and L2
+        token.setL2Bridge(l2Bridge);
+
+        OrigamiGovernanceToken govToken = OrigamiGovernanceToken(govTokenProxy);
+        govToken.enableTransfer();
+        govToken.enableBurn();
+        govToken.revokeRole(govToken.MINTER_ROLE(), contractAdmin);
+        govToken.grantRole(govToken.MINTER_ROLE(), l2Bridge);
+        govToken.grantRole(govToken.BURNER_ROLE(), l2Bridge);
+        vm.stopBroadcast();
+    }
+
+    function configureGovernanceTokenProxyForL1(address govTokenProxy) public {
+        vm.startBroadcast();
+        OrigamiGovernanceToken govToken = OrigamiGovernanceToken(govTokenProxy);
+        govToken.enableTransfer();
+        govToken.enableBurn();
         vm.stopBroadcast();
     }
 }

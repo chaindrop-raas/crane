@@ -379,12 +379,12 @@ deployCreate3Factory() {
 
 # @cmd get the create3 deterministic address for a deployer and salt
 # @alias create3-address
-# @arg create3-factory! the address of the create3 factory
 # @arg deployer! the address of the deployer
 # @arg salt! the salt to use
+# @option --c3f=0xE21f6b2A09bB27149E1afec31D05675bcf581FEd the address of the create3 factory
 create3Address() {
   forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
-    --sig "getDeterministicAddress(address,address,string)" $argc_create3_factory $argc_deployer $argc_salt
+    --sig "getDeterministicAddress(address,address,string)" $argc_c3f $argc_deployer $argc_salt
 }
 
 # @cmd deploy a governance token proxy
@@ -403,10 +403,11 @@ create3Address() {
 deployGovernanceTokenProxy() {
   declare -a options=()
   options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
-  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy $argc_c3f \
-    $argc_salt $argc_implementation $argc_proxy_admin $argc_contract_admin \
-    "$argc_name" $argc_symbol $argc_supply_cap ${options[@]} \
-    --private-key $argc_private_key \
+  CREATE3_FACTORY=$argc_c3f forge script \
+    script/DeterministicDeploy.s.sol:DeterministicallyDeployGovernanceToken \
+    $argc_implementation $argc_proxy_admin $argc_contract_admin \
+    $argc_salt "$argc_name" $argc_symbol $argc_supply_cap \
+    ${options[@]} --private-key $argc_private_key \
     --sig "deployGovernanceTokenProxy(address,string,address,address,address,string,string,uint256)"
 }
 
@@ -418,7 +419,7 @@ deployGovernanceTokenProxy() {
 # @option -p --private-key!
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 configureGovernanceTokenProxyL2() {
-  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
+  forge script script/Utils.s.sol:ConfigureContractsForBridge \
     $argc_governance_token_proxy $argc_l2_bridge $argc_contract_admin \
     --private-key $argc_private_key --rpc-url $argc_rpc_url --broadcast \
     --sig "configureGovernanceTokenProxyForL2(address,address,address)"
@@ -430,7 +431,7 @@ configureGovernanceTokenProxyL2() {
 # @option -p --private-key!
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 configureGovernanceTokenProxyL1() {
-  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy \
+  forge script script/Utils.s.sol:ConfigureContractsForBridge \
     $argc_governance_token_proxy \
     --private-key $argc_private_key --rpc-url $argc_rpc_url --broadcast \
     --sig "configureGovernanceTokenProxyForL1(address)"
@@ -452,9 +453,10 @@ configureGovernanceTokenProxyL1() {
 deployMembershipTokenProxy() {
   declare -a options=()
   options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
-  forge script script/DeterministicDeploy.s.sol:DeterministicDeploy $argc_c3f \
-    $argc_salt $argc_implementation $argc_proxy_admin $argc_contract_admin \
-    "$argc_name" $argc_symbol $argc_base_uri ${options[@]} \
+  CREATE3_FACTORY=$argc_c3f forge script \
+    script/DeterministicDeploy.s.sol:DeterministicallyDeployGovernanceToken \
+    $argc_implementation $argc_proxy_admin $argc_contract_admin \
+    $argc_salt "$argc_name" $argc_symbol $argc_base_uri ${options[@]} \
     --private-key $argc_private_key \
     --sig "deployMembershipTokenProxy(address,string,address,address,address,string,string,string)"
 }
