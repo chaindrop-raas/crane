@@ -20,6 +20,8 @@ interface IVotes {
 
     /**
      * @notice Returns the total supply of votes available at the end of a past block's timestamp.
+     * @param timestamp The timestamp to check the total supply of votes at.
+     * @return The total supply of votes available at the last checkpoint before `timestamp`.
      *
      * NOTE: This value is the sum of all available votes, which is not necessarily the sum of all delegated votes.
      * Votes that have not been delegated are still part of total supply, even though they would not participate in a
@@ -30,15 +32,36 @@ interface IVotes {
     /// @notice Returns the EIP712 domain separator for this contract.
     function domainSeparatorV4() external view returns (bytes32);
 
-    /// @notice Returns the nonce for `delegator`. Used to validate signatures.
+    /**
+     * @notice Returns the current nonce for `delegator`.
+     * @dev Used to prevent replay attacks when delegating by signature.
+     * @param delegator The address of the delegator to get the nonce for.
+     * @return The nonce for `delegator`.
+     */
     function getDelegatorNonce(address delegator) external view returns (uint256);
 
-    /// @notice Returns the delegate that `account` has chosen.
+    /**
+     * @notice Returns the delegate that `account` has chosen.
+     * @param account The address of the account to get the delegate for.
+     * @return The address of the delegate for `account`.
+     */
     function delegates(address account) external view returns (address);
 
-    /// @notice Delegates votes from the sender to `delegatee`.
+    /**
+     * @notice Delegates votes from the sender to `delegatee`.
+     * @param delegatee The address to delegate votes to.
+     */
     function delegate(address delegatee) external;
 
-    /// @notice Delegates votes from signer to `delegatee`.
+    /**
+     * @notice Delegates votes from the signer to `delegatee`.
+     * @dev This allows execution by proxy of a delegation, so that signers do not need to pay gas.
+     * @param delegatee The address to delegate votes to.
+     * @param nonce The nonce of the delegator.
+     * @param expiry The timestamp at which the delegation expires.
+     * @param v The recovery byte of the signature.
+     * @param r Half of the ECDSA signature pair.
+     * @param s Half of the ECDSA signature pair.
+     */
     function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external;
 }

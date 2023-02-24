@@ -12,6 +12,12 @@ interface IVotesToken {
     function version() external pure returns (string memory);
 }
 
+/**
+ * @title Votes
+ * @notice Implements voting weight calculation for Origami Governance Token
+ * @dev This contract is abstract and must be inherited by a contract that implements IVotesToken
+ * NB: this is a lightweight integration around Checkpoints.sol that implements IVotes
+ */
 abstract contract Votes is IVotes, IVotesToken {
     /// @notice the typehash for the EIP712 domain separator
     bytes32 public constant EIP712_TYPEHASH =
@@ -86,6 +92,7 @@ abstract contract Votes is IVotes, IVotesToken {
         Checkpoints.delegate(delegator, delegatee);
     }
 
+    /// @dev this overrides an OZ hook so that we can update voting units when tokens are transferred
     function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {
         Checkpoints.transferVotingUnits(from, to, amount);
     }
