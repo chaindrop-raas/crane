@@ -5,6 +5,8 @@ import "src/interfaces/IAccessControl.sol";
 import "src/OrigamiGovernanceToken.sol";
 import "src/utils/L2StandardERC20.sol";
 
+import "@oz/proxy/transparent/ProxyAdmin.sol";
+import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@std/Script.sol";
 
 contract GrantPermissions is Script {
@@ -49,6 +51,18 @@ contract ConfigureContractsForBridge is Script {
         OrigamiGovernanceToken govToken = OrigamiGovernanceToken(govTokenProxy);
         govToken.enableTransfer();
         govToken.enableBurn();
+        vm.stopBroadcast();
+    }
+}
+
+contract DeployAndRenounceNewProxyAdmin is Script {
+    function run(address oldProxyAdmin, address payable transparentProxy) public {
+        vm.startBroadcast();
+        ProxyAdmin oldAdmin = ProxyAdmin(oldProxyAdmin);
+        ProxyAdmin newProxyAdmin = new ProxyAdmin();
+        TransparentUpgradeableProxy tug = TransparentUpgradeableProxy(transparentProxy);
+        oldAdmin.changeProxyAdmin(tug, address(newProxyAdmin));
+        newProxyAdmin.renounceOwnership();
         vm.stopBroadcast();
     }
 }

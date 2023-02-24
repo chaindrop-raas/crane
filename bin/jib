@@ -408,7 +408,7 @@ deployGovernanceTokenProxy() {
     $argc_implementation $argc_proxy_admin $argc_contract_admin \
     $argc_salt "$argc_name" $argc_symbol $argc_supply_cap \
     ${options[@]} --private-key $argc_private_key \
-    --sig "deployGovernanceTokenProxy(address,string,address,address,address,string,string,uint256)"
+    --sig "deployGovernanceTokenProxy(address,address,address,string,string,string,uint256)"
 }
 
 # @cmd configure governance token proxy for L2
@@ -454,11 +454,32 @@ deployMembershipTokenProxy() {
   declare -a options=()
   options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
   CREATE3_FACTORY=$argc_c3f forge script \
-    script/DeterministicDeploy.s.sol:DeterministicallyDeployGovernanceToken \
+    script/DeterministicDeploy.s.sol:DeterministicallyDeployMembershipToken \
     $argc_implementation $argc_proxy_admin $argc_contract_admin \
     $argc_salt "$argc_name" $argc_symbol $argc_base_uri ${options[@]} \
     --private-key $argc_private_key \
-    --sig "deployMembershipTokenProxy(address,string,address,address,address,string,string,string)"
+    --sig "deployMembershipTokenProxy(address,address,address,string,string,string,string)"
+}
+
+# @cmd deploy a new proxy admin for a transparent proxy and renounce ownership
+# @alias deploy-and-renounce-new-proxy-admin
+# @arg proxy-admin! the address of the current proxy admin
+# @arg transparent-proxy! the address of the transparent proxy
+# @option -p --private-key!
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+# @flag --really-really-really-sure if you are sure you want to do this
+deployAndRenounceNewProxyAdmin() {
+  if [ -z "$argc_really_really_really_sure" ]; then
+    echo "***                       ~~~ WARNING ~~~                            ***"
+    echo "This command will deploy a new proxy admin and renounce ownership of it."
+    echo "This is permanent, and cannot be undone. Proceed with caution."
+    echo "You must pass --really-really-really-sure to execute this command."
+    exit 1
+  fi
+  forge script script/Util.s.sol:DeployAndRenounceNewProxyAdmin \
+    $argc_proxy_admin $argc_transparent_proxy \
+    --private-key $argc_private_key --rpc-url $argc_rpc_url --broadcast \
+    --sig "run(address,address)"
 }
 
 eval $(argc "$0" "$@")
