@@ -8,7 +8,9 @@ import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 /**
  * @title L2StandardERC20
+ * @author Origami
  * @notice an ERC20 extension that is compatible with the Optimism bridge
+ * @custom:security-contact contract-security@joinorigami.com
  */
 contract L2StandardERC20 is ERC20Base, IL2StandardERC20 {
     bytes32 public constant L2BRIDGE_INFO_STORAGE_POSITION = keccak256("com.origami.l2bridge.info");
@@ -30,18 +32,12 @@ contract L2StandardERC20 is ERC20Base, IL2StandardERC20 {
         // solhint-enable no-inline-assembly
     }
 
-    /**
-     * @notice returns the address of the paired ERC20 token on L1
-     * @dev this is part of the ILegacyMintableERC20 interface
-     */
+    /// @inheritdoc ILegacyMintableERC20
     function l1Token() public view returns (address) {
         return l2BridgeInfoStorage().l1Token;
     }
 
-    /**
-     * @notice returns the address of the bridge contract on L2
-     * @dev this is _not_ part of the ILegacyMintableERC20 interface, but is still required for compatibility
-     */
+    /// @inheritdoc IL2StandardERC20
     function l2Bridge() public view returns (address) {
         return l2BridgeInfoStorage().l2Bridge;
     }
@@ -76,28 +72,18 @@ contract L2StandardERC20 is ERC20Base, IL2StandardERC20 {
             || interfaceId == type(IL2StandardERC20).interfaceId || super.supportsInterface(interfaceId);
     }
 
-    /**
-     * @notice mints tokens on L2
-     * @param account address to mint tokens to
-     * @param amount amount of tokens to mint
-     * @dev overriden so we can emit Mint, which is part of the IL2StandardERC20 interface
-     */
+    /// @inheritdoc ILegacyMintableERC20
     function mint(address account, uint256 amount)
         public
         virtual
-        override(ERC20Base, IL2StandardERC20)
+        override(ERC20Base, ILegacyMintableERC20)
         onlyRole(MINTER_ROLE)
     {
         super._mint(account, amount);
         emit Mint(account, amount);
     }
 
-    /**
-     * @notice burns tokens on L2
-     * @param account address to burn tokens from
-     * @param amount amount of tokens to burn
-     * @dev overriden so we can emit Burn, which is part of the IL2StandardERC20 interface
-     */
+    /// @inheritdoc ILegacyMintableERC20
     function burn(address account, uint256 amount) public virtual override onlyRole(BURNER_ROLE) {
         super._burn(account, amount);
         emit Burn(account, amount);
