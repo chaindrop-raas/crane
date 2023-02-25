@@ -219,25 +219,27 @@ contract ERC20Base is
 
     /// End OpenZeppelin hooks --^
 
-    /// @dev this modifier allows us to ensure that something may only occur when burning is disabled
+    /// @dev this modifier prevents calls to functions it is applied to unless burning is disabled.
     modifier whenNotBurnable() {
         require(!burnable(), "Burnable: burning is enabled");
         _;
     }
 
-    /// @dev this modifier allows us to ensure that something may only occur when burning is enabled
+    /// @dev this modifier prevents calls to functions it is applied to unless
+    /// burning is enabled or when the caller has the `BURNER_ROLE` role.
     modifier whenBurnable() {
         require(hasRole(BURNER_ROLE, _msgSender()) || burnable(), "Burnable: burning is disabled");
         _;
     }
 
-    /// @dev this modifier allows us to ensure that something may only occur when transfers are disabled
+    /// @dev this modifier prevents calls to functions it is applied to unless transfers are disabled.
     modifier whenNontransferrable() {
         require(!transferrable(), "Transferrable: transfers are enabled");
         _;
     }
 
-    /// @dev this modifier allows us to ensure that something may only occur when the transfers are enabled
+    /// @dev this modifier prevents calls to functions it is applied to unless
+    /// transfers are enabled or when the caller has the `TRANSFERRER_ROLE` role.
     modifier whenTransferrable() {
         require(hasRole(TRANSFERRER_ROLE, _msgSender()) || transferrable(), "Transferrable: transfers are disabled");
         _;
