@@ -3,20 +3,16 @@ pragma solidity 0.8.16;
 
 import "src/utils/Checkpoints.sol";
 import "src/interfaces/IVotes.sol";
+import "src/interfaces/IVotesToken.sol";
 
 import "@oz/utils/cryptography/ECDSA.sol";
-
-interface IVotesToken {
-    function balanceOf(address owner) external view returns (uint256 balance);
-    function name() external view returns (string memory);
-    function version() external pure returns (string memory);
-}
 
 /**
  * @title Votes
  * @notice Implements voting weight calculation for Origami Governance Token
  * @dev This contract is abstract and must be inherited by a contract that implements IVotesToken
  * NB: this is a lightweight integration around Checkpoints.sol that implements IVotes
+ * @custom:security-contact contract-security@joinorigami.com
  */
 abstract contract Votes is IVotes, IVotesToken {
     /// @notice the typehash for the EIP712 domain separator

@@ -7,9 +7,14 @@ import "src/utils/TransferLocksStorage.sol";
 import "@diamond/interfaces/IERC165.sol";
 
 /**
+ * @title TransferLocks
+ * @author Origami
  * @notice this library enables time-locked transfers of ERC20 tokens.
+ * Transferlocks are the inverse of a vesting schedule. They allow the holder to
+ * vote with their weight but not to tranfer them before a certain date.
  * @dev TransferLocks are resilient to timestamp manipulation by using
  * block.timestamp, locks will typically be measured in months, not seconds.
+ * @custom:security-contact contract-security@joinorigami.com
  */
 abstract contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
     /// @inheritdoc ITransferLocks
@@ -71,6 +76,7 @@ abstract contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
         return interfaceId == type(ITransferLocks).interfaceId;
     }
 
+    /// @dev Modifier to check that the deadline is in the future and the amount is not greater than the available balance.
     modifier whenValidLock(uint256 amount, uint256 deadline) {
         // slither-disable-next-line timestamp
         require(deadline > block.timestamp, "TransferLock: deadline must be in the future");
