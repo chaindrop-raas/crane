@@ -73,7 +73,7 @@ abstract contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
 
     /// @inheritdoc IERC165
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC20Base, IERC165) returns (bool) {
-        return interfaceId == type(ITransferLocks).interfaceId;
+        return interfaceId == type(ITransferLocks).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @dev Modifier to check that the deadline is in the future and the amount is not greater than the available balance.
