@@ -49,7 +49,7 @@ contract OrigamiGovernorProposalTest is GovernorDiamondHelper {
             604801,
             1209601,
             "New proposal"
-            );
+        );
         coreFacet.propose(targets, values, calldatas, "New proposal");
     }
 

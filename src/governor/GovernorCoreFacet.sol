@@ -319,7 +319,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             ps.snapshot,
             ps.deadline,
             description
-            );
+        );
     }
 
     /// @dev internal function to cast a vote on a proposal; restricts voting to members

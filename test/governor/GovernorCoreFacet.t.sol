@@ -141,7 +141,7 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
             604801,
             1209601,
             description
-            );
+        );
         coreFacet.proposeBySig(targets, values, calldatas, description, 0, v, r, s);
     }
 
@@ -157,7 +157,7 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
             604801,
             1209601,
             description
-            );
+        );
         coreFacet.proposeWithParamsBySig(targets, values, calldatas, description, "", nonce, v, r, s);
     }
 
@@ -173,7 +173,7 @@ contract OrigamiGovernorProposeBySigTest is GovernorDiamondHelper {
             604801,
             1209601,
             description
-            );
+        );
         coreFacet.proposeWithTokenAndCountingStrategyBySig(
             targets,
             values,
