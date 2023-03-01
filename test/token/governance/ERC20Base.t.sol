@@ -373,6 +373,16 @@ contract PauseGovernanceTokenTest is ERC20BaseHelper {
         vm.prank(mintee);
         token.transfer(minter, 100);
     }
+
+    function testBurnerRoleCannotBurnWhenPaused() public {
+        token.grantRole(token.BURNER_ROLE(), mintee);
+        token.mint(mintee, 100);
+        token.pause();
+        vm.stopPrank();
+        vm.expectRevert("Pausable: paused");
+        vm.prank(mintee);
+        token.burn(100);
+    }
 }
 
 contract TransferGovernanceTokenTest is ERC20BaseHelper {
