@@ -81,7 +81,8 @@ contract OrigamiGovernanceToken is ERC20Base, TransferLocks, Votes {
     }
 
     /// @inheritdoc ERC20Upgradeable
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20Upgradeable, Votes) {
+    function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20Upgradeable) {
+        transferVotingUnits(from, to, amount);
         super._afterTokenTransfer(from, to, amount);
     }
 }

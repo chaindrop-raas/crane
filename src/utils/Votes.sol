@@ -88,8 +88,13 @@ abstract contract Votes is IVotes, IVotesToken {
         Checkpoints.delegate(delegator, delegatee);
     }
 
-    /// @dev this overrides an OZ hook so that we can update voting units when tokens are transferred
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {
+    /**
+     * @dev internal function to transfer voting units from one account to another. This should be called by contracts inheriting this one after a transfer.
+     * @param from the address to transfer voting units from
+     * @param to the address to transfer voting units to
+     * @param amount the amount of voting units to transfer
+     */
+    function transferVotingUnits(address from, address to, uint256 amount) internal {
         Checkpoints.transferVotingUnits(from, to, amount);
     }
 }

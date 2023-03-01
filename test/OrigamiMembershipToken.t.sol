@@ -492,6 +492,9 @@ contract RevokeMembershipTokenTest is OMTHelper {
 }
 
 contract MembershipTokenVotingPowerTest is OMTHelper {
+    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
+
     function setUp() public {
         vm.startPrank(owner);
     }
@@ -570,6 +573,36 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
 
         // delegate to self
         vm.prank(mintee);
+        token.delegate(delegatee);
+
+        // visit the next block and make assertions
+        assertEq(token.delegates(mintee), delegatee);
+    }
+
+    function testDelegateEmitsDelegateChangedEvent(address delegatee) public {
+        // mint token as owner
+        token.safeMint(mintee);
+        vm.stopPrank();
+
+        // delegate to self
+        vm.prank(mintee);
+        vm.expectEmit(true, true, true, true, address(token));
+        emit DelegateChanged(mintee, address(0), delegatee);
+        token.delegate(delegatee);
+
+        // visit the next block and make assertions
+        assertEq(token.delegates(mintee), delegatee);
+    }
+
+    function testDelegateEmitsDelegateVotesChangedEvent(address delegatee) public {
+        // mint token as owner
+        token.safeMint(mintee);
+        vm.stopPrank();
+
+        // delegate to self
+        vm.prank(mintee);
+        vm.expectEmit(true, true, true, true, address(token));
+        emit DelegateVotesChanged(delegatee, 0, 1);
         token.delegate(delegatee);
 
         // visit the next block and make assertions

@@ -236,7 +236,7 @@ contract OrigamiMembershipToken is
         internal
         override(ERC721Upgradeable)
     {
-        Checkpoints.transferVotingUnits(from, to, batchSize);
+        transferVotingUnits(from, to, batchSize);
         super._afterTokenTransfer(from, to, tokenId, batchSize);
     }
 
