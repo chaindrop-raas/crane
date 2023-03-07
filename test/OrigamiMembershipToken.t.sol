@@ -580,6 +580,8 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
     }
 
     function testDelegateEmitsDelegateChangedEvent(address delegatee) public {
+        vm.assume(delegatee != address(0));
+
         // mint token as owner
         token.safeMint(mintee);
         vm.stopPrank();
@@ -595,6 +597,8 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
     }
 
     function testDelegateEmitsDelegateVotesChangedEvent(address delegatee) public {
+        vm.assume(delegatee != address(0));
+
         // mint token as owner
         token.safeMint(mintee);
         vm.stopPrank();
