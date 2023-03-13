@@ -62,10 +62,15 @@ $ forge test -vvv -w
 
 ### Coverage
 
-Generate a coverage report:
+Generate a coverage report: 
 
 ```sh
 $ forge coverage
+```
+Additionally, as part of `jib` you can run a coverage report that generates an html view of the coverage. Note: In order to run this coverage report you will need `lcov` and `genhtml`. You can install these with your package manager of choice.
+
+```sh
+$ ./bin/jib coverage
 ```
 
 ## Linting
@@ -73,7 +78,7 @@ $ forge coverage
 Run the linter manually:
 
 ```sh
-$ solhint src/*.sol
+$ npx solhint src/**/*.sol
 ```
 
 ## Deploying
