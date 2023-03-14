@@ -28,6 +28,7 @@ We power our solidity development with `foundry`. The [book](https://book.getfou
    - `foundryup`
 3. Install `argc`: `cargo install argc`
 4. Install `solhint`: `npm ci`
+5. Install `lcov` and `genhtml` (in order to support running coverage via `jib`)
 
 
 NB: if you intend to run the scripts in `./script` directly or via `./bin/jib`, ensure you've created a `.envrc` file (`cp {example,}.envrc`), populated its values and exported them to your shell (`direnv` is a convenient way of managing this).
@@ -62,10 +63,10 @@ $ forge test -vvv -w
 
 ### Coverage
 
-Generate a coverage report:
+Generate a coverage report: 
 
 ```sh
-$ forge coverage
+$ ./bin/jib coverage
 ```
 
 ## Linting
@@ -73,7 +74,7 @@ $ forge coverage
 Run the linter manually:
 
 ```sh
-$ solhint src/*.sol
+$ npx solhint src/**/*.sol
 ```
 
 ## Deploying
