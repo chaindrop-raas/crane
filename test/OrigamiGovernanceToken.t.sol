@@ -559,3 +559,96 @@ contract OGTQSP3VotesTest is OGTHelper {
         assertEq(token.getVotes(accountTwo), 100);
     }
 }
+
+contract OGTQSP4VotesTest is OGTHelper {
+    function testExploit() public {
+        address accountOne = address(0x1);
+        address accountTwo = address(0x2);
+        address accountThree = address(0x3);
+        address dex = address(0x42);
+
+        /**
+         * NB: Delegation is not transitive. This means that if address_1
+         * delegates to address_2 and address_2 delegates to address_3,
+         * address_1 will not have delegated its weight to address_3.
+         */
+
+        // give the "DEX" some tokens and make the token transferable
+        vm.startPrank(owner);
+        token.mint(dex, 1000000);
+        token.enableTransfer();
+        // set initial balances
+        token.mint(accountOne, 100);
+        token.mint(accountTwo, 100);
+        vm.stopPrank();
+
+        // Step 1.
+        // address_1 which has a token balance of 100 and a voting power of 100.
+        vm.prank(accountOne);
+        // we assume QS expects accounts to have self-delegated by default
+        token.delegate(accountOne);
+        assertEq(token.balanceOf(accountOne), 100);
+        assertEq(token.getVotes(accountOne), 100);
+
+        // address_2 which has a token balance of 100 and a voting power of 100.
+        vm.prank(accountTwo);
+        // we assume QS expects accounts to have self-delegated by default
+        token.delegate(accountTwo);
+        assertEq(token.balanceOf(accountTwo), 100);
+        assertEq(token.getVotes(accountTwo), 100);
+
+        // address_3 has a token balance of 0 and a voting power of 0.
+        vm.prank(accountThree);
+        // we assume QS expects accounts to have self-delegated by default
+        token.delegate(accountThree);
+        assertEq(token.balanceOf(accountThree), 0);
+        assertEq(token.getVotes(accountThree), 0);
+
+        // Step 2.
+        // address_2 calls token.delegate(address_3)
+        vm.prank(accountTwo);
+        token.delegate(accountThree);
+
+        assertEq(token.balanceOf(accountOne), 100);
+        assertEq(token.getVotes(accountOne), 100);
+        assertEq(token.balanceOf(accountTwo), 100);
+        assertEq(token.getVotes(accountTwo), 0);
+        assertEq(token.balanceOf(accountThree), 0);
+        assertEq(token.getVotes(accountThree), 100);
+
+        // Step 3.
+        // address_1 calls token.delegate(account_2)
+        vm.prank(accountOne);
+        token.delegate(accountTwo);
+
+        assertEq(token.balanceOf(accountOne), 100);
+        assertEq(token.getVotes(accountOne), 0);
+        assertEq(token.balanceOf(accountTwo), 100);
+        assertEq(token.getVotes(accountTwo), 100);
+        assertEq(token.balanceOf(accountThree), 0);
+        assertEq(token.getVotes(accountThree), 100);
+
+        // Step 4.
+        // address_2 transfers 100 tokens to address_3
+        vm.prank(accountTwo);
+        token.transfer(accountThree, 100);
+
+        assertEq(token.balanceOf(accountOne), 100);
+        assertEq(token.getVotes(accountOne), 0);
+        assertEq(token.balanceOf(accountTwo), 0);
+        // QS asserts that the voting power of address_2 is 0
+        assertEq(token.getVotes(accountTwo), 100);
+        assertEq(token.balanceOf(accountThree), 100);
+        // QS asserts that the voting power of address_3 is 200
+        assertEq(token.getVotes(accountThree), 100);
+
+        // Step 5.
+        // address_1 self-delegates
+        vm.prank(accountOne);
+        token.delegate(accountOne);
+
+        assertEq(token.balanceOf(accountOne), 100);
+        // QS asserts that the voting power of address_1 is 0
+        assertEq(token.getVotes(accountOne), 100);
+    }
+}
