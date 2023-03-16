@@ -495,3 +495,67 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
         assertEq(token.getAvailableBalanceAt(address(0x43), 501), 500000);
     }
 }
+
+contract OGTQSP3VotesTest is OGTHelper {
+    function testExploit() public {
+        address accountOne = address(0x01);
+        address accountTwo = address(0x02);
+        address dex = address(0x42);
+
+        // give the "DEX" some tokens and make the token transferable
+        vm.startPrank(owner);
+        token.mint(dex, 1000000);
+        token.enableTransfer();
+        // set initial balances
+        token.mint(accountOne, 100);
+        token.mint(accountTwo, 100);
+        vm.stopPrank();
+
+        // Step 1.
+        // address_1 which has a token balance of 100 and a voting power of 100.
+        vm.prank(accountOne);
+        token.delegate(accountOne);
+        assertEq(token.balanceOf(accountOne), 100);
+        assertEq(token.getVotes(accountOne), 100);
+
+        // address_2 which has a token balance of 100 and a voting power of 100.
+        vm.prank(accountTwo);
+        token.delegate(accountTwo);
+        assertEq(token.balanceOf(accountTwo), 100);
+        assertEq(token.getVotes(accountTwo), 100);
+
+        // Step 2.
+        // address_1 calls token.delegate(address_2)
+        vm.prank(accountOne);
+        token.delegate(accountTwo);
+
+        assertEq(token.balanceOf(accountOne), 100);
+        assertEq(token.getVotes(accountOne), 0);
+        assertEq(token.balanceOf(accountTwo), 100);
+        assertEq(token.getVotes(accountTwo), 200);
+
+        // Step 3.
+        // address_1 acquires 100 tokens from a DEX
+        vm.prank(dex);
+        token.transfer(accountOne, 100);
+
+        assertEq(token.balanceOf(accountOne), 200);
+        // QS asserts that their voting power is 100, but it is zero because they delegated previously
+        assertEq(token.getVotes(accountOne), 0);
+        assertEq(token.balanceOf(accountTwo), 100);
+        // QS asserts that their voting power is 200, but it is 300 because address_1 delegated to them: 200 + 100 = 300
+        assertEq(token.getVotes(accountTwo), 300);
+
+        // Step 4.
+        // address_1 calls token.delegate(address_1)
+        vm.prank(accountOne);
+        token.delegate(accountOne);
+
+        assertEq(token.balanceOf(accountOne), 200);
+        // QS asserts their voting power is 300, but it is actually 200
+        assertEq(token.getVotes(accountOne), 200);
+        assertEq(token.balanceOf(accountTwo), 100);
+        // QS asserts their voting power has been stolen (is zero), but it is actually 100
+        assertEq(token.getVotes(accountTwo), 100);
+    }
+}
