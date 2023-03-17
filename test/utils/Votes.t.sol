@@ -19,9 +19,7 @@ contract VotesTest is Votes {
         transferVotingUnits(sender, recipient, amount);
     }
 
-    function balanceOf(
-        address owner
-    ) external view override returns (uint256 balance) {
+    function balanceOf(address owner) external view override returns (uint256 balance) {
         return balances[owner];
     }
 

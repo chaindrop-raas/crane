@@ -272,6 +272,43 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
         assertEq(token.getVotes(other), 90);
     }
 
+    function testTransferWhenDelegationExists() public {
+        address other = address(0x7);
+
+        // mint some more tokens as owner
+        vm.warp(43);
+        vm.prank(owner);
+        token.mint(other, 100);
+
+        // make sure mintee is self delegated
+        vm.prank(mintee);
+        token.delegate(mintee);
+
+        // other should have balance of 100
+        assertEq(token.balanceOf(other), 100);
+
+        // delegate to mintee from other
+        vm.startPrank(other);
+        token.delegate(mintee);
+        assertEq(token.getVotes(mintee), 200);
+        assertEq(token.getVotes(other), 0);
+
+        assertEq(token.balanceOf(other), 100);
+
+        // transfer 10 tokens to mintee
+        token.transfer(mintee, 10);
+
+        // check that mintee has 110 votes
+        assertEq(token.balanceOf(mintee), 110);
+        // should still be 200 because it is self delegated
+        assertEq(token.getVotes(mintee), 200);
+
+        // // check that other has 90 as balance and 0 voting power
+        // assertEq(token.balanceOf(mintee), 110);
+        // assertEq(token.getVotes(other), 0);
+        vm.stopPrank();
+    }
+
     function testBurnAndMintPastSupplyAndPastVotesInteractions() public {
         vm.prank(owner);
         token.enableBurn();
@@ -495,4 +532,3 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
         assertEq(token.getAvailableBalanceAt(address(0x43), 501), 500000);
     }
 }
-
