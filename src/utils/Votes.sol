@@ -44,9 +44,7 @@ abstract contract Votes is IVotes, IVotesToken {
 
     /// @inheritdoc IVotes
     function delegate(address delegatee) external {
-        address oldDelegate = Checkpoints.delegates(msg.sender);
-        Checkpoints.delegate(msg.sender, delegatee);
-        Checkpoints.moveDelegation(oldDelegate, delegatee, IVotesToken(this).balanceOf(msg.sender));
+        handleDelegation(msg.sender, delegatee);
     }
 
     /// @inheritdoc IVotes
@@ -85,7 +83,7 @@ abstract contract Votes is IVotes, IVotesToken {
         require(nonce == ds.nonces[delegator], "Invalid nonce");
 
         ds.nonces[delegator]++;
-        Checkpoints.delegate(delegator, delegatee);
+        handleDelegation(delegator, delegatee);
     }
 
     /**
@@ -96,5 +94,16 @@ abstract contract Votes is IVotes, IVotesToken {
      */
     function transferVotingUnits(address from, address to, uint256 amount) internal {
         Checkpoints.transferVotingUnits(from, to, amount);
+    }
+
+    /**
+     * @dev internal function to delegate voting units from one account to another. This should be called by contracts inheriting this one after a transfer.
+     * @param delegator the address to delegate voting units from
+     * @param delegatee the address to delegate voting units to
+     */
+    function handleDelegation(address delegator, address delegatee) internal {
+        address oldDelegate = Checkpoints.delegates(delegator);
+        Checkpoints.delegate(delegator, delegatee);
+        Checkpoints.moveDelegation(oldDelegate, delegatee, IVotesToken(this).balanceOf(delegator));
     }
 }
