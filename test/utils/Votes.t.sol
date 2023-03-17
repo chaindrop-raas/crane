@@ -19,7 +19,9 @@ contract VotesTest is Votes {
         transferVotingUnits(sender, recipient, amount);
     }
 
-    function balanceOf(address owner) external view override returns (uint256 balance) {
+    function balanceOf(
+        address owner
+    ) external view override returns (uint256 balance) {
         return balances[owner];
     }
 
@@ -69,9 +71,11 @@ contract BaselineTest is VotesTestHelper {
 
 contract VotesCanAlwaysBeRecalledTest is VotesTestHelper {
     function testDelegationRevoke() public {
-        // We want to ensure that when voting power has been
-        // delegated and new tokens are introduced that the revoke
-        // doesn't return more voting power than was originally delegated
+        /** 
+        * We want to ensure that when voting power has been
+        * delegated and new tokens are introduced that the revoke
+ doesn't return more voting power than was originally delegated
+        */
 
         // Given 1 exchange
         vm.prank(owner);

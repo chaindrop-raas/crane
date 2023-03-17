@@ -303,9 +303,9 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
         // should still be 200 because it is self delegated
         assertEq(token.getVotes(mintee), 200);
 
-        // // check that other has 90 as balance and 0 voting power
-        // assertEq(token.balanceOf(mintee), 110);
-        // assertEq(token.getVotes(other), 0);
+        // check that other has 90 as balance and 0 voting power
+        assertEq(token.balanceOf(other), 90);
+        assertEq(token.getVotes(other), 0);
         vm.stopPrank();
     }
 

@@ -596,7 +596,7 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
         assertEq(token.delegates(mintee), delegatee);
     }
 
-    function testTransferMTTransfersVotingPower() public {
+    function testTransferOMTMovesVotingPower() public {
         address other = address(0x7);
 
         // mint some more tokens as owner
@@ -610,7 +610,7 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
         assertEq(token.getVotes(mintee), 1);
         assertEq(token.getVotes(other), 1);
 
-        // transfer 10 tokens to mintee
+        // transfer membership token to mintee
         vm.prank(other);
         token.transferFrom(other, mintee, 1);
 
