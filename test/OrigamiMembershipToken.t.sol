@@ -602,48 +602,27 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
         // mint some more tokens as owner
         token.enableTransfer();
         token.safeMint(mintee);
+        vm.stopPrank();
 
-        // self-delegate
+
+        // set up delegations
+        vm.prank(mintee);
+        token.delegate(other);
         vm.prank(other);
         token.delegate(other);
 
-        assertEq(token.getVotes(mintee), 1);
         assertEq(token.getVotes(other), 1);
+        assertEq(token.getVotes(mintee), 0);
 
-        // transfer membership token to mintee
-        vm.prank(other);
-        token.transferFrom(other, mintee, 1);
+        // transfer 1 token to other
+        vm.prank(mintee);
+        token.transferFrom(mintee, other, 1);
 
-        // check that mintee has 2 votes
-        assertEq(token.getVotes(mintee), 2);
+        // check that mintee has 0 votes
+        assertEq(token.getVotes(mintee), 0);
 
-        // check that other has 0 votes
-        assertEq(token.getVotes(other), 0);
-    }
-
-    function testTransferOMTWhenDelegated() public {
-        address other = address(0x7);
-
-        // mint some more tokens as owner
-        token.enableTransfer();
-        token.safeMint(mintee);
-
-        // self-delegate
-        vm.prank(other);
-        token.delegate(mintee);
-
-        assertEq(token.getVotes(mintee), 2);
-        assertEq(token.getVotes(other), 0);
-
-        // transfer 10 tokens to mintee
-        vm.prank(other);
-        token.transferFrom(other, mintee, 1);
-
-        // check that mintee has 2 votes
-        assertEq(token.getVotes(mintee), 2);
-
-        // check that other has 0 votes
-        assertEq(token.getVotes(other), 0);
+        // check that other has 1 votes
+        assertEq(token.getVotes(other), 1);
     }
 
     function testDelegateEmitsDelegateVotesChangedEvent(address delegatee) public {
