@@ -519,6 +519,22 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
         assertEq(token.getVotes(mintee), 0);
     }
 
+    function testDelegateBySig() public {
+        address signer = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+        token.safeMint(signer);
+        vm.stopPrank();
+
+        bytes32 r = 0x774efa4fbbf362b15afc5ab93b586753240e34db78e4c406b946282cb737caad;
+        bytes32 s = 0x665fe98c8cd81dc3de182c6e0054194a3abcda2d7fa0a220ed4bf128769d0c99;
+        uint8 v = 28;
+
+        vm.prank(signer);
+        token.delegateBySig(recipient, 0, 242, v, r, s);
+
+        assertEq(token.getVotes(signer), 0);
+        assertEq(token.getVotes(recipient), 1);
+    }
+
     function testGetPastVotesSnapshotsByBlock() public {
         // mint token as owner
         token.enableTransfer();

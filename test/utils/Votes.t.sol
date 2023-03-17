@@ -33,13 +33,19 @@ contract VotesTest is Votes {
 }
 
 abstract contract VotesTestHelper is Test {
+    address public signer = address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
+
     address public deployer = address(0x1);
     address public owner = address(0x2);
     address public recipient = address(0x3);
 
+    address public accountOne = address(0x4);
+    address public accountTwo = address(0x5);
+    address public accountThree = address(0x6);
+
     VotesTest public votes;
 
-    function setUp() public {
+    constructor() {
         vm.prank(owner);
         votes = new VotesTest();
     }
@@ -65,6 +71,20 @@ contract BaselineTest is VotesTestHelper {
         assertEq(votes.getPastVotes(recipient, 1), 0);
         assertEq(votes.getPastVotes(recipient, 42), 100);
     }
+
+    function testDelegateBySig() public {
+        bytes32 accountOneR = 0x30c6da6c49bf7e3231438b6b2ca58532998303d4d764e9268c0a28814405d0c2;
+        bytes32 accountOneS = 0x19f31dd0a9b12cdd840ff3a26aa78d9d281a99dff9470bc73da84d301868ba0a;
+        uint8 accountOneV = 28;
+
+        votes.mint(signer, 100);
+
+        vm.prank(signer);
+        votes.delegateBySig(accountOne, 0, 242, accountOneV, accountOneR, accountOneS);
+
+        assertEq(votes.getVotes(signer), 0);
+        assertEq(votes.getVotes(accountOne), 100);
+    }
 }
 
 contract VotesCanAlwaysBeRecalledTest is VotesTestHelper {
@@ -81,13 +101,11 @@ contract VotesCanAlwaysBeRecalledTest is VotesTestHelper {
         votes.mint(dex, 200000);
 
         // Given two account each with voting power 100 and balance 100
-        address accountOne = address(0x4);
         votes.mint(accountOne, 100);
         vm.prank(accountOne);
         votes.delegate(accountOne);
         assertEq(votes.getVotes(accountOne), 100);
 
-        address accountTwo = address(0x5);
         votes.mint(accountTwo, 100);
         vm.prank(accountTwo);
         votes.delegate(accountTwo);
@@ -143,18 +161,15 @@ contract VoteDelegationTest is VotesTestHelper {
          */
 
         // Given 2 accounts with balance 100 both self delegated
-        address accountOne = address(0x4);
         votes.mint(accountOne, 100);
         vm.prank(accountOne);
         votes.delegate(accountOne);
 
-        address accountTwo = address(0x5);
         votes.mint(accountTwo, 100);
         vm.prank(accountTwo);
         votes.delegate(accountTwo);
 
         // And 1 account with balance 0 also self delegated
-        address accountThree = address(0x3);
         vm.prank(accountThree);
         votes.delegate(accountThree);
 
