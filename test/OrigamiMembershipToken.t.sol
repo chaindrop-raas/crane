@@ -621,7 +621,7 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
         assertEq(token.getVotes(other), 0);
     }
 
-    function testTransferMTWhenDelegated() public {
+    function testTransferOMTWhenDelegated() public {
         address other = address(0x7);
 
         // mint some more tokens as owner
