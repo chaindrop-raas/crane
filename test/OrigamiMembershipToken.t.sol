@@ -620,7 +620,6 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
         token.safeMint(mintee);
         vm.stopPrank();
 
-
         // set up delegations
         vm.prank(mintee);
         token.delegate(other);
