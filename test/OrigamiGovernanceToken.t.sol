@@ -387,6 +387,40 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
         token.addTransferLock(101, 1000);
     }
 
+    function testTransferLockAllowsUnlockedBalanceTransfer() public {
+        address other = address(0x7);
+        vm.warp(1673049600); // 2023-01-01
+        vm.startPrank(mintee);
+        
+        // start off with 100 tokens
+        assertEq(token.balanceOf(mintee), 100);
+        
+        // add a lock for the full amount until March 21, 2023
+        token.addTransferLock(100, 1679426715); //2023-03-21
+        
+        assertEq(token.balanceOf(mintee), 100);
+        
+        // add another lock for full amount starting the very next day
+        assertEq(block.timestamp, 1673049600);
+        assertEq(token.getAvailableBalanceAt(mintee, 1679426715), 0);
+        token.addTransferLock(100, 1679513115); //2023-03-22
+
+        assertEq(token.getTransferLockTotalAt(mintee, 1673049600), 100);
+              
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        token.mint(mintee, 50);
+        vm.stopPrank();
+
+        // mintee should now have 150 tokens (100 locked until March 21/22, 2023 and 50 unlocked)
+        vm.startPrank(mintee);
+        assertEq(token.balanceOf(mintee), 150);
+
+        token.transfer(other, 50);
+        vm.stopPrank(); 
+    }
+
     function testCannotTransferWhileLocked() public {
         vm.warp(1673049600); // 2023-01-01
         vm.prank(mintee);

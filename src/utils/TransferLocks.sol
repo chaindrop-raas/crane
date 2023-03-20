@@ -16,7 +16,7 @@ import "@diamond/interfaces/IERC165.sol";
  * block.timestamp, locks will typically be measured in months, not seconds.
  * @custom:security-contact contract-security@joinorigami.com
  */
-abstract contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
+contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
     /// @inheritdoc ITransferLocks
     function addTransferLock(uint256 amount, uint256 deadline) public whenValidLock(amount, deadline) {
         TransferLocksStorage.addTransferLock(msg.sender, amount, deadline);
@@ -81,7 +81,7 @@ abstract contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
         // slither-disable-next-line timestamp
         require(deadline > block.timestamp, "TransferLock: deadline must be in the future");
         require(
-            amount <= getAvailableBalanceAt(msg.sender, deadline),
+            amount <= getAvailableBalanceAt(msg.sender, block.timestamp),
             "TransferLock: amount cannot exceed available balance"
         );
         _;
