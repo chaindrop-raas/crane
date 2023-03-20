@@ -347,6 +347,7 @@ contract PauseGovernanceTokenTest is ERC20BaseHelper {
     function testCannotBurnWhenPaused() public {
         token.mint(mintee, 100);
         token.pause();
+        token.enableBurn();
         vm.stopPrank();
         vm.expectRevert("Pausable: paused");
         vm.prank(mintee);
