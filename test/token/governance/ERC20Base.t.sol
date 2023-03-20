@@ -199,11 +199,22 @@ contract BurnGovernanceTokenTest is ERC20BaseHelper {
     }
 
     function testCannotBurnAsNonHolder() public {
+        token.enableBurn();
         vm.stopPrank();
         vm.startPrank(minter);
         token.mint(mintee, 100);
         vm.expectRevert("ERC20: insufficient allowance");
         token.burnFrom(mintee, 10);
+    }
+
+    function testCannotBurnAsHolderWhenBurnIsDisabled() public {
+        vm.stopPrank();
+        vm.prank(minter);
+        token.mint(mintee, 100);
+        assertEq(token.balanceOf(mintee), 100);
+        vm.prank(mintee);
+        vm.expectRevert("Burnable: burning is disabled");
+        token.burn(100);
     }
 
     function testCanBurnAsHolderWhenBurnIsEnabled(uint96 amount) public {

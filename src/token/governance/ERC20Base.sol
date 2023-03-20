@@ -187,6 +187,16 @@ contract ERC20Base is
         return super.transfer(to, amount);
     }
 
+    /// @inheritdoc ERC20BurnableUpgradeable
+    function burn(uint256 amount) public override whenBurnable {
+        super.burn(amount);
+    }
+
+    /// @inheritdoc ERC20BurnableUpgradeable
+    function burnFrom(address account, uint256 amount) public override whenBurnable {
+        super.burnFrom(account, amount);
+    }
+
     /**
      * @notice Query if a contract implements an interface
      * @param interfaceId The interface identifier, as specified in ERC-165
