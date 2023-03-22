@@ -61,9 +61,9 @@ contract L2StandardERC20 is ERC20Base, IL2StandardERC20 {
      */
     function setL2Bridge(address newL2Bridge) public onlyRole(DEFAULT_ADMIN_ROLE) {
         address oldL2Bridge = l2BridgeInfoStorage().l2Bridge;
-        require(newL2Bridge != oldL2Bridge, "L2StandardERC20: L2 bridge cannot be set to same L2 bridge");        
+        require(newL2Bridge != oldL2Bridge, "L2StandardERC20: L2 bridge cannot be set to same L2 bridge");
         require(newL2Bridge != address(0), "L2StandardERC20: L2 bridge cannot be zero address");
-        
+
         l2BridgeInfoStorage().l2Bridge = newL2Bridge;
         emit L2BridgeUpdated(oldL2Bridge, newL2Bridge);
     }

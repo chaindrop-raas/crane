@@ -78,7 +78,7 @@ contract TestL2ChildContract is L2ChildContractHelper {
         emit L2BridgeUpdated(address(0x4), address(0x6));
         child.setL2Bridge(address(0x6));
         assertEq(child.l2Bridge(), address(0x6));
-        
+
         vm.expectRevert("L2StandardERC20: L2 bridge cannot be set to same L2 bridge");
         child.setL2Bridge(address(0x6));
 

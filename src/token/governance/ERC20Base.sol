@@ -60,7 +60,7 @@ contract ERC20Base is
         initializer
     {
         require(admin != address(0), "Admin address cannot be zero");
-        
+
         bool tokenNameEmpty = keccak256(abi.encode(tokenName)) == keccak256(abi.encode(""));
         bool tokenSymbolEmpty = keccak256(abi.encode(tokenSymbol)) == keccak256(abi.encode(""));
         require(!(tokenNameEmpty && tokenSymbolEmpty), "ERC20Base: Token name cannot be empty");

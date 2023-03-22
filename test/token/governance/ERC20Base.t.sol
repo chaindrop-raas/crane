@@ -36,7 +36,7 @@ contract ERC20BaseInitializationTest is ERC20AddressHelper, Test {
         token = ERC20Base(address(proxy));
         vm.expectRevert("ERC20Base: Token name cannot be empty");
         token.initialize(owner, "", "", 10000000000000000000000000000);
-    
+
         vm.expectRevert("ERC20Capped: cap is 0");
         token.initialize(owner, "thing", "THI", 0);
     }
@@ -51,21 +51,14 @@ abstract contract ERC20BaseHelper is ERC20AddressHelper, Test {
         vm.startPrank(deployer);
         impl = new ERC20Base();
         proxyAdmin = new ProxyAdmin();
-        token = deployNewToken(
-            owner,
-            "Deciduous Tree DAO Governance",
-            "DTDG",
-            10000000000000000000000000000
-        );
+        token = deployNewToken(owner, "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
         vm.stopPrank();
     }
 
-    function deployNewToken(
-        address _owner,
-        string memory _name,
-        string memory _symbol,
-        uint256 _cap
-    ) public returns (ERC20Base _token) {
+    function deployNewToken(address _owner, string memory _name, string memory _symbol, uint256 _cap)
+        public
+        returns (ERC20Base _token)
+    {
         TransparentUpgradeableProxy proxy;
         proxy = new TransparentUpgradeableProxy(
             address(impl),
@@ -176,9 +169,7 @@ contract BurnGovernanceTokenTest is ERC20BaseHelper {
         assertFalse(token.burnable());
     }
 
-    function testRevertsWhenNonAdminAttemptsToEnableBurn(
-        address nonAdmin
-    ) public {
+    function testRevertsWhenNonAdminAttemptsToEnableBurn(address nonAdmin) public {
         vm.assume(nonAdmin != owner);
         vm.assume(nonAdmin != address(proxyAdmin));
         vm.stopPrank();
@@ -193,9 +184,7 @@ contract BurnGovernanceTokenTest is ERC20BaseHelper {
         token.enableBurn();
     }
 
-    function testRevertsWhenNonAdminAttemptsToDisableBurn(
-        address nonAdmin
-    ) public {
+    function testRevertsWhenNonAdminAttemptsToDisableBurn(address nonAdmin) public {
         vm.assume(nonAdmin != owner);
         vm.assume(nonAdmin != address(proxyAdmin));
         vm.stopPrank();
@@ -216,9 +205,7 @@ contract BurnGovernanceTokenTest is ERC20BaseHelper {
         token.enableBurn();
     }
 
-    function testRevertsWhenCallingDisableBurnAndBurnIsAlreadyDisabled()
-        public
-    {
+    function testRevertsWhenCallingDisableBurnAndBurnIsAlreadyDisabled() public {
         vm.expectRevert("Burnable: burning is disabled");
         token.disableBurn();
     }
@@ -266,9 +253,7 @@ contract BurnGovernanceTokenTest is ERC20BaseHelper {
         assertEq(token.balanceOf(mintee), 0);
     }
 
-    function testCanBurnFromWalletWithAllowanceWhenEnabled(
-        uint96 amount
-    ) public {
+    function testCanBurnFromWalletWithAllowanceWhenEnabled(uint96 amount) public {
         vm.assume(amount < token.cap());
         token.enableBurn();
         vm.stopPrank();
@@ -405,9 +390,7 @@ contract PauseGovernanceTokenTest is ERC20BaseHelper {
         assertEq(token.balanceOf(minter), amount);
     }
 
-    function testCannotTransferWhenPausedAndTransferEnabled(
-        uint96 amount
-    ) public {
+    function testCannotTransferWhenPausedAndTransferEnabled(uint96 amount) public {
         vm.assume(amount < token.cap());
         token.mint(mintee, amount);
         token.enableTransfer();
