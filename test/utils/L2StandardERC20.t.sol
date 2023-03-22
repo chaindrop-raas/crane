@@ -64,7 +64,7 @@ contract TestL2ChildContract is L2ChildContractHelper {
         child.setL1Token(address(0x5));
         assertEq(child.l1Token(), address(0x5));
 
-        vm.expectRevert("L2StandardERC20: L1 token cannot be set to same L1 token");
+        vm.expectRevert("L2StandardERC20: L1 token value must change");
         child.setL1Token(address(0x5));
 
         vm.expectRevert("L2StandardERC20: L1 token cannot be zero address");
@@ -79,7 +79,7 @@ contract TestL2ChildContract is L2ChildContractHelper {
         child.setL2Bridge(address(0x6));
         assertEq(child.l2Bridge(), address(0x6));
 
-        vm.expectRevert("L2StandardERC20: L2 bridge cannot be set to same L2 bridge");
+        vm.expectRevert("L2StandardERC20: L2 bridge value must change");
         child.setL2Bridge(address(0x6));
 
         vm.expectRevert("L2StandardERC20: L2 bridge cannot be zero address");

@@ -72,7 +72,7 @@ contract BaselineTest is VotesTestHelper {
         assertEq(votes.getPastVotes(recipient, 42), 100);
     }
 
-    function testDelegateDelegateeCannotBeZeroAddress() public {
+    function testCannotDelegateToZeroAddress() public {
         vm.startPrank(recipient);
         vm.expectRevert("Votes: delegatee cannot be zero address");
         votes.delegate(address(0));

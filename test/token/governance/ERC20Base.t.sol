@@ -35,7 +35,10 @@ contract ERC20BaseInitializationTest is ERC20AddressHelper, Test {
         );
         token = ERC20Base(address(proxy));
         vm.expectRevert("ERC20Base: Token name cannot be empty");
-        token.initialize(owner, "", "", 10000000000000000000000000000);
+        token.initialize(owner, "", "sym", 10000000000000000000000000000);
+
+        vm.expectRevert("ERC20Base: Token symbol cannot be empty");
+        token.initialize(owner, "name", "", 10000000000000000000000000000);
 
         vm.expectRevert("ERC20Capped: cap is 0");
         token.initialize(owner, "thing", "THI", 0);

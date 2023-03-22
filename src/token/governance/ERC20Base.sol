@@ -63,7 +63,8 @@ contract ERC20Base is
 
         bool tokenNameEmpty = keccak256(abi.encode(tokenName)) == keccak256(abi.encode(""));
         bool tokenSymbolEmpty = keccak256(abi.encode(tokenSymbol)) == keccak256(abi.encode(""));
-        require(!(tokenNameEmpty && tokenSymbolEmpty), "ERC20Base: Token name cannot be empty");
+        require(!tokenNameEmpty, "ERC20Base: Token name cannot be empty");
+        require(!tokenSymbolEmpty, "ERC20Base: Token symbol cannot be empty");
         __AccessControl_init();
         __ERC20Burnable_init();
         __ERC20Capped_init(supplyCap);
