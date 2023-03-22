@@ -102,6 +102,7 @@ abstract contract Votes is IVotes, IVotesToken {
      * @param delegatee the address to delegate voting units to
      */
     function handleDelegation(address delegator, address delegatee) internal {
+        require(delegatee != address(0), "Votes: delegatee cannot be zero address");
         address oldDelegate = Checkpoints.delegates(delegator);
         Checkpoints.delegate(delegator, delegatee);
         Checkpoints.moveDelegation(oldDelegate, delegatee, IVotesToken(this).balanceOf(delegator));

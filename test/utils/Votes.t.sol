@@ -72,6 +72,13 @@ contract BaselineTest is VotesTestHelper {
         assertEq(votes.getPastVotes(recipient, 42), 100);
     }
 
+    function testDelegateDelegateeCannotBeZeroAddress() public {
+        vm.startPrank(recipient);
+        vm.expectRevert("Votes: delegatee cannot be zero address");
+        votes.delegate(address(0));
+        vm.stopPrank();
+    }
+
     function testDelegateBySig() public {
         bytes32 accountOneR = 0x30c6da6c49bf7e3231438b6b2ca58532998303d4d764e9268c0a28814405d0c2;
         bytes32 accountOneS = 0x19f31dd0a9b12cdd840ff3a26aa78d9d281a99dff9470bc73da84d301868ba0a;
