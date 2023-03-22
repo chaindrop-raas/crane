@@ -58,19 +58,33 @@ contract TestL2ChildContract is L2ChildContractHelper {
     }
 
     function testSetL1Token() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         vm.expectEmit(true, true, true, true, address(child));
         emit L1TokenUpdated(address(0x3), address(0x5));
         child.setL1Token(address(0x5));
         assertEq(child.l1Token(), address(0x5));
+
+        vm.expectRevert("L2StandardERC20: L1 token cannot be set to same L1 token");
+        child.setL1Token(address(0x5));
+
+        vm.expectRevert("L2StandardERC20: L1 token cannot be zero address");
+        child.setL1Token(address(0x0));
+        vm.stopPrank();
     }
 
     function testSetL2Bridge() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         vm.expectEmit(true, true, true, true, address(child));
         emit L2BridgeUpdated(address(0x4), address(0x6));
         child.setL2Bridge(address(0x6));
         assertEq(child.l2Bridge(), address(0x6));
+        
+        vm.expectRevert("L2StandardERC20: L2 bridge cannot be set to same L2 bridge");
+        child.setL2Bridge(address(0x6));
+
+        vm.expectRevert("L2StandardERC20: L2 bridge cannot be zero address");
+        child.setL2Bridge(address(0x0));
+        vm.stopPrank();
     }
 
     function testMint() public {
