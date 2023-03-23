@@ -79,6 +79,7 @@ contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
     /// @dev Modifier to check that the deadline is in the future and the amount is not greater than the available balance.
     modifier whenValidLock(uint256 amount, uint256 deadline) {
         // slither-disable-next-line timestamp
+        require(amount > 0, "TransferLock: amount must be greater than zero");
         require(deadline > block.timestamp, "TransferLock: deadline must be in the future");
         require(
             amount <= getAvailableBalanceAt(msg.sender, block.timestamp),
