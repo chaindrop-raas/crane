@@ -20,6 +20,13 @@ library GovernorStorage {
     event DefaultProposalTokenSet(address oldDefaultProposalToken, address newDefaultProposalToken);
 
     /**
+     * @dev Emitted when the proposal token is enabled or disabled.
+     * @param proposalToken The proposal token's address.
+     * @param enabled Whether the proposal token is enabled.
+     */
+    event ProposalTokenEnabled(address proposalToken, bool enabled);
+
+    /**
      * @dev Emitted when the voting delay is set.
      * @param oldVotingDelay The previous voting delay.
      * @param newVotingDelay The new voting delay.
@@ -92,6 +99,7 @@ library GovernorStorage {
         uint64 votingPeriod;
         uint128 quorumNumerator;
         uint256 proposalThreshold;
+        mapping(address => bool) proposalTokens;
     }
 
     struct TimelockQueue {
@@ -137,6 +145,15 @@ library GovernorStorage {
     }
 
     /**
+     * @notice determine if a token is enabled for proposal creation.
+     * @param token the token address to check.
+     * @return true if the token is enabled for proposal creation.
+     */
+     function isProposalTokenEnabled(address token) internal view returns (bool) {
+        return configStorage().proposalTokens[token];
+     }
+
+    /**
      * @notice sets the default counting strategy.
      * @param newDefaultCountingStrategy the new default counting strategy address.
      * emits DefaultCountingStrategySet event.
@@ -158,6 +175,19 @@ library GovernorStorage {
         configStorage().defaultProposalToken = newDefaultProposalToken;
 
         emit DefaultProposalTokenSet(oldDefaultProposalToken, newDefaultProposalToken);
+    }
+
+    /**
+     * @notice set proposal token validity
+     * @param proposalToken the proposal token address.
+     * @param enabled true if the proposal token is valid.
+     * emits ProposalTokenEnabled event.
+     */
+    function enableProposalToken(address proposalToken, bool enabled) internal {
+        require(isConfiguredToken(proposalToken), "Governor: proposal token must be a configured token");
+        configStorage().proposalTokens[proposalToken] = enabled;
+
+        emit ProposalTokenEnabled(proposalToken, enabled);
     }
 
     /**

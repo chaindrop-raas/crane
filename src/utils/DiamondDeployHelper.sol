@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/governor/GovernorCoreFacet.sol";
-import "src/governor/GovernorSettingsFacet.sol";
-import "src/governor/GovernorTimelockControlFacet.sol";
+import {GovernorCoreFacet} from "src/governor/GovernorCoreFacet.sol";
+import {GovernorSettingsFacet} from "src/governor/GovernorSettingsFacet.sol";
+import {GovernorTimelockControlFacet} from "src/governor/GovernorTimelockControlFacet.sol";
 
-import "@diamond/facets/DiamondCutFacet.sol";
-import "@diamond/facets/DiamondLoupeFacet.sol";
-import "@diamond/facets/OwnershipFacet.sol";
+import {DiamondCutFacet} from "@diamond/facets/DiamondCutFacet.sol";
+import {DiamondLoupeFacet} from "@diamond/facets/DiamondLoupeFacet.sol";
+import {OwnershipFacet} from "@diamond/facets/OwnershipFacet.sol";
+import {IDiamondCut} from "@diamond/interfaces/IDiamondCut.sol";
 
 /**
  * @author Origami
@@ -53,7 +54,7 @@ library DiamondDeployHelper {
         pure
         returns (IDiamondCut.FacetCut memory governorCoreCut)
     {
-        bytes4[] memory selectors = new bytes4[](32);
+        bytes4[] memory selectors = new bytes4[](34);
         selectors[0] = facet.CANCELLER_ROLE.selector;
         selectors[1] = facet.DEFAULT_ADMIN_ROLE.selector;
         selectors[2] = facet.EIP712_TYPEHASH.selector;
@@ -64,28 +65,30 @@ library DiamondDeployHelper {
         selectors[7] = facet.castVoteWithReason.selector;
         selectors[8] = facet.castVoteWithReasonBySig.selector;
         selectors[9] = facet.domainSeparatorV4.selector;
-        selectors[10] = facet.getRoleAdmin.selector;
-        selectors[11] = facet.getVotes.selector;
-        selectors[12] = facet.grantRole.selector;
-        selectors[13] = facet.hasRole.selector;
-        selectors[14] = facet.hasVoted.selector;
-        selectors[15] = facet.hashProposal.selector;
-        selectors[16] = facet.name.selector;
-        selectors[17] = facet.proposalDeadline.selector;
-        selectors[18] = facet.proposalSnapshot.selector;
-        selectors[19] = facet.proposalVotes.selector;
-        selectors[20] = facet.propose.selector;
-        selectors[21] = facet.proposeBySig.selector;
-        selectors[22] = facet.proposeWithParams.selector;
-        selectors[23] = facet.proposeWithParamsBySig.selector;
-        selectors[24] = facet.proposeWithTokenAndCountingStrategy.selector;
-        selectors[25] = facet.proposeWithTokenAndCountingStrategyBySig.selector;
-        selectors[26] = facet.quorum.selector;
-        selectors[27] = facet.renounceRole.selector;
-        selectors[28] = facet.revokeRole.selector;
-        selectors[29] = facet.simpleWeight.selector;
-        selectors[30] = facet.state.selector;
-        selectors[31] = facet.version.selector;
+        selectors[10] = facet.getAccountNonce.selector;
+        selectors[11] = facet.getRoleAdmin.selector;
+        selectors[12] = facet.getVotes.selector;
+        selectors[13] = facet.grantRole.selector;
+        selectors[14] = facet.hasRole.selector;
+        selectors[15] = facet.hasVoted.selector;
+        selectors[16] = facet.hashProposal.selector;
+        selectors[17] = facet.isProposalTokenEnabled.selector;
+        selectors[18] = facet.name.selector;
+        selectors[19] = facet.proposalDeadline.selector;
+        selectors[20] = facet.proposalSnapshot.selector;
+        selectors[21] = facet.proposalVotes.selector;
+        selectors[22] = facet.propose.selector;
+        selectors[23] = facet.proposeBySig.selector;
+        selectors[24] = facet.proposeWithParams.selector;
+        selectors[25] = facet.proposeWithParamsBySig.selector;
+        selectors[26] = facet.proposeWithTokenAndCountingStrategy.selector;
+        selectors[27] = facet.proposeWithTokenAndCountingStrategyBySig.selector;
+        selectors[28] = facet.quorum.selector;
+        selectors[29] = facet.renounceRole.selector;
+        selectors[30] = facet.revokeRole.selector;
+        selectors[31] = facet.simpleWeight.selector;
+        selectors[32] = facet.state.selector;
+        selectors[33] = facet.version.selector;
 
         governorCoreCut = IDiamondCut.FacetCut({
             facetAddress: address(facet),
@@ -99,25 +102,26 @@ library DiamondDeployHelper {
         pure
         returns (IDiamondCut.FacetCut memory governorSettingsCut)
     {
-        bytes4[] memory selectors = new bytes4[](18);
+        bytes4[] memory selectors = new bytes4[](19);
         selectors[0] = facet.defaultCountingStrategy.selector;
         selectors[1] = facet.defaultProposalToken.selector;
-        selectors[2] = facet.governanceToken.selector;
-        selectors[3] = facet.membershipToken.selector;
-        selectors[4] = facet.proposalThreshold.selector;
-        selectors[5] = facet.proposalThresholdToken.selector;
-        selectors[6] = facet.quorumNumerator.selector;
-        selectors[7] = facet.setDefaultCountingStrategy.selector;
-        selectors[8] = facet.setDefaultProposalToken.selector;
-        selectors[9] = facet.setGovernanceToken.selector;
-        selectors[10] = facet.setMembershipToken.selector;
-        selectors[11] = facet.setProposalThreshold.selector;
-        selectors[12] = facet.setProposalThresholdToken.selector;
-        selectors[13] = facet.setQuorumNumerator.selector;
-        selectors[14] = facet.setVotingDelay.selector;
-        selectors[15] = facet.setVotingPeriod.selector;
-        selectors[16] = facet.votingDelay.selector;
-        selectors[17] = facet.votingPeriod.selector;
+        selectors[2] = facet.enableProposalToken.selector;
+        selectors[3] = facet.governanceToken.selector;
+        selectors[4] = facet.membershipToken.selector;
+        selectors[5] = facet.proposalThreshold.selector;
+        selectors[6] = facet.proposalThresholdToken.selector;
+        selectors[7] = facet.quorumNumerator.selector;
+        selectors[8] = facet.setDefaultCountingStrategy.selector;
+        selectors[9] = facet.setDefaultProposalToken.selector;
+        selectors[10] = facet.setGovernanceToken.selector;
+        selectors[11] = facet.setMembershipToken.selector;
+        selectors[12] = facet.setProposalThreshold.selector;
+        selectors[13] = facet.setProposalThresholdToken.selector;
+        selectors[14] = facet.setQuorumNumerator.selector;
+        selectors[15] = facet.setVotingDelay.selector;
+        selectors[16] = facet.setVotingPeriod.selector;
+        selectors[17] = facet.votingDelay.selector;
+        selectors[18] = facet.votingPeriod.selector;
 
         governorSettingsCut = IDiamondCut.FacetCut({
             facetAddress: address(facet),

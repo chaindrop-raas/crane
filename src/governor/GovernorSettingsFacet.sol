@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/interfaces/IGovernorSettings.sol";
-import "src/utils/GovernorStorage.sol";
+import {IGovernorSettings} from "src/interfaces/IGovernorSettings.sol";
+import {GovernorStorage} from "src/utils/GovernorStorage.sol";
 
 /**
  * @title Origami Governor Settings Facet
@@ -164,6 +164,16 @@ contract GovernorSettingsFacet is IGovernorSettings {
     function setVotingPeriod(uint64 newVotingPeriod) public onlyGovernance {
         GovernorStorage.setVotingPeriod(newVotingPeriod);
     }
+
+    /**
+     * @notice update proposal token validity.
+     * @param proposalToken the proposal token address.
+     * @param valid whether the proposal token is valid.
+     * emits ProposalTokenValidSet event.
+     */
+     function enableProposalToken(address proposalToken, bool valid) public onlyGovernance {
+        GovernorStorage.enableProposalToken(proposalToken, valid);
+     }
 
     /**
      * @dev returns the GovernorConfig storage pointer.

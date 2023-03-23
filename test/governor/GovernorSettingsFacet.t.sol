@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.16;
 
-import "src/interfaces/IGovernor.sol";
+import {IGovernor} from "src/interfaces/IGovernor.sol";
 import {GovernorDiamondHelper} from "test/OrigamiDiamondTestHelper.sol";
 
 contract SettingsFacetTest is GovernorDiamondHelper {

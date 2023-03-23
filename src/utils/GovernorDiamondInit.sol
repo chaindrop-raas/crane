@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/interfaces/IAccessControl.sol";
-import "src/interfaces/IGovernor.sol";
-import "src/interfaces/IGovernorQuorum.sol";
-import "src/interfaces/IGovernorSettings.sol";
-import "src/interfaces/IGovernorTimelockControl.sol";
-import "src/utils/AccessControlStorage.sol";
-import "src/utils/GovernorStorage.sol";
+import {IAccessControl} from "src/interfaces/IAccessControl.sol";
+import {IGovernor} from "src/interfaces/IGovernor.sol";
+import {IGovernorQuorum} from "src/interfaces/IGovernorQuorum.sol";
+import {IGovernorSettings} from "src/interfaces/IGovernorSettings.sol";
+import {IGovernorTimelockControl} from "src/interfaces/IGovernorTimelockControl.sol";
+import {AccessControlStorage} from "src/utils/AccessControlStorage.sol";
+import {GovernorStorage} from "src/utils/GovernorStorage.sol";
 
-import "@diamond/libraries/LibDiamond.sol";
-import "@diamond/interfaces/IDiamondLoupe.sol";
-import "@diamond/interfaces/IDiamondCut.sol";
-import "@diamond/interfaces/IERC173.sol";
-import "@diamond/interfaces/IERC165.sol";
+import {LibDiamond} from "@diamond/libraries/LibDiamond.sol";
+import {IDiamondLoupe} from "@diamond/interfaces/IDiamondLoupe.sol";
+import {IDiamondCut} from "@diamond/interfaces/IDiamondCut.sol";
+import {IERC173} from "@diamond/interfaces/IERC173.sol";
+import {IERC165} from "@diamond/interfaces/IERC165.sol";
 
 // EIP-2535 specifies that the `diamondCut` function takes two optional
 // arguments: address _init and bytes calldata _calldata
@@ -71,6 +71,8 @@ contract GovernorDiamondInit {
         config.quorumNumerator = quorumPercentage;
         config.proposalThreshold = threshold;
         config.proposalThresholdToken = proposalThresholdToken;
+        // by default, we only allow the default proposal token to be used for proposals
+        config.proposalTokens[proposalToken] = true;
 
         // in order to facilitate role administration, we add the admin to the admin role
         // it is advised that the admin renounces this role after the diamond is deployed

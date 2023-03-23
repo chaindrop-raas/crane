@@ -1,21 +1,26 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.16;
 
-import "src/OrigamiGovernanceToken.sol";
-import "src/OrigamiMembershipToken.sol";
-import "src/OrigamiTimelockController.sol";
+import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
+import {OrigamiMembershipToken} from "src/OrigamiMembershipToken.sol";
+import {OrigamiTimelockController} from "src/OrigamiTimelockController.sol";
+import {SimpleCounting} from "src/governor/lib/SimpleCounting.sol";
 
-import "src/governor/GovernorCoreFacet.sol";
-import "src/governor/GovernorSettingsFacet.sol";
-import "src/governor/GovernorTimelockControlFacet.sol";
-import "src/utils/GovernorDiamondInit.sol";
-import "src/utils/DiamondDeployHelper.sol";
+import {GovernorCoreFacet} from "src/governor/GovernorCoreFacet.sol";
+import {GovernorSettingsFacet} from "src/governor/GovernorSettingsFacet.sol";
+import {GovernorTimelockControlFacet} from "src/governor/GovernorTimelockControlFacet.sol";
+import {GovernorDiamondInit} from "src/utils/GovernorDiamondInit.sol";
+import {DiamondDeployHelper} from "src/utils/DiamondDeployHelper.sol";
 
-import "@std/Test.sol";
-import "@diamond/Diamond.sol";
+import {Test} from "@std/Test.sol";
+import {Diamond} from "@diamond/Diamond.sol";
+import {DiamondLoupeFacet} from "@diamond/facets/DiamondLoupeFacet.sol";
+import {DiamondCutFacet} from "@diamond/facets/DiamondCutFacet.sol";
+import {IDiamondCut} from "@diamond/interfaces/IDiamondCut.sol";
+import {OwnershipFacet} from "@diamond/facets/OwnershipFacet.sol";
 
-import "@oz/proxy/transparent/ProxyAdmin.sol";
-import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "@oz/proxy/transparent/ProxyAdmin.sol";
+import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 abstract contract GovDiamondAddressHelper {
     address public deployer = address(0x1);
@@ -182,8 +187,11 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         timelockControlFacet = GovernorTimelockControlFacet(address(origamiGovernorDiamond));
         loupeFacet = DiamondLoupeFacet(address(origamiGovernorDiamond));
 
-        vm.prank(address(timelock));
+        vm.startPrank(address(timelock));
         settingsFacet.setGovernanceToken(address(govToken));
+        settingsFacet.enableProposalToken(address(govToken), true);
+        settingsFacet.enableProposalToken(address(memToken), true);
+        vm.stopPrank();
 
         vm.roll(42);
     }
