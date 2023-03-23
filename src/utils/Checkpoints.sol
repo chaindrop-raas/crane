@@ -281,6 +281,7 @@ library Checkpoints {
     function delegate(address delegator, address delegatee) internal {
         DelegateStorage storage ds = delegateStorage();
         address currentDelegate = ds.delegates[delegator];
+        require(delegatee != currentDelegate, "Delegate: already delegated to this delegatee");
         ds.delegates[delegator] = delegatee;
         emit DelegateChanged(delegator, currentDelegate, delegatee);
     }

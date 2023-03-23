@@ -194,6 +194,15 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
         token.mint(mintee2, 10);
     }
 
+    function testDelegateOfSameDelegateeReverts() public {
+        address other = address(0x7);
+
+        vm.startPrank(other);
+        token.delegate(other);
+        vm.expectRevert("Delegate: already delegated to this delegatee");
+        token.delegate(other);
+    }
+
     function testGetVotesIsZeroBeforeDelegation() public {
         address other = address(0x7);
 
@@ -280,10 +289,7 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
         vm.prank(owner);
         token.mint(other, 100);
 
-        // make sure mintee is self delegated
-        vm.prank(mintee);
-        token.delegate(mintee);
-
+        // mintee is self delegated already from setup
         // other should have balance of 100
         assertEq(token.balanceOf(other), 100);
 
