@@ -17,6 +17,34 @@ abstract contract ERC20AddressHelper {
     address public signer = address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
 }
 
+contract ERC20BaseInitializationTest is ERC20AddressHelper, Test {
+    ERC20Base public impl;
+    ProxyAdmin public proxyAdmin;
+    ERC20Base public token;
+
+    function testInitializing() public {
+        vm.startPrank(deployer);
+        impl = new ERC20Base();
+        proxyAdmin = new ProxyAdmin();
+
+        TransparentUpgradeableProxy proxy;
+        proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            address(proxyAdmin),
+            ""
+        );
+        token = ERC20Base(address(proxy));
+        vm.expectRevert("ERC20Base: Token name cannot be empty");
+        token.initialize(owner, "", "sym", 10000000000000000000000000000);
+
+        vm.expectRevert("ERC20Base: Token symbol cannot be empty");
+        token.initialize(owner, "name", "", 10000000000000000000000000000);
+
+        vm.expectRevert("ERC20Capped: cap is 0");
+        token.initialize(owner, "thing", "THI", 0);
+    }
+}
+
 abstract contract ERC20BaseHelper is ERC20AddressHelper, Test {
     ERC20Base public impl;
     ProxyAdmin public proxyAdmin;

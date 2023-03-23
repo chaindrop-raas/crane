@@ -368,7 +368,32 @@ contract GovernanceTokenTransferLockTest is OGTHelper {
         vm.stopPrank();
     }
 
-    function testTransferLockBeforeTransferIsInvoked() public {
+    function testEmptyTransferLock() public {
+        uint256 amount = token.getTransferLockTotal(mintee);
+        assertEq(amount, 0);
+    }
+
+    function testAddTransferLock() public {
+        assertEq(block.timestamp, 1);
+        vm.prank(mintee);
+        token.addTransferLock(100, 1000);
+        uint256 amount = token.getTransferLockTotal(mintee);
+        assertEq(amount, 100);
+    }
+
+    function testCannotAddTransferLockOfZero() public {
+        vm.prank(mintee);
+        vm.expectRevert("TransferLock: amount must be greater than zero");
+        token.addTransferLock(0, 1000);
+    }
+
+    function testCannotAddTransferLockAmountHigherThanBalance() public {
+        vm.prank(mintee);
+        vm.expectRevert("TransferLock: amount cannot exceed available balance");
+        token.addTransferLock(101, 1000);
+    }
+
+    function testCannotTransferWhileLocked() public {
         vm.warp(1673049600); // 2023-01-01
         vm.prank(mintee);
         token.addTransferLock(100, 1704585600); // 2024-01-01

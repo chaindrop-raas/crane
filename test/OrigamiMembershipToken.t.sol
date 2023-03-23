@@ -416,6 +416,15 @@ contract TransferrabilityMembershipTokenTest is OMTHelper {
         assertEq(token.balanceOf(recipient), 1);
     }
 
+    function testCannotTransferZeroMembershipTokens() public {
+        token.safeMint(mintee);
+        token.enableTransfer();
+        vm.stopPrank();
+        vm.prank(mintee);
+        vm.expectRevert(bytes("ERC721: invalid token ID"));
+        token.safeTransferFrom(mintee, recipient, 0);
+    }
+
     function testOnlyOwnerCanTransferWhenEnabled() public {
         token.safeMint(mintee);
         token.enableTransfer();

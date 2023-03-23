@@ -61,6 +61,10 @@ contract ERC20Base is
     {
         require(admin != address(0), "Admin address cannot be zero");
 
+        bytes32 blank = keccak256(abi.encode(""));
+        require(keccak256(abi.encode(tokenName)) != blank, "ERC20Base: Token name cannot be empty");
+        require(keccak256(abi.encode(tokenSymbol)) != blank, "ERC20Base: Token symbol cannot be empty");
+
         __AccessControl_init();
         __ERC20Burnable_init();
         __ERC20Capped_init(supplyCap);
