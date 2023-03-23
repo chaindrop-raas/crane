@@ -73,6 +73,8 @@ contract GovernorDiamondInit {
         config.proposalThresholdToken = proposalThresholdToken;
         // by default, we only allow the default proposal token to be used for proposals
         config.proposalTokens[proposalToken] = true;
+        // by default, we only allow the simple counting strategy to be used for proposals
+        config.countingStrategies[0x6c4b0e9f] = true;
 
         // in order to facilitate role administration, we add the admin to the admin role
         // it is advised that the admin renounces this role after the diamond is deployed

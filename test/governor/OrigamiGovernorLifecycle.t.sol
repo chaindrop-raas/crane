@@ -415,7 +415,8 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
     function testProposalTokenMustBeAConfiguredToken() public {
         targets[0] = address(origamiGovernorDiamond);
         values[0] = uint256(0);
-        calldatas[0] = abi.encodeWithSignature("enableProposalToken(address,bool)", address(origamiGovernorDiamond), true);
+        calldatas[0] =
+            abi.encodeWithSignature("enableProposalToken(address,bool)", address(origamiGovernorDiamond), true);
 
         // use the gov token for vote weight
         params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
@@ -451,6 +452,49 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
 
         vm.warp(block.timestamp + 1 days);
         // the underlying transaction is reverted due to the proposal token not being a configured token
+        vm.expectRevert("TimelockController: underlying transaction reverted");
+        timelockControlFacet.execute(targets, values, calldatas, proposalHash);
+    }
+
+    function testCountingStrategyMustBeKnown() public {
+        targets[0] = address(origamiGovernorDiamond);
+        values[0] = uint256(0);
+        calldatas[0] = abi.encodeWithSignature("enableCountingStrategy(bytes4,bool)", 0x54fd4d50, true);
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
+        proposalHash = keccak256(bytes("Update Counting Strategy"));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.proposeWithParams(targets, values, calldatas, "Update Counting Strategy", params);
+
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // proposal is created in the pending state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+        // advance to the voting period
+        vm.warp(block.timestamp + 7 days + 1);
+        vm.prank(voter);
+        coreFacet.castVoteWithReason(proposalId, 1, "I like it");
+
+        // proposal is in the active state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
+
+        // advance to the voting deadline
+        vm.warp(block.timestamp + 7 days + 1);
+
+        // proposal is in the succeeded state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+        // Enqueue the proposal
+        timelockControlFacet.queue(targets, values, calldatas, proposalHash);
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
+
+        vm.warp(block.timestamp + 1 days);
+        // the underlying transaction is reverted due to the counting strategy not being known
         vm.expectRevert("TimelockController: underlying transaction reverted");
         timelockControlFacet.execute(targets, values, calldatas, proposalHash);
     }
@@ -498,6 +542,54 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         vm.warp(block.timestamp + 1);
         assertFalse(coreFacet.isProposalTokenEnabled(address(memToken)));
         assertTrue(coreFacet.isProposalTokenEnabled(address(govToken)));
+    }
+
+    function testDisableCountingStrategy() public {
+        targets[0] = address(origamiGovernorDiamond);
+        values[0] = uint256(0);
+        bytes4 simpleWeightSelector = bytes4(keccak256("simpleWeight(uint256)"));
+        calldatas[0] = abi.encodeWithSignature("enableCountingStrategy(bytes4,bool)", simpleWeightSelector, false);
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), simpleWeightSelector);
+        proposalHash = keccak256(bytes("Update Counting Strategy"));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.proposeWithParams(targets, values, calldatas, "Update Counting Strategy", params);
+
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // proposal is created in the pending state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+        // advance to the voting period
+        vm.warp(block.timestamp + 7 days + 1);
+        vm.prank(voter);
+        coreFacet.castVoteWithReason(proposalId, 1, "I like it");
+
+        // proposal is in the active state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
+
+        // advance to the voting deadline
+        vm.warp(block.timestamp + 7 days + 1);
+
+        // proposal is in the succeeded state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+        // Enqueue the proposal
+        timelockControlFacet.queue(targets, values, calldatas, proposalHash);
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
+
+        vm.warp(block.timestamp + 1 days);
+        timelockControlFacet.execute(targets, values, calldatas, proposalHash);
+
+        vm.warp(block.timestamp + 1);
+        // simple counting strategy is disabled
+        assertFalse(coreFacet.isCountingStrategyEnabled(simpleWeightSelector));
+        // quadratic counting strategy is still enabled
+        assertTrue(coreFacet.isCountingStrategyEnabled(bytes4(keccak256("quadraticWeight(uint256)"))));
     }
 }
 

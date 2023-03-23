@@ -171,9 +171,19 @@ contract GovernorSettingsFacet is IGovernorSettings {
      * @param valid whether the proposal token is valid.
      * emits ProposalTokenValidSet event.
      */
-     function enableProposalToken(address proposalToken, bool valid) public onlyGovernance {
+    function enableProposalToken(address proposalToken, bool valid) public onlyGovernance {
         GovernorStorage.enableProposalToken(proposalToken, valid);
-     }
+    }
+
+    /**
+     * @notice update counting strategy validity.
+     * @param countingStrategy the counting strategy bytes4 selector.
+     * @param valid whether the counting strategy is valid.
+     * emits CountingStrategyValidSet event.
+     */
+    function enableCountingStrategy(bytes4 countingStrategy, bool valid) public onlyGovernance {
+        GovernorStorage.enableCountingStrategy(countingStrategy, valid);
+    }
 
     /**
      * @dev returns the GovernorConfig storage pointer.
