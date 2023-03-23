@@ -18,6 +18,7 @@ contract TransferLocksTestHelper is Test {
 
     address public mintee = address(0x3);
     address public minter = address(0x4);
+    address public recipient = address(0x5);
 
     constructor() {
         vm.startPrank(owner);
@@ -29,24 +30,17 @@ contract TransferLocksTestHelper is Test {
             ""
         );
         token = TransferLocks(address(proxy));
-        token.initialize(owner, "TransferLocksTest", "TLT", 1000000 ether);
+        token.initialize(owner, "TransferLocksTest", "TLT", type(uint256).max);
         token.mint(mintee, 100);
         token.enableTransfer();
         vm.stopPrank();
     }
 }
 
-contract TransferLocksBaseTest is TransferLocksTestHelper {
+contract TransferLocksTest is TransferLocksTestHelper {
     function testEmptyTransferLock() public {
         uint256 amount = token.getTransferLockTotal(mintee);
         assertEq(amount, 0);
-    }
-
-    function testCannotCreateTransferLockInPast() public {
-        vm.warp(10000);
-        vm.prank(mintee);
-        vm.expectRevert("TransferLock: deadline must be in the future");
-        token.addTransferLock(100, 1);
     }
 
     function testAddTransferLock() public {
@@ -55,70 +49,6 @@ contract TransferLocksBaseTest is TransferLocksTestHelper {
         token.addTransferLock(100, 1000);
         uint256 amount = token.getTransferLockTotal(mintee);
         assertEq(amount, 100);
-    }
-
-    function testCannotAddTransferLockAmountHigherThanBalance() public {
-        vm.prank(mintee);
-        vm.expectRevert("TransferLock: amount cannot exceed available balance");
-        token.addTransferLock(101, 1000);
-    }
-
-    function testCannotTransferWhileLocked() public {
-        vm.warp(1673049600); // 2023-01-01
-        vm.prank(mintee);
-        token.addTransferLock(100, 1704585600); // 2024-01-01
-        vm.prank(mintee);
-        vm.expectRevert("TransferLock: this exceeds your unlocked balance");
-        token.transfer(minter, 10);
-    }
-
-    function testCanTransferSurplusWhileLocked() public {
-        vm.warp(1673049600); // 2023-01-01
-        vm.prank(mintee);
-        token.addTransferLock(90, 1704585600); // 2024-01-01
-        vm.prank(mintee);
-        token.transfer(minter, 10);
-        assertEq(token.balanceOf(mintee), 90);
-        assertEq(token.balanceOf(minter), 10);
-    }
-
-    function testCanTransferAfterLockExpires() public {
-        vm.warp(1673049600); // 2023-01-01
-        vm.prank(mintee);
-        token.addTransferLock(100, 1704585600); // 2024-01-01
-
-        // timelock date is inclusive, so an attempt to transfer at the exact timelock time will fail
-        vm.warp(1704585600); // 2024-01-01
-        vm.prank(mintee);
-        vm.expectRevert("TransferLock: this exceeds your unlocked balance");
-        token.transfer(mintee, 10);
-
-        // warp to the second immediately after the timelock expires and try again
-        vm.prank(mintee);
-        vm.warp(1704585601); // 2024-01-01
-        token.transfer(minter, 10);
-        assertEq(token.balanceOf(minter), 10);
-    }
-
-    function testCannotUnderflowAmount() public {
-        vm.prank(mintee);
-        token.addTransferLock(100, 1000);
-        // we would get an underflow revert if we weren't checking the balance
-        // exceeds the amount, since we do, we get the built-in revert about the
-        // amount being too high
-        vm.prank(mintee);
-        vm.expectRevert("ERC20: transfer amount exceeds balance");
-        token.transfer(minter, 200);
-    }
-
-    function testCanSetMultipleLocks() public {
-        vm.startPrank(mintee);
-        token.addTransferLock(50, 1000);
-        token.addTransferLock(49, 2000);
-        assertEq(token.getTransferLockTotal(mintee), 99);
-
-        vm.warp(1001);
-        assertEq(token.getTransferLockTotal(mintee), 49);
     }
 
     function testGetTransferLockTotalAt() public {
@@ -160,6 +90,24 @@ contract TransferLocksBaseTest is TransferLocksTestHelper {
         assertEq(token.getAvailableBalanceAt(recipient, 1), 0);
         assertEq(token.getAvailableBalanceAt(recipient, 69), 10);
         assertEq(token.getAvailableBalanceAt(recipient, 420), 20);
+    }
+
+    function testBatchTransferWithLocksRevertsWhenInputsAreInvalidLengths() public {
+        address[] memory recipients = new address[](2);
+        uint256[] memory amounts = new uint256[](3);
+        uint256[] memory timelocks = new uint256[](2);
+
+        vm.prank(address(0x42));
+        vm.expectRevert("TransferLock: recipients and amounts must be the same length");
+        token.batchTransferWithLocks(recipients, amounts, timelocks);
+
+        address[] memory recipients2 = new address[](2);
+        uint256[] memory amounts2 = new uint256[](2);
+        uint256[] memory timelocks2 = new uint256[](3);
+
+        vm.prank(address(0x42));
+        vm.expectRevert("TransferLock: recipients and deadlines must be the same length");
+        token.batchTransferWithLocks(recipients2, amounts2, timelocks2);
     }
 
     function testBatchTransferWithLocks() public {
@@ -208,6 +156,90 @@ contract TransferLocksBaseTest is TransferLocksTestHelper {
         assertEq(token.getAvailableBalanceAt(address(0x43), 501), 500000);
     }
 
+    function testSupportsInterface() public {
+        assertTrue(token.supportsInterface(0x01ffc9a7)); // ERC165
+        assertTrue(token.supportsInterface(type(ITransferLocks).interfaceId));
+    }
+}
+
+contract TransferLockUseCaseTests is TransferLocksTestHelper {
+    function testCannotAddTransferLockForAmountZero() public {
+        vm.prank(mintee);
+        vm.expectRevert("TransferLock: amount must be greater than zero");
+        token.addTransferLock(0, 1000);
+    }
+
+    function testCanSetMultipleLocks() public {
+        vm.startPrank(mintee);
+        token.addTransferLock(50, 1000);
+        token.addTransferLock(49, 2000);
+        assertEq(token.getTransferLockTotal(mintee), 99);
+
+        vm.warp(1001);
+        assertEq(token.getTransferLockTotal(mintee), 49);
+    }
+
+    function testCannotUnderflowAmount() public {
+        vm.prank(mintee);
+        token.addTransferLock(100, 1000);
+        // we would get an underflow revert if we weren't checking the balance
+        // exceeds the amount, since we do, we get the built-in revert about the
+        // amount being too high
+        vm.prank(mintee);
+        vm.expectRevert("ERC20: transfer amount exceeds balance");
+        token.transfer(minter, 200);
+    }
+
+    function testCannotCreateTransferLockInPast() public {
+        vm.warp(10000);
+        vm.prank(mintee);
+        vm.expectRevert("TransferLock: deadline must be in the future");
+        token.addTransferLock(100, 1);
+    }
+
+    function testCannotAddTransferLockAmountHigherThanBalance() public {
+        vm.prank(mintee);
+        vm.expectRevert("TransferLock: amount cannot exceed available balance");
+        token.addTransferLock(101, 1000);
+    }
+
+    function testCannotTransferWhileLocked() public {
+        vm.warp(1673049600); // 2023-01-01
+        vm.prank(mintee);
+        token.addTransferLock(100, 1704585600); // 2024-01-01
+        vm.prank(mintee);
+        vm.expectRevert("TransferLock: this exceeds your unlocked balance");
+        token.transfer(minter, 10);
+    }
+
+    function testCanTransferSurplusWhileLocked() public {
+        vm.warp(1673049600); // 2023-01-01
+        vm.prank(mintee);
+        token.addTransferLock(90, 1704585600); // 2024-01-01
+        vm.prank(mintee);
+        token.transfer(minter, 10);
+        assertEq(token.balanceOf(mintee), 90);
+        assertEq(token.balanceOf(minter), 10);
+    }
+
+    function testCanTransferAfterLockExpires() public {
+        vm.warp(1673049600); // 2023-01-01
+        vm.prank(mintee);
+        token.addTransferLock(100, 1704585600); // 2024-01-01
+
+        // timelock date is inclusive, so an attempt to transfer at the exact timelock time will fail
+        vm.warp(1704585600); // 2024-01-01
+        vm.prank(mintee);
+        vm.expectRevert("TransferLock: this exceeds your unlocked balance");
+        token.transfer(mintee, 10);
+
+        // warp to the second immediately after the timelock expires and try again
+        vm.prank(mintee);
+        vm.warp(1704585601); // 2024-01-01
+        token.transfer(minter, 10);
+        assertEq(token.balanceOf(minter), 10);
+    }
+
     function testCannotAddLockThatExceedsCurrentAvailableBalance() public {
         vm.warp(1673049600); // 2023-01-01
 
@@ -228,8 +260,90 @@ contract TransferLocksBaseTest is TransferLocksTestHelper {
         token.addTransferLock(100, 1679513115); //2023-03-22
     }
 
-    function testSupportsInterface() public {
-        assertTrue(token.supportsInterface(0x01ffc9a7)); // ERC165
-        assertTrue(token.supportsInterface(type(ITransferLocks).interfaceId));
+    function testAddingMultipleLocksWithTheSameDeadlineAndDifferentAmounts() public {
+        vm.startPrank(mintee);
+
+        // start off with 100 tokens
+        assertEq(token.balanceOf(mintee), 100);
+
+        token.addTransferLock(10, 1000);
+        token.addTransferLock(20, 1000);
+
+        assertEq(token.balanceOf(mintee), 100);
+        assertEq(token.getTransferLockTotalAt(mintee, 1000), 30);
+        assertEq(token.getTransferLockTotalAt(mintee, block.timestamp), 30);
+        assertEq(token.getAvailableBalanceAt(mintee, 1000), 70);
+        assertEq(token.getAvailableBalanceAt(mintee, 1001), 100);
+
+        vm.warp(50);
+
+        token.addTransferLock(30, 1000);
+        token.addTransferLock(40, 1000);
+
+        vm.expectRevert("TransferLock: amount cannot exceed available balance");
+        token.addTransferLock(10, 1000);
+
+        assertEq(token.balanceOf(mintee), 100);
+        assertEq(token.getTransferLockTotalAt(mintee, 1000), 100);
+        assertEq(token.getTransferLockTotalAt(mintee, block.timestamp), 100);
+        assertEq(token.getAvailableBalanceAt(mintee, 1000), 0);
+        assertEq(token.getAvailableBalanceAt(mintee, 1001), 100);
+    }
+
+    function testAddingMultipleLocksWithDescendingDeadlines() public {
+        vm.startPrank(mintee);
+
+        // start off with 100 tokens
+        assertEq(token.balanceOf(mintee), 100);
+
+        token.addTransferLock(10, 1000);
+        token.addTransferLock(20, 900);
+        token.addTransferLock(10, 800);
+        token.addTransferLock(20, 700);
+
+        assertEq(token.balanceOf(mintee), 100);
+        assertEq(token.getTransferLockTotal(mintee), 60);
+        assertEq(token.getAvailableBalanceAt(mintee, 1000), 90);
+        assertEq(token.getAvailableBalanceAt(mintee, 1001), 100);
+        assertEq(token.getAvailableBalanceAt(mintee, 700), 40);
+        assertEq(token.getTransferLockTotalAt(mintee, 1001), 0);
+        assertEq(token.getTransferLockTotalAt(mintee, 1000), 10);
+        assertEq(token.getTransferLockTotalAt(mintee, 700), 60);
+    }
+
+    function testTransferWithLockCannotExceedYourBalance() public {
+        vm.startPrank(mintee);
+
+        // start off with 100 tokens
+        assertEq(token.balanceOf(mintee), 100);
+
+        token.transferWithLock(recipient, 10, 1000);
+        token.transferWithLock(recipient, 20, 900);
+        token.transferWithLock(recipient, 10, 800);
+        token.transferWithLock(recipient, 20, 700);
+        token.transferWithLock(recipient, 40, 600);
+
+        vm.expectRevert("TransferLock: amount cannot exceed available balance");
+        token.transferWithLock(recipient, 1, 700);
+
+        assertEq(token.balanceOf(recipient), 100);
+        assertEq(token.getTransferLockTotal(recipient), 100);
+        assertEq(token.getAvailableBalanceAt(recipient, 1000), 90);
+        assertEq(token.getAvailableBalanceAt(recipient, 1001), 100);
+        assertEq(token.getAvailableBalanceAt(recipient, 700), 40);
+        assertEq(token.getTransferLockTotalAt(recipient, 1001), 0);
+        assertEq(token.getTransferLockTotalAt(recipient, 1000), 10);
+        assertEq(token.getTransferLockTotalAt(recipient, 600), 100);
+        assertEq(token.getTransferLockTotalAt(recipient, 601), 60);
+    }
+
+    function testTransferLockAtMaxValue() public {
+        vm.prank(owner);
+        token.mint(mintee, type(uint256).max - 100);
+        vm.prank(mintee);
+        token.addTransferLock(type(uint256).max, 1000);
+
+        assertEq(token.balanceOf(mintee), type(uint256).max);
+        assertEq(token.getTransferLockTotal(mintee), type(uint256).max);
     }
 }

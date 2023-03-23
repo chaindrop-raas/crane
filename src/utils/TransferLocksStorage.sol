@@ -14,11 +14,16 @@ library TransferLocksStorage {
     struct TransferLock {
         uint256 amount;
         uint256 deadline;
+        uint256 next;
+        uint256 prev;
     }
 
     /// @dev address mapping for transfer locks
     struct TransferLocks {
-        mapping(address => TransferLock[]) locks;
+        mapping(address => mapping(uint256 => TransferLock)) locks;
+        mapping(address => uint256) numLocks;
+        mapping(address => uint256) firstLock;
+        mapping(address => uint256) lastLock;
     }
 
     /// @dev returns the storage pointer for transfer locks
@@ -40,7 +45,42 @@ library TransferLocksStorage {
      */
     function addTransferLock(address account, uint256 amount, uint256 deadline) internal {
         TransferLocks storage tls = transferLocksStorage();
-        tls.locks[account].push(TransferLock(amount, deadline));
+
+        // Remove expired locks from the head of the linked list
+        while (tls.numLocks[account] > 0 && tls.locks[account][tls.firstLock[account]].deadline < block.timestamp) {
+            // Delete the expired lock from storage
+            delete tls.locks[account][tls.firstLock[account]];
+            // Increment the index of the first lock in the list
+            tls.firstLock[account] += 1;
+            // Decrement the number of locks
+            tls.numLocks[account] -= 1;
+        }
+
+        // Make sure we haven't exceeded the maximum number of locks
+        require(tls.numLocks[account] < type(uint16).max, "TransferLocks: maximum number of transfer locks exceeded");
+
+        // Get the index of the new lock
+        uint256 index = tls.numLocks[account];
+
+        // Create the new lock and add it to storage
+        tls.locks[account][index] = TransferLock(amount, deadline, 0, 0);
+
+        // If this is the first lock, update the first and last lock indices
+        if (index == 0) {
+            tls.firstLock[account] = 0;
+            tls.lastLock[account] = 0;
+        } else {
+            // If this is not the first lock, update the next and prev pointers of the locks
+            // Update the prev pointer of the new lock to point to the last lock in the list
+            tls.locks[account][index].prev = tls.lastLock[account];
+            // Update the next pointer of the last lock in the list to point to the new lock
+            tls.locks[account][tls.lastLock[account]].next = index;
+            // Update the last lock index to point to the new lock
+            tls.lastLock[account] = index;
+        }
+
+        // Increment the number of locks
+        tls.numLocks[account] += 1;
     }
 
     /**
@@ -52,11 +92,14 @@ library TransferLocksStorage {
     function getTotalLockedAt(address account, uint256 timestamp) internal view returns (uint256) {
         TransferLocks storage tls = transferLocksStorage();
         uint256 totalLocked = 0;
-        for (uint256 i = 0; i < tls.locks[account].length; i++) {
+
+        // Iterate over the linked list of transfer locks and add up the amount of tokens that are locked
+        for (uint256 i = tls.firstLock[account]; i <= tls.lastLock[account]; i++) {
             if (tls.locks[account][i].deadline >= timestamp) {
                 totalLocked += tls.locks[account][i].amount;
             }
         }
+
         return totalLocked;
     }
 }
