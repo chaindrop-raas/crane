@@ -378,7 +378,7 @@ contract TransferrabilityMembershipTokenTest is OMTHelper {
         emit TransferEnabled(owner, true);
         token.enableTransfer();
     }
- 
+
     function testEmitsTransferDisabledEvent() public {
         token.enableTransfer();
         vm.expectEmit(true, true, true, true, address(token));

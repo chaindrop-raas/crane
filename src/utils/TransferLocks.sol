@@ -18,64 +18,42 @@ import "@diamond/interfaces/IERC165.sol";
  */
 contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
     /// @inheritdoc ITransferLocks
-    function addTransferLock(
-        uint256 amount,
-        uint256 deadline
-    ) public whenValidLock(amount, deadline) {
+    function addTransferLock(uint256 amount, uint256 deadline) public whenValidLock(amount, deadline) {
         TransferLocksStorage.addTransferLock(msg.sender, amount, deadline);
     }
 
     /// @inheritdoc ITransferLocks
-    function getTransferLockTotal(
-        address account
-    ) public view returns (uint256 amount) {
+    function getTransferLockTotal(address account) public view returns (uint256 amount) {
         return TransferLocksStorage.getTotalLockedAt(account, block.timestamp);
     }
 
     /// @inheritdoc ITransferLocks
-    function getTransferLockTotalAt(
-        address account,
-        uint256 timestamp
-    ) public view returns (uint256 amount) {
+    function getTransferLockTotalAt(address account, uint256 timestamp) public view returns (uint256 amount) {
         return TransferLocksStorage.getTotalLockedAt(account, timestamp);
     }
 
     /// @inheritdoc ITransferLocks
-    function getAvailableBalanceAt(
-        address account,
-        uint256 timestamp
-    ) public view returns (uint256 amount) {
-        uint256 totalLocked = TransferLocksStorage.getTotalLockedAt(
-            account,
-            timestamp
-        );
+    function getAvailableBalanceAt(address account, uint256 timestamp) public view returns (uint256 amount) {
+        uint256 totalLocked = TransferLocksStorage.getTotalLockedAt(account, timestamp);
         return balanceOf(account) - totalLocked;
     }
 
     /// @dev Override ERC20Upgradeable._beforeTokenTransfer to check for transfer locks.
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual override {
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         uint256 lockedAmount = getTransferLockTotalAt(from, block.timestamp);
         // slither-disable-next-line timestamp
         if (lockedAmount > 0 && balanceOf(from) >= amount) {
             // slither-disable-next-line timestamp
-            require(
-                balanceOf(from) - amount >= lockedAmount,
-                "TransferLock: this exceeds your unlocked balance"
-            );
+            require(balanceOf(from) - amount >= lockedAmount, "TransferLock: this exceeds your unlocked balance");
         }
         super._beforeTokenTransfer(from, to, amount);
     }
 
     /// @inheritdoc ITransferLocks
-    function transferWithLock(
-        address recipient,
-        uint256 amount,
-        uint256 deadline
-    ) public whenValidLock(amount, deadline) {
+    function transferWithLock(address recipient, uint256 amount, uint256 deadline)
+        public
+        whenValidLock(amount, deadline)
+    {
         _transfer(msg.sender, recipient, amount);
         TransferLocksStorage.addTransferLock(recipient, amount, deadline);
     }
@@ -86,36 +64,23 @@ contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
         uint256[] calldata amounts,
         uint256[] calldata deadlines
     ) external {
-        require(
-            recipients.length == amounts.length,
-            "TransferLock: recipients and amounts must be the same length"
-        );
-        require(
-            recipients.length == deadlines.length,
-            "TransferLock: recipients and deadlines must be the same length"
-        );
+        require(recipients.length == amounts.length, "TransferLock: recipients and amounts must be the same length");
+        require(recipients.length == deadlines.length, "TransferLock: recipients and deadlines must be the same length");
         for (uint256 i = 0; i < recipients.length; i++) {
             transferWithLock(recipients[i], amounts[i], deadlines[i]);
         }
     }
 
     /// @inheritdoc IERC165
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override(ERC20Base, IERC165) returns (bool) {
-        return
-            interfaceId == type(ITransferLocks).interfaceId ||
-            super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC20Base, IERC165) returns (bool) {
+        return interfaceId == type(ITransferLocks).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @dev Modifier to check that the deadline is in the future and the amount is not greater than the available balance.
     modifier whenValidLock(uint256 amount, uint256 deadline) {
         // slither-disable-next-line timestamp
         require(amount > 0, "TransferLock: amount must be greater than zero");
-        require(
-            deadline > block.timestamp,
-            "TransferLock: deadline must be in the future"
-        );
+        require(deadline > block.timestamp, "TransferLock: deadline must be in the future");
         require(
             amount <= getAvailableBalanceAt(msg.sender, block.timestamp),
             "TransferLock: amount cannot exceed available balance"

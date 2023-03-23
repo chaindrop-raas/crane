@@ -27,21 +27,14 @@ abstract contract OGTHelper is OGTAddressHelper, Test {
         vm.startPrank(deployer);
         impl = new OrigamiGovernanceToken();
         proxyAdmin = new ProxyAdmin();
-        token = deployNewToken(
-            owner,
-            "Deciduous Tree DAO Governance",
-            "DTDG",
-            10000000000000000000000000000
-        );
+        token = deployNewToken(owner, "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
         vm.stopPrank();
     }
 
-    function deployNewToken(
-        address _owner,
-        string memory _name,
-        string memory _symbol,
-        uint256 _cap
-    ) public returns (OrigamiGovernanceToken _token) {
+    function deployNewToken(address _owner, string memory _name, string memory _symbol, uint256 _cap)
+        public
+        returns (OrigamiGovernanceToken _token)
+    {
         TransparentUpgradeableProxy proxy;
         proxy = new TransparentUpgradeableProxy(
             address(impl),
@@ -71,12 +64,7 @@ contract DeployGovernanceTokenTest is OGTAddressHelper, Test {
 
     function testDeploy() public {
         token = OrigamiGovernanceToken(address(proxy));
-        token.initialize(
-            owner,
-            "Deciduous Tree DAO Governance",
-            "DTDG",
-            10000000000000000000000000000
-        );
+        token.initialize(owner, "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
         assertEq(token.name(), "Deciduous Tree DAO Governance");
         assertEq(token.symbol(), "DTDG");
         assertEq(token.totalSupply(), 0);
@@ -86,12 +74,7 @@ contract DeployGovernanceTokenTest is OGTAddressHelper, Test {
     function testDeployRevertsWhenAdminIsAdressZero() public {
         token = OrigamiGovernanceToken(address(proxy));
         vm.expectRevert("Admin address cannot be zero");
-        token.initialize(
-            address(0),
-            "Deciduous Tree DAO Governance",
-            "DTDG",
-            10000000000000000000000000000
-        );
+        token.initialize(address(0), "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
     }
 }
 
@@ -115,12 +98,7 @@ contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
         );
         tokenV1 = OrigamiGovernanceToken(address(proxy));
 
-        tokenV1.initialize(
-            owner,
-            "Deciduous Tree DAO Governance",
-            "DTDG",
-            10000000000000000000000000000
-        );
+        tokenV1.initialize(owner, "Deciduous Tree DAO Governance", "DTDG", 10000000000000000000000000000);
     }
 
     function testCanInitialize() public {
@@ -129,12 +107,7 @@ contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
 
     function testCannotInitializeTwice() public {
         vm.expectRevert("Initializable: contract is already initialized");
-        tokenV1.initialize(
-            owner,
-            "EVEN MOAR Deciduous Tree DAO Governance",
-            "EMDTDG",
-            10000000000000000000000000000
-        );
+        tokenV1.initialize(owner, "EVEN MOAR Deciduous Tree DAO Governance", "EMDTDG", 10000000000000000000000000000);
     }
 
     function testCanUpgrade() public {
@@ -153,16 +126,8 @@ contract UpgradeGovernanceTokenTest is Test, OGTAddressHelper {
 }
 
 contract GovernanceTokenVotingPowerTest is OGTHelper {
-    event DelegateChanged(
-        address indexed delegator,
-        address indexed fromDelegate,
-        address indexed toDelegate
-    );
-    event DelegateVotesChanged(
-        address indexed delegate,
-        uint256 previousBalance,
-        uint256 newBalance
-    );
+    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
 
     function setUp() public {
         vm.startPrank(owner);
