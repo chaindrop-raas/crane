@@ -1,9 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
+import {TokenWeightStrategy} from "src/governor/lib/TokenWeightStrategy.sol";
+
 library GovernorStorage {
     bytes32 public constant CONFIG_STORAGE_POSITION = keccak256("com.origami.governor.configStorage");
     bytes32 public constant PROPOSAL_STORAGE_POSITION = keccak256("com.origami.governor.proposalStorage");
+
+    /**
+     * @dev Emitted when a counting strategy's validity is enabled.
+     * @param countingStrategy The counting strategy's bytes4 signature.
+     * @param enabled Whether the counting strategy is enabled.
+     */
+    event CountingStrategyEnabled(bytes4 countingStrategy, bool enabled);
 
     /**
      * @dev Emitted when the default counting strategy is set.
@@ -100,6 +109,7 @@ library GovernorStorage {
         uint128 quorumNumerator;
         uint256 proposalThreshold;
         mapping(address => bool) proposalTokens;
+        mapping(bytes4 => bool) countingStrategies;
     }
 
     struct TimelockQueue {
@@ -145,13 +155,22 @@ library GovernorStorage {
     }
 
     /**
+     * @notice determine if a counting strategy is enabled.
+     * @param countingStrategy the counting strategy to check.
+     * @return true if the counting strategy is enabled.
+     */
+    function isCountingStrategyEnabled(bytes4 countingStrategy) internal view returns (bool) {
+        return configStorage().countingStrategies[countingStrategy];
+    }
+
+    /**
      * @notice determine if a token is enabled for proposal creation.
      * @param token the token address to check.
      * @return true if the token is enabled for proposal creation.
      */
-     function isProposalTokenEnabled(address token) internal view returns (bool) {
+    function isProposalTokenEnabled(address token) internal view returns (bool) {
         return configStorage().proposalTokens[token];
-     }
+    }
 
     /**
      * @notice sets the default counting strategy.
@@ -188,6 +207,20 @@ library GovernorStorage {
         configStorage().proposalTokens[proposalToken] = enabled;
 
         emit ProposalTokenEnabled(proposalToken, enabled);
+    }
+
+    /**
+     * @notice set counting strategy validity
+     * @param countingStrategy the counting strategy selector.
+     * @param enabled true if the counting strategy is valid.
+     * emits CountingStrategyEnabled event.
+     */
+    function enableCountingStrategy(bytes4 countingStrategy, bool enabled) internal {
+        // ensure it's a valid counting strategy selector
+        require(TokenWeightStrategy.knownStrategy(countingStrategy), "Governor: counting strategy must be known");
+        configStorage().countingStrategies[countingStrategy] = enabled;
+
+        emit CountingStrategyEnabled(countingStrategy, enabled);
     }
 
     /**

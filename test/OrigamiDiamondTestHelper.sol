@@ -5,6 +5,7 @@ import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
 import {OrigamiMembershipToken} from "src/OrigamiMembershipToken.sol";
 import {OrigamiTimelockController} from "src/OrigamiTimelockController.sol";
 import {SimpleCounting} from "src/governor/lib/SimpleCounting.sol";
+import {TokenWeightStrategy} from "src/governor/lib/TokenWeightStrategy.sol";
 
 import {GovernorCoreFacet} from "src/governor/GovernorCoreFacet.sol";
 import {GovernorSettingsFacet} from "src/governor/GovernorSettingsFacet.sol";
@@ -191,6 +192,8 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
         settingsFacet.setGovernanceToken(address(govToken));
         settingsFacet.enableProposalToken(address(govToken), true);
         settingsFacet.enableProposalToken(address(memToken), true);
+        settingsFacet.enableCountingStrategy(TokenWeightStrategy.simpleWeightSelector, true);
+        settingsFacet.enableCountingStrategy(TokenWeightStrategy.quadraticWeightSelector, true);
         vm.stopPrank();
 
         vm.roll(42);

@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/utils/GovernorStorage.sol";
+import {GovernorStorage} from "src/utils/GovernorStorage.sol";
 
 /**
  * @title Simple Counting strategy
@@ -12,6 +12,15 @@ import "src/utils/GovernorStorage.sol";
 library TokenWeightStrategy {
     bytes4 internal constant simpleWeightSelector = bytes4(keccak256("simpleWeight(uint256)"));
     bytes4 internal constant quadraticWeightSelector = bytes4(keccak256("quadraticWeight(uint256)"));
+
+    /**
+     * @notice Checks if the provided selector is a known strategy.
+     * @param weightingSelector the selector to check.
+     * @return true if the selector is a known strategy.
+     */
+    function knownStrategy(bytes4 weightingSelector) internal pure returns (bool) {
+        return weightingSelector == simpleWeightSelector || weightingSelector == quadraticWeightSelector;
+    }
 
     /**
      * @notice Applies the indicated weighting strategy to the amount `weight` that is supplied.
@@ -53,7 +62,7 @@ library TokenWeightStrategy {
      * @param x the number to derive the square root of.
      * @return y - the square root of x.
      */
-    function squareRoot(uint256 x) private pure returns (uint256 y) {
+    function squareRoot(uint256 x) internal pure returns (uint256 y) {
         uint256 z = (x + 1) / 2;
         y = x;
         while (z < y) {

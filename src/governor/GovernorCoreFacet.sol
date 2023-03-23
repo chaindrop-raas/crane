@@ -97,6 +97,15 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     }
 
     /**
+     * @notice determine if a counting strategy is valid to configure a proposal for voting with.
+     * @param countingStrategy the selector of the counting strategy to check
+     * @return true if the counting strategy is a proposal token, false otherwise
+     */
+    function isCountingStrategyEnabled(bytes4 countingStrategy) public view returns (bool) {
+        return GovernorStorage.isCountingStrategyEnabled(countingStrategy);
+    }
+
+    /**
      * @notice Strategy for deriving the proposal-specific voting weight. Returns the weight unchanged.
      * @dev this is a shim for configuring the default counting strategy with a
      * concrete selector. We can't use the lib directly or else its functions
@@ -309,7 +318,8 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             IERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
             "Governor: proposal token must support IVotes"
         );
-        require(GovernorStorage.isProposalTokenEnabled(proposalToken), "Governor: proposal token not allowed");
+        require(isProposalTokenEnabled(proposalToken), "Governor: proposal token not allowed");
+        require(isCountingStrategyEnabled(countingStrategy), "Governor: counting strategy not allowed");
 
         require(targets.length == values.length, "Governor: invalid proposal length");
         require(targets.length == calldatas.length, "Governor: invalid proposal length");
