@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/governor/lib/GovernorCommon.sol";
-import "src/governor/lib/GovernorQuorum.sol";
-import "src/governor/lib/TokenWeightStrategy.sol";
-import "src/interfaces/IGovernor.sol";
-import "src/interfaces/IVotes.sol";
-import "src/interfaces/utils/IEIP712.sol";
-import "src/utils/AccessControl.sol";
-import "src/utils/GovernorStorage.sol";
+import {GovernorCommon} from "src/governor/lib/GovernorCommon.sol";
+import {GovernorQuorum} from "src/governor/lib/GovernorQuorum.sol";
+import {TokenWeightStrategy} from "src/governor/lib/TokenWeightStrategy.sol";
+import {IGovernor} from "src/interfaces/IGovernor.sol";
+import {IVotes} from "src/interfaces/IVotes.sol";
+import {IEIP712} from "src/interfaces/utils/IEIP712.sol";
+import {AccessControl} from "src/utils/AccessControl.sol";
+import {GovernorStorage} from "src/utils/GovernorStorage.sol";
+import {SimpleCounting} from "src/governor/lib/SimpleCounting.sol";
 
-import "@diamond/interfaces/IERC165.sol";
-import "@oz/utils/cryptography/ECDSA.sol";
+import {IERC165} from "@diamond/interfaces/IERC165.sol";
+import {ECDSA} from "@oz/utils/cryptography/ECDSA.sol";
 
 /**
  * @dev a really simple interface for a token that has a balanceOf function.
@@ -84,6 +85,15 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
     /// @inheritdoc IGovernor
     function proposalDeadline(uint256 proposalId) external view returns (uint256) {
         return GovernorStorage.proposalStorage().proposals[proposalId].deadline;
+    }
+
+    /**
+     * @notice determine if a token is valid to configure a proposal for voting with.
+     * @param proposalToken the address of the token to check
+     * @return true if the token is a proposal token, false otherwise
+     */
+    function isProposalTokenEnabled(address proposalToken) public view returns (bool) {
+        return GovernorStorage.isProposalTokenEnabled(proposalToken);
     }
 
     /**
@@ -299,7 +309,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
             IERC165(proposalToken).supportsInterface(type(IVotes).interfaceId),
             "Governor: proposal token must support IVotes"
         );
-        require(GovernorStorage.isConfiguredToken(proposalToken), "Governor: proposal token not allowed");
+        require(GovernorStorage.isProposalTokenEnabled(proposalToken), "Governor: proposal token not allowed");
 
         require(targets.length == values.length, "Governor: invalid proposal length");
         require(targets.length == calldatas.length, "Governor: invalid proposal length");

@@ -21,8 +21,6 @@ library TokenWeightStrategy {
      * @return the weight with the weighting strategy applied to it.
      */
     function applyStrategy(uint256 weight, bytes4 weightingSelector) internal pure returns (uint256) {
-        // We check for success and only issue this as staticcall
-
         if (weightingSelector == simpleWeightSelector) {
             return simpleWeight(weight);
         } else if (weightingSelector == quadraticWeightSelector) {

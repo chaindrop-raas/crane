@@ -3,11 +3,11 @@ pragma solidity 0.8.16;
 
 import {GovernorDiamondHelper} from "test/OrigamiDiamondTestHelper.sol";
 
-import "src/OrigamiGovernanceToken.sol";
-import "src/interfaces/IGovernor.sol";
+import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
+import {IGovernor} from "src/interfaces/IGovernor.sol";
 
-import "@oz/proxy/transparent/ProxyAdmin.sol";
-import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "@oz/proxy/transparent/ProxyAdmin.sol";
+import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract OrigamiGovernorProposalTest is GovernorDiamondHelper {
     event ProposalCreated(
@@ -107,7 +107,7 @@ contract OrigamiGovernorProposalTest is GovernorDiamondHelper {
         );
     }
 
-    function testProposalWithParamsTokenMustBeAConfiguredToken() public {
+    function testProposalWithParamsTokenMustBeAProposalToken() public {
         targets[0] = address(0xbeef);
         values[0] = uint256(0xdead);
         calldatas[0] = "0x";
@@ -410,6 +410,94 @@ contract OrigamiGovernorLifeCycleTest is GovernorDiamondHelper {
         vm.expectRevert("Governor: proposal not successful");
         // Enqueue the proposal
         timelockControlFacet.queue(targets, values, calldatas, proposalHash);
+    }
+
+    function testProposalTokenMustBeAConfiguredToken() public {
+        targets[0] = address(origamiGovernorDiamond);
+        values[0] = uint256(0);
+        calldatas[0] = abi.encodeWithSignature("enableProposalToken(address,bool)", address(origamiGovernorDiamond), true);
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
+        proposalHash = keccak256(bytes("Update Proposal Token"));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.proposeWithParams(targets, values, calldatas, "Update Proposal Token", params);
+
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // proposal is created in the pending state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+        // advance to the voting period
+        vm.warp(block.timestamp + 7 days + 1);
+        vm.prank(voter);
+        coreFacet.castVoteWithReason(proposalId, 1, "I like it");
+
+        // proposal is in the active state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
+
+        // advance to the voting deadline
+        vm.warp(block.timestamp + 7 days + 1);
+
+        // proposal is in the succeeded state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+        // Enqueue the proposal
+        timelockControlFacet.queue(targets, values, calldatas, proposalHash);
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
+
+        vm.warp(block.timestamp + 1 days);
+        // the underlying transaction is reverted due to the proposal token not being a configured token
+        vm.expectRevert("TimelockController: underlying transaction reverted");
+        timelockControlFacet.execute(targets, values, calldatas, proposalHash);
+    }
+
+    function testDisableProposalToken() public {
+        targets[0] = address(origamiGovernorDiamond);
+        values[0] = uint256(0);
+        calldatas[0] = abi.encodeWithSignature("enableProposalToken(address,bool)", address(memToken), false);
+
+        // use the gov token for vote weight
+        params = abi.encode(address(govToken), bytes4(keccak256("simpleWeight(uint256)")));
+        proposalHash = keccak256(bytes("Update Proposal Token"));
+
+        vm.prank(voter2);
+        proposalId = coreFacet.proposeWithParams(targets, values, calldatas, "Update Proposal Token", params);
+
+        // self-delegate to get voting power
+        vm.prank(voter);
+        govToken.delegate(voter);
+
+        // proposal is created in the pending state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+        // advance to the voting period
+        vm.warp(block.timestamp + 7 days + 1);
+        vm.prank(voter);
+        coreFacet.castVoteWithReason(proposalId, 1, "I like it");
+
+        // proposal is in the active state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Active));
+
+        // advance to the voting deadline
+        vm.warp(block.timestamp + 7 days + 1);
+
+        // proposal is in the succeeded state
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+        // Enqueue the proposal
+        timelockControlFacet.queue(targets, values, calldatas, proposalHash);
+        assertEq(uint8(coreFacet.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
+
+        vm.warp(block.timestamp + 1 days);
+        timelockControlFacet.execute(targets, values, calldatas, proposalHash);
+
+        vm.warp(block.timestamp + 1);
+        assertFalse(coreFacet.isProposalTokenEnabled(address(memToken)));
+        assertTrue(coreFacet.isProposalTokenEnabled(address(govToken)));
     }
 }
 
