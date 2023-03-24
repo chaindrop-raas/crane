@@ -186,7 +186,7 @@ contract TransferLockUseCaseTests is TransferLocksTestHelper {
         vm.expectRevert(); //Reverts with Arithmetic over/underflow
         token.transfer(minter, 200);
     }
-q
+
     function testCannotCreateTransferLockInPast() public {
         vm.warp(10000);
         vm.prank(mintee);

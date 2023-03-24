@@ -13,14 +13,14 @@ library Checkpoints {
     bytes32 public constant DELEGATE_STORAGE_POSITION = keccak256("com.origami.ivotes.delegates");
 
     /**
-     * @dev Emitted when an account changes their delegate.
+     * @dev Emitted when an account changes their delegatee.
      */
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
 
     /**
-     * @dev Emitted when a token transfer or delegate change results in changes to a delegate's number of votes.
+     * @dev Emitted when a token transfer or delegatee change results in changes to a delegatee's number of votes.
      */
-    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
+    event DelegateVotesChanged(address indexed delegatee, uint256 previousBalance, uint256 newBalance);
 
     /// @dev struct to store checkpoint data
     struct Checkpoint {
@@ -196,7 +196,7 @@ library Checkpoints {
 
     /**
      * @notice Returns the address of the account which `account` has delegated to
-     * @param account The address to return the delegate for
+     * @param account The address to return the delegatee for
      * @return The address of the account which `account` delegated to. If `account` has not delegated, returns address(0).
      */
     function delegates(address account) internal view returns (address) {
@@ -233,21 +233,21 @@ library Checkpoints {
     /**
      * @notice Moves the delegated voting weight from one delegatee to another
      * @dev because it calls writeCheckpoint, as a side effect, a DelegateVotesChanged event is emitted
-     * @param oldDelegate The address of the delegate to remove voting units from. If not address(0), then the voting units are removed from the oldDelegate
-     * @param newDelegate The address of the delegate to add voting units to. If not address(0), then the voting units are added to the newDelegate
+     * @param oldDelegate The address of the delegatee to remove voting units from. If not address(0), then the voting units are removed from the oldDelegate
+     * @param newDelegate The address of the delegatee to add voting units to. If not address(0), then the voting units are added to the newDelegate
      * @param amount The number of voting units to move
      */
     function moveDelegation(address oldDelegate, address newDelegate, uint256 amount) internal {
         if (oldDelegate != newDelegate && amount > 0) {
             if (oldDelegate != address(0)) {
-                // decrease old delegate
+                // decrease old delegatee
                 uint256 oldVotes = getVotes(oldDelegate);
                 uint256 newVotes = oldVotes - amount;
                 writeCheckpoint(oldDelegate, oldVotes, newVotes);
             }
 
             if (newDelegate != address(0)) {
-                // increase new delegate
+                // increase new delegatee
                 uint256 oldVotes = getVotes(newDelegate);
                 uint256 newVotes = oldVotes + amount;
                 writeCheckpoint(newDelegate, oldVotes, newVotes);

@@ -6,11 +6,11 @@ pragma solidity 0.8.16;
  * @notice Common interface for {ERC20Votes}, {ERC721Votes}, and other {Votes}-enabled contracts.
  */
 interface IVotes {
-    /// @dev Emitted when an account changes their delegate.
+    /// @dev Emitted when an account changes their delegatee.
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
 
-    /// @dev Emitted when a token transfer or delegate change results in changes to a delegate's number of votes.
-    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
+    /// @dev Emitted when a token transfer or delegatee change results in changes to a delegatee's number of votes.
+    event DelegateVotesChanged(address indexed delegatee, uint256 previousBalance, uint256 newBalance);
 
     /// @dev Returns the current amount of votes that `account` has.
     function getVotes(address account) external view returns (uint256);
@@ -41,9 +41,9 @@ interface IVotes {
     function getDelegatorNonce(address delegator) external view returns (uint256);
 
     /**
-     * @notice Returns the delegate that `account` has chosen.
-     * @param account The address of the account to get the delegate for.
-     * @return The address of the delegate for `account`.
+     * @notice Returns the delegatee that `account` has chosen.
+     * @param account The address of the account to get the delegatee for.
+     * @return The address of the delegatee for `account`.
      */
     function delegates(address account) external view returns (address);
 
