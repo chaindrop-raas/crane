@@ -337,6 +337,20 @@ contract TransferLockUseCaseTests is TransferLocksTestHelper {
         assertEq(token.getTransferLockTotalAt(recipient, 601), 60);
     }
 
+    /// guard against not being able to add a lock if an account doesn't already
+    /// have a balance that could absorb it.
+    function testTransferLockIsAppliedAfterBalanceIsUpdated() public {
+
+        // minter has no balance in advance of being transferred to
+        assertEq(token.balanceOf(minter), 0);
+
+        // mintee transferWithLock's 10 tokens to minter
+        vm.prank(mintee);
+        token.transferWithLock(minter, 10, 1000);
+
+        assertEq(token.getTransferLockTotal(minter), 10);
+    }
+
     function testTransferLockAtMaxValue() public {
         vm.prank(owner);
         token.mint(mintee, type(uint256).max - 100);
