@@ -232,7 +232,7 @@ library Checkpoints {
 
     /**
      * @notice Moves the delegated voting weight from one delegatee to another
-     * @dev because it calls writeCheckpoint, this function emits a DelegateVotesChanged event
+     * @dev because it calls writeCheckpoint, as a side effect, a DelegateVotesChanged event is emitted
      * @param oldDelegate The address of the delegate to remove voting units from. If not address(0), then the voting units are removed from the oldDelegate
      * @param newDelegate The address of the delegate to add voting units to. If not address(0), then the voting units are added to the newDelegate
      * @param amount The number of voting units to move
