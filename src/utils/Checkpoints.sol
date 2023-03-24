@@ -79,7 +79,8 @@ library Checkpoints {
         returns (uint256 weight)
     {
         if (count > 0) {
-            weight = checkpoints[count - 1].votes;
+            uint32 index = count - 1;
+            weight = checkpoints[index].votes;
         } else {
             weight = 0;
         }
