@@ -88,7 +88,7 @@ library Checkpoints {
     /**
      * @dev This is generalized to allow lookups in any indexed mapping of checkpoints
      * @param checkpoints the mapping with a sequence of checkpoints
-     * @param count the sequence number of the desired checkpoint
+     * @param count the total number of checkpoints for param checkpoints
      * @param timestamp the timestamp of the snapshot
      * @return the weight for the latest checkpoint before the timestamp specified
      *
