@@ -11,7 +11,7 @@ import "@diamond/interfaces/IERC165.sol";
  * @author Origami
  * @notice this library enables time-locked transfers of ERC20 tokens.
  * Transferlocks are the inverse of a vesting schedule. They allow the holder to
- * vote with their weight but not to tranfer them before a certain date.
+ * vote with their weight but not to transfer them before a certain date.
  * @dev TransferLocks are resilient to timestamp manipulation by using
  * block.timestamp, locks will typically be measured in months, not seconds.
  * @custom:security-contact contract-security@joinorigami.com
