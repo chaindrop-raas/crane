@@ -40,7 +40,7 @@ contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
 
     /// @dev Override ERC20Upgradeable._beforeTokenTransfer to check for transfer locks.
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
-        uint256 lockedAmount = getTransferLockTotalAt(from, block.timestamp);
+        uint256 lockedAmount = getTransferLockTotal(from);
         // slither-disable-next-line timestamp
         if (lockedAmount > 0) {
             // slither-disable-next-line timestamp
