@@ -182,8 +182,11 @@ contract TransferLockUseCaseTests is TransferLocksTestHelper {
     function testCannotUnderflowAmount() public {
         vm.prank(mintee);
         token.addTransferLock(100, 1000);
+        // we would get an underflow revert if we weren't checking the balance
+        // exceeds the amount, since we do, we get the built-in revert about the
+        // amount being too high
         vm.prank(mintee);
-        vm.expectRevert(); //Reverts with Arithmetic over/underflow
+        vm.expectRevert("ERC20: transfer amount exceeds balance");
         token.transfer(minter, 200);
     }
 

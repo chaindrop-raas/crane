@@ -42,9 +42,8 @@ contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         uint256 lockedAmount = getTransferLockTotal(from);
         // slither-disable-next-line timestamp
-        if (lockedAmount > 0) {
+        if (lockedAmount > 0 && balanceOf(from) >= amount) {
             // slither-disable-next-line timestamp
-            // the require accounts for balanceOf(from) needing to be >= amount
             require(balanceOf(from) - amount >= lockedAmount, "TransferLock: this exceeds your unlocked balance");
         }
         super._beforeTokenTransfer(from, to, amount);
