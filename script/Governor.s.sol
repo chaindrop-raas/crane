@@ -1,19 +1,40 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.16;
 
-import "src/OrigamiTimelockController.sol";
-import "src/utils/DiamondDeployHelper.sol";
-import "src/utils/GovernorDiamondInit.sol";
+import {OrigamiTimelockController} from "src/OrigamiTimelockController.sol";
+import {GovernorCoreFacet} from "src/governor/GovernorCoreFacet.sol";
+import {GovernorSettingsFacet} from "src/governor/GovernorSettingsFacet.sol";
+import {GovernorTimelockControlFacet} from "src/governor/GovernorTimelockControlFacet.sol";
+import {GovernorDiamondInit} from "src/utils/GovernorDiamondInit.sol";
+import {DiamondDeployHelper} from "src/utils/DiamondDeployHelper.sol";
 
-import "@std/Script.sol";
-import "@diamond/Diamond.sol";
+import {DiamondLoupeFacet} from "@diamond/facets/DiamondLoupeFacet.sol";
+import {DiamondCutFacet} from "@diamond/facets/DiamondCutFacet.sol";
+import {IDiamondCut} from "@diamond/interfaces/IDiamondCut.sol";
+import {OwnershipFacet} from "@diamond/facets/OwnershipFacet.sol";
 
+import {Script} from "@std/Script.sol";
+import {console2} from "@std/console2.sol";
+import {Diamond} from "@diamond/Diamond.sol";
+
+// solhint-disable no-console
 contract DeployGovernorCoreFacet is Script {
     function run() external {
         vm.startBroadcast();
 
         GovernorCoreFacet governorCoreFacet = new GovernorCoreFacet();
         console2.log("GovernorCoreFacet deployed at", address(governorCoreFacet));
+
+        vm.stopBroadcast();
+    }
+}
+
+contract DeployGovernorSettingsFacet is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        GovernorSettingsFacet governorSettingsFacet = new GovernorSettingsFacet();
+        console2.log("GovernorSettingsFacet deployed at", address(governorSettingsFacet));
 
         vm.stopBroadcast();
     }
