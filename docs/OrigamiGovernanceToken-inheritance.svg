@@ -1,0 +1,187 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1299pt" height="260pt" viewBox="0.00 0.00 1299.46 260.00">
+<g id="graph0" class="graph" transform="translate(4,256) scale(1)" data-name="G">
+
+<polygon fill="white" stroke="none" points="-4,4 -4,-256 1295.46,-256 1295.46,4 -4,4" style=""/>
+<!-- OrigamiGovernanceToken -->
+<g id="node1" class="node" pointer-events="visible" data-name="OrigamiGovernanceToken">
+
+<ellipse fill="none" stroke="black" cx="694.15" cy="-234" rx="114.57" ry="18" style=""/>
+<text text-anchor="middle" x="694.15" y="-229.8" font-family="Times,serif" font-size="14.00" style="">OrigamiGovernanceToken</text>
+</g>
+<!-- ERC20Base -->
+<g id="node2" class="node" pointer-events="visible" data-name="ERC20Base">
+
+<ellipse fill="none" stroke="black" cx="570.15" cy="-90" rx="58.49" ry="18" style=""/>
+<text text-anchor="middle" x="570.15" y="-85.8" font-family="Times,serif" font-size="14.00" style="">ERC20Base</text>
+</g>
+<!-- OrigamiGovernanceToken&#45;&gt;ERC20Base -->
+<g id="edge1" class="edge" data-name="OrigamiGovernanceToken-&gt;ERC20Base">
+
+<path fill="none" stroke="black" d="M663.47,-216.22C648.5,-206.95 631,-194.41 618.15,-180 602.01,-161.9 589.32,-137.43 581.05,-118.72" style=""/>
+<polygon fill="black" stroke="black" points="584.3,-117.44 577.18,-109.59 577.86,-120.17 584.3,-117.44" style=""/>
+</g>
+<!-- TransferLocks -->
+<g id="node3" class="node" pointer-events="visible" data-name="TransferLocks">
+
+<ellipse fill="none" stroke="black" cx="694.15" cy="-162" rx="67.18" ry="18" style=""/>
+<text text-anchor="middle" x="694.15" y="-157.8" font-family="Times,serif" font-size="14.00" style="">TransferLocks</text>
+</g>
+<!-- OrigamiGovernanceToken&#45;&gt;TransferLocks -->
+<g id="edge2" class="edge" data-name="OrigamiGovernanceToken-&gt;TransferLocks">
+
+<path fill="none" stroke="black" d="M694.15,-215.7C694.15,-208.41 694.15,-199.73 694.15,-191.54" style=""/>
+<polygon fill="black" stroke="black" points="697.65,-191.62 694.15,-181.62 690.65,-191.62 697.65,-191.62" style=""/>
+</g>
+<!-- Votes -->
+<g id="node4" class="node" pointer-events="visible" data-name="Votes">
+
+<ellipse fill="none" stroke="black" cx="955.15" cy="-162" rx="33.63" ry="18" style=""/>
+<text text-anchor="middle" x="955.15" y="-157.8" font-family="Times,serif" font-size="14.00" style="">Votes</text>
+</g>
+<!-- OrigamiGovernanceToken&#45;&gt;Votes -->
+<g id="edge3" class="edge" data-name="OrigamiGovernanceToken-&gt;Votes">
+
+<path fill="none" stroke="black" d="M750.46,-217.9C799.95,-204.62 870.76,-185.63 914.79,-173.82" style=""/>
+<polygon fill="black" stroke="black" points="915.44,-177.27 924.19,-171.3 913.63,-170.51 915.44,-177.27" style=""/>
+</g>
+<!-- Initializable -->
+<g id="node10" class="node" pointer-events="visible" data-name="Initializable">
+
+<ellipse fill="none" stroke="black" cx="57.15" cy="-18" rx="57.3" ry="18" style=""/>
+<text text-anchor="middle" x="57.15" y="-13.8" font-family="Times,serif" font-size="14.00" style="">Initializable</text>
+</g>
+<!-- ERC20Base&#45;&gt;Initializable -->
+<g id="edge9" class="edge" data-name="ERC20Base-&gt;Initializable">
+
+<path fill="none" stroke="black" d="M513.69,-84.75C428.53,-77.79 262.38,-62.06 123.15,-36 118.83,-35.19 114.37,-34.26 109.9,-33.25" style=""/>
+<polygon fill="black" stroke="black" points="110.87,-29.89 100.33,-30.99 109.26,-36.7 110.87,-29.89" style=""/>
+</g>
+<!-- ERC20Upgradeable -->
+<g id="node11" class="node" pointer-events="visible" data-name="ERC20Upgradeable">
+
+<ellipse fill="none" stroke="black" cx="221.15" cy="-18" rx="88.61" ry="18" style=""/>
+<text text-anchor="middle" x="221.15" y="-13.8" font-family="Times,serif" font-size="14.00" style="">ERC20Upgradeable</text>
+</g>
+<!-- ERC20Base&#45;&gt;ERC20Upgradeable -->
+<g id="edge10" class="edge" data-name="ERC20Base-&gt;ERC20Upgradeable">
+
+<path fill="none" stroke="black" d="M521.99,-79.34C462.92,-67.49 362.21,-47.29 293.74,-33.56" style=""/>
+<polygon fill="black" stroke="black" points="294.59,-30.16 284.1,-31.63 293.21,-37.02 294.59,-30.16" style=""/>
+</g>
+<!-- ERC20BurnableUpgradeable -->
+<g id="node12" class="node" pointer-events="visible" data-name="ERC20BurnableUpgradeable">
+
+<ellipse fill="none" stroke="black" cx="452.15" cy="-18" rx="124.41" ry="18" style=""/>
+<text text-anchor="middle" x="452.15" y="-13.8" font-family="Times,serif" font-size="14.00" style="">ERC20BurnableUpgradeable</text>
+</g>
+<!-- ERC20Base&#45;&gt;ERC20BurnableUpgradeable -->
+<g id="edge11" class="edge" data-name="ERC20Base-&gt;ERC20BurnableUpgradeable">
+
+<path fill="none" stroke="black" d="M543.96,-73.46C528.15,-64.08 507.73,-51.97 490.16,-41.55" style=""/>
+<polygon fill="black" stroke="black" points="492.43,-38.83 482.05,-36.73 488.86,-44.85 492.43,-38.83" style=""/>
+</g>
+<!-- PausableUpgradeable -->
+<g id="node13" class="node" pointer-events="visible" data-name="PausableUpgradeable">
+
+<ellipse fill="none" stroke="black" cx="689.15" cy="-18" rx="94.89" ry="18" style=""/>
+<text text-anchor="middle" x="689.15" y="-13.8" font-family="Times,serif" font-size="14.00" style="">PausableUpgradeable</text>
+</g>
+<!-- ERC20Base&#45;&gt;PausableUpgradeable -->
+<g id="edge12" class="edge" data-name="ERC20Base-&gt;PausableUpgradeable">
+
+<path fill="none" stroke="black" d="M596.56,-73.46C612.74,-63.95 633.7,-51.62 651.59,-41.1" style=""/>
+<polygon fill="black" stroke="black" points="653.01,-44.32 659.85,-36.23 649.46,-38.29 653.01,-44.32" style=""/>
+</g>
+<!-- AccessControlUpgradeable -->
+<g id="node14" class="node" pointer-events="visible" data-name="AccessControlUpgradeable">
+
+<ellipse fill="none" stroke="black" cx="919.15" cy="-18" rx="117.45" ry="18" style=""/>
+<text text-anchor="middle" x="919.15" y="-13.8" font-family="Times,serif" font-size="14.00" style="">AccessControlUpgradeable</text>
+</g>
+<!-- ERC20Base&#45;&gt;AccessControlUpgradeable -->
+<g id="edge13" class="edge" data-name="ERC20Base-&gt;AccessControlUpgradeable">
+
+<path fill="none" stroke="black" d="M613.67,-77.54C621.47,-75.6 629.54,-73.68 637.15,-72 701.89,-57.72 775.53,-43.96 831.32,-34.04" style=""/>
+<polygon fill="black" stroke="black" points="831.86,-37.5 841.1,-32.31 830.64,-30.61 831.86,-37.5" style=""/>
+</g>
+<!-- ERC20CappedUpgradeable -->
+<g id="node15" class="node" pointer-events="visible" data-name="ERC20CappedUpgradeable">
+
+<ellipse fill="none" stroke="black" cx="1173.15" cy="-18" rx="118.11" ry="18" style=""/>
+<text text-anchor="middle" x="1173.15" y="-13.8" font-family="Times,serif" font-size="14.00" style="">ERC20CappedUpgradeable</text>
+</g>
+<!-- ERC20Base&#45;&gt;ERC20CappedUpgradeable -->
+<g id="edge14" class="edge" data-name="ERC20Base-&gt;ERC20CappedUpgradeable">
+
+<path fill="none" stroke="black" d="M612.47,-77.17C620.61,-75.21 629.11,-73.37 637.15,-72 816.62,-41.52 864.22,-55.99 1045.15,-36 1055.49,-34.86 1066.28,-33.57 1077.03,-32.23" style=""/>
+<polygon fill="black" stroke="black" points="1077.2,-35.74 1086.68,-31.01 1076.32,-28.79 1077.2,-35.74" style=""/>
+</g>
+<!-- TransferLocks&#45;&gt;ERC20Base -->
+<g id="edge6" class="edge" data-name="TransferLocks-&gt;ERC20Base">
+
+<path fill="none" stroke="black" d="M666.32,-145.29C648.77,-135.38 625.9,-122.47 606.87,-111.73" style=""/>
+<polygon fill="black" stroke="black" points="608.78,-108.79 598.35,-106.92 605.34,-114.88 608.78,-108.79" style=""/>
+</g>
+<!-- IERC165 -->
+<g id="node8" class="node" pointer-events="visible" data-name="IERC165">
+
+<ellipse fill="none" stroke="black" cx="694.15" cy="-90" rx="47.54" ry="18" style=""/>
+<text text-anchor="middle" x="694.15" y="-85.8" font-family="Times,serif" font-size="14.00" style="">IERC165</text>
+</g>
+<!-- TransferLocks&#45;&gt;IERC165 -->
+<g id="edge7" class="edge" data-name="TransferLocks-&gt;IERC165">
+
+<path fill="none" stroke="black" d="M694.15,-143.7C694.15,-136.41 694.15,-127.73 694.15,-119.54" style=""/>
+<polygon fill="black" stroke="black" points="697.65,-119.62 694.15,-109.62 690.65,-119.62 697.65,-119.62" style=""/>
+</g>
+<!-- ITransferLocks -->
+<g id="node9" class="node" pointer-events="visible" data-name="ITransferLocks">
+
+<ellipse fill="none" stroke="black" cx="830.15" cy="-90" rx="70.62" ry="18" style=""/>
+<text text-anchor="middle" x="830.15" y="-85.8" font-family="Times,serif" font-size="14.00" style="">ITransferLocks</text>
+</g>
+<!-- TransferLocks&#45;&gt;ITransferLocks -->
+<g id="edge8" class="edge" data-name="TransferLocks-&gt;ITransferLocks">
+
+<path fill="none" stroke="black" d="M724.33,-145.46C743.62,-135.54 768.84,-122.56 789.83,-111.75" style=""/>
+<polygon fill="black" stroke="black" points="791.42,-114.87 798.71,-107.18 788.21,-108.65 791.42,-114.87" style=""/>
+</g>
+<!-- IVotes -->
+<g id="node5" class="node" pointer-events="visible" data-name="IVotes">
+
+<ellipse fill="none" stroke="black" cx="955.15" cy="-90" rx="36.57" ry="18" style=""/>
+<text text-anchor="middle" x="955.15" y="-85.8" font-family="Times,serif" font-size="14.00" style="">IVotes</text>
+</g>
+<!-- Votes&#45;&gt;IVotes -->
+<g id="edge4" class="edge" data-name="Votes-&gt;IVotes">
+
+<path fill="none" stroke="black" d="M955.15,-143.7C955.15,-136.41 955.15,-127.73 955.15,-119.54" style=""/>
+<polygon fill="black" stroke="black" points="958.65,-119.62 955.15,-109.62 951.65,-119.62 958.65,-119.62" style=""/>
+</g>
+<!-- IVotesToken -->
+<g id="node6" class="node" pointer-events="visible" data-name="IVotesToken">
+
+<ellipse fill="none" stroke="black" cx="1071.15" cy="-90" rx="61.41" ry="18" style=""/>
+<text text-anchor="middle" x="1071.15" y="-85.8" font-family="Times,serif" font-size="14.00" style="">IVotesToken</text>
+</g>
+<!-- Votes&#45;&gt;IVotesToken -->
+<g id="edge5" class="edge" data-name="Votes-&gt;IVotesToken">
+
+<path fill="none" stroke="black" d="M976.97,-147.83C993.51,-137.85 1016.59,-123.92 1035.77,-112.35" style=""/>
+<polygon fill="black" stroke="black" points="1037.33,-115.5 1044.09,-107.33 1033.71,-109.5 1037.33,-115.5" style=""/>
+</g>
+<!-- Checkpoints -->
+<g id="node7" class="node" pointer-events="visible" data-name="Checkpoints">
+
+<ellipse fill="none" stroke="black" cx="886.15" cy="-234" rx="59.13" ry="18" style=""/>
+<text text-anchor="middle" x="886.15" y="-229.8" font-family="Times,serif" font-size="14.00" style="">Checkpoints</text>
+</g>
+<!-- TransferLocksStorage -->
+<g id="node16" class="node" pointer-events="visible" data-name="TransferLocksStorage">
+
+<ellipse fill="none" stroke="black" cx="1060.15" cy="-234" rx="96.68" ry="18" style=""/>
+<text text-anchor="middle" x="1060.15" y="-229.8" font-family="Times,serif" font-size="14.00" style="">TransferLocksStorage</text>
+</g>
+</g>
+</svg>
