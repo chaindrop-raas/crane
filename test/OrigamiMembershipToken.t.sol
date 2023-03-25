@@ -591,6 +591,8 @@ contract MembershipTokenVotingPowerTest is OMTHelper {
     }
 
     function testDelegatesReturnsDelegateOf(address delegatee) public {
+        vm.assume(delegatee != address(0));
+
         // mint token as owner
         token.enableTransfer();
         token.safeMint(mintee);
