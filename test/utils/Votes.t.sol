@@ -222,3 +222,50 @@ contract VoteDelegationTest is VotesTestHelper {
         assertEq(votes.getVotes(accountTwo), 0);
     }
 }
+
+contract ClearDelegationTest is VotesTestHelper {
+    function testClearSelfDelegation() public {
+        votes.mint(accountOne, 100);
+        vm.prank(accountOne);
+        votes.delegate(accountOne);
+
+        assertEq(votes.getVotes(accountOne), 100);
+
+        vm.prank(accountOne);
+        votes.clearDelegation();
+
+        assertEq(votes.getVotes(accountOne), 0);
+    }
+
+    function testClearDelegationToAccountWithOtherDelegates() public {
+        votes.mint(accountOne, 100);
+        votes.mint(accountTwo, 100);
+        votes.mint(accountThree, 100);
+
+        vm.prank(accountOne);
+        votes.delegate(accountTwo);
+
+        vm.prank(accountThree);
+        votes.delegate(accountTwo);
+
+        vm.prank(accountTwo);
+        votes.delegate(accountTwo);
+
+        // accountTwo has 300 votes, accountOne has 0
+        assertEq(votes.getVotes(accountTwo), 300);
+        assertEq(votes.getVotes(accountOne), 0);
+
+        // accountOne clears their delegation
+        vm.prank(accountOne);
+        votes.clearDelegation();
+        assertEq(votes.getVotes(accountOne), 0);
+        assertEq(votes.getVotes(accountTwo), 200);
+        assertEq(votes.getVotes(address(0)), 0);
+        assertEq(votes.delegates(accountOne), address(0));
+
+        // can re-delegate to self after clearing
+        vm.prank(accountOne);
+        votes.delegate(accountOne);
+        assertEq(votes.getVotes(accountOne), 100);
+    }
+}

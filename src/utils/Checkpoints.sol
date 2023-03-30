@@ -286,4 +286,16 @@ library Checkpoints {
         ds.delegates[delegator] = delegatee;
         emit DelegateChanged(delegator, currentDelegate, delegatee);
     }
+
+    /**
+     * @dev Internal function to clear the delegation of a delegator
+     * @param delegator The address delegating their voting power
+     * @dev this function emits a DelegateChanged event
+     */
+    function clearDelegation(address delegator) internal {
+        DelegateStorage storage ds = delegateStorage();
+        address currentDelegate = ds.delegates[delegator];
+        ds.delegates[delegator] = address(0);
+        emit DelegateChanged(delegator, currentDelegate, address(0));
+    }
 }
