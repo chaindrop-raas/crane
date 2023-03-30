@@ -268,4 +268,34 @@ contract ClearDelegationTest is VotesTestHelper {
         votes.delegate(accountOne);
         assertEq(votes.getVotes(accountOne), 100);
     }
+
+    function testClearDelegationWithIntransitveDelegation() public {
+        votes.mint(accountOne, 100);
+        votes.mint(accountTwo, 100);
+        votes.mint(accountThree, 100);
+
+        vm.prank(accountOne);
+        votes.delegate(accountTwo);
+        vm.prank(accountTwo);
+        votes.delegate(accountThree);
+        vm.prank(accountThree);
+        votes.delegate(accountThree);
+
+        // accountOne has 0 votes, accountTwo has 100 votes, accountThree has 200 votes
+        assertEq(votes.getVotes(accountOne), 0);
+        assertEq(votes.getVotes(accountTwo), 100);
+        assertEq(votes.getVotes(accountThree), 200);
+
+        vm.prank(accountTwo);
+        votes.clearDelegation();
+
+        // accountOne has 0 votes, accountTwo has 100 votes, accountThree has 100 votes
+        assertEq(votes.getVotes(accountOne), 0);
+        assertEq(votes.getVotes(accountTwo), 100);
+        assertEq(votes.getVotes(accountThree), 100);
+
+        assertEq(votes.balanceOf(accountOne), 100);
+        assertEq(votes.balanceOf(accountTwo), 100);
+        assertEq(votes.balanceOf(accountThree), 100);
+    }
 }
