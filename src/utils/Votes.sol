@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/utils/Checkpoints.sol";
-import "src/interfaces/IVotes.sol";
-import "src/interfaces/IVotesToken.sol";
+import {Checkpoints} from "src/utils/Checkpoints.sol";
+import {IVotes} from "src/interfaces/IVotes.sol";
+import {IVotesToken} from "src/interfaces/IVotesToken.sol";
 
-import "@oz/utils/cryptography/ECDSA.sol";
+import {ECDSA} from "@oz/utils/cryptography/ECDSA.sol";
 
 /**
  * @title Votes
@@ -84,6 +84,19 @@ abstract contract Votes is IVotes, IVotesToken {
 
         ds.nonces[delegator]++;
         handleDelegation(delegator, delegatee);
+    }
+
+    /**
+     * @notice clears the delegation of the sender
+     */
+    function clearDelegation() external {
+        address currentDelegate = Checkpoints.delegates(msg.sender);
+        if(currentDelegate == msg.sender) {
+            Checkpoints.moveDelegation(currentDelegate, address(0), getVotes(msg.sender));
+        } else {
+            Checkpoints.moveDelegation(currentDelegate, address(0), IVotesToken(this).balanceOf(msg.sender));
+        }
+        Checkpoints.clearDelegation(msg.sender);
     }
 
     /**
