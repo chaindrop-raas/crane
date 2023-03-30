@@ -91,10 +91,17 @@ abstract contract Votes is IVotes, IVotesToken {
      */
     function clearDelegation() external {
         address currentDelegate = Checkpoints.delegates(msg.sender);
-        if(currentDelegate == msg.sender) {
-            Checkpoints.moveDelegation(currentDelegate, address(0), getVotes(msg.sender));
+
+        // Ensure the caller has an active delegation
+        require(currentDelegate != address(0), "Votes: No active delegation to clear");
+
+        uint256 balance = IVotesToken(this).balanceOf(msg.sender);
+        uint256 votes = getVotes(msg.sender);
+
+        if (currentDelegate == msg.sender) {
+            Checkpoints.moveDelegation(currentDelegate, address(0), votes > balance ? balance : votes);
         } else {
-            Checkpoints.moveDelegation(currentDelegate, address(0), IVotesToken(this).balanceOf(msg.sender));
+            Checkpoints.moveDelegation(currentDelegate, address(0), balance);
         }
         Checkpoints.clearDelegation(msg.sender);
     }
