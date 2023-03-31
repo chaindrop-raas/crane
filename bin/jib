@@ -157,7 +157,7 @@ upgradeGovToken() {
 upgradeMemToken() {
   PRIVATE_KEY=$argc_private_key forge script \
     script/Upgrade.s.sol:UpgradeScript \
-    $argc_proxy_admin $argc_transparent_proxy $argc_implementation \
+    $argc_transparent_proxy $argc_proxy_admin $argc_implementation \
     --sig "upgradeMembershipToken(address,address,address)" \
     --rpc-url $argc_rpc_url --broadcast --verify -vvvv
 }
