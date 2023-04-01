@@ -65,6 +65,16 @@ contract TransferLocksTest is TransferLocksTestHelper {
         assertEq(token.getTransferLockTotalAt(mintee, 3001), 0);
     }
 
+    function testGetAvailableBalance() public {
+        vm.startPrank(mintee);
+        token.addTransferLock(50, 1000);
+        assertEq(token.getAvailableBalance(mintee), 50);
+        token.addTransferLock(25, 2000);
+        assertEq(token.getAvailableBalance(mintee), 25);
+        token.addTransferLock(25, 3000);
+        assertEq(token.getAvailableBalance(mintee), 0);
+    }
+
     function testGetAvailableBalanceAt() public {
         vm.startPrank(mintee);
         token.addTransferLock(50, 1000);

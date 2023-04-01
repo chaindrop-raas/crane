@@ -26,6 +26,13 @@ interface ITransferLocks {
     function getTransferLockTotalAt(address account, uint256 timestamp) external view returns (uint256 amount);
 
     /**
+     * @notice Returns the amount of tokens that are not locked up as of current block.timestamp.
+     * @param account the address to check.
+     * @return amount the amount of tokens that are not transfer-locked.
+     */
+    function getAvailableBalance(address account) external view returns (uint256 amount);
+
+    /**
      * @notice Retrieves the balance of an account that is not locked at a given timestamp.
      * @param account the address to check.
      * @param timestamp the timestamp to check.

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/interfaces/ITransferLocks.sol";
-import "src/token/governance/ERC20Base.sol";
-import "src/utils/TransferLocksStorage.sol";
-import "@diamond/interfaces/IERC165.sol";
+import {ITransferLocks} from "src/interfaces/ITransferLocks.sol";
+import {ERC20Base} from "src/token/governance/ERC20Base.sol";
+import {TransferLocksStorage} from "src/utils/TransferLocksStorage.sol";
+import {IERC165} from "@diamond/interfaces/IERC165.sol";
 
 /**
  * @title TransferLocks
@@ -30,6 +30,11 @@ contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
     /// @inheritdoc ITransferLocks
     function getTransferLockTotalAt(address account, uint256 timestamp) public view returns (uint256 amount) {
         return TransferLocksStorage.getTotalLockedAt(account, timestamp);
+    }
+
+    /// @inheritdoc ITransferLocks
+    function getAvailableBalance(address account) public view returns (uint256 amount) {
+        return getAvailableBalanceAt(account, block.timestamp);
     }
 
     /// @inheritdoc ITransferLocks
