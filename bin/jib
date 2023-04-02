@@ -120,9 +120,9 @@ deployGovToken() {
 # @option -n --name! the name of the token
 # @option -s --symbol! the symbol for the token
 # @option -u --base-uri! the base uri for the token metadata
-# @option --private-key!
-# @option --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --block-explorer-api-key=POLYGONSCAN_API_KEY the api key for the block explorer
+# @option -p --private-key!
+# @option -b --block-explorer-api-key=POLYGONSCAN_API_KEY the api key for the block explorer
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployMemToken() {
   declare -a options=()
   options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
