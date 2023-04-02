@@ -54,40 +54,56 @@ contract TransferLocksTest is TransferLocksTestHelper {
     function testIncreaseTransferLockAllowance() public {
         vm.prank(minter);
         token.increaseTransferLockAllowance(mintee, 50);
-        assertEq(token.transferLockAllowances(minter, mintee), 50);
+        assertEq(token.allowances(minter, mintee), 50);
     }
 
     function testCannotIncreaseTransferLockAllowanceAboveMax() public {
         vm.startPrank(minter);
         token.increaseTransferLockAllowance(mintee, type(uint8).max);
-        vm.expectRevert("TransferLocks: cannot exceed max account locks");
+        vm.expectRevert("TransferLocks: cannot exceed max account locks and allowances");
         token.increaseTransferLockAllowance(mintee, 1);
         vm.stopPrank();
         vm.startPrank(mintee);
         token.increaseTransferLockAllowance(minter, 155);
-        vm.expectRevert("TransferLocks: cannot exceed max account locks");
+        vm.expectRevert("TransferLocks: cannot exceed max account locks and allowances");
         token.increaseTransferLockAllowance(minter, 101);
         // does not revert
         token.increaseTransferLockAllowance(minter, 100);
         vm.stopPrank();
-        assertEq(token.transferLockAllowances(minter, mintee), 255);
-        assertEq(token.transferLockAllowances(mintee, minter), 255);
+        assertEq(token.allowances(minter, mintee), 255);
+        assertEq(token.allowances(mintee, minter), 255);
     }
 
     function testDecreaseTransferLockAllowance() public {
         vm.startPrank(minter);
         token.increaseTransferLockAllowance(mintee, 50);
-        assertEq(token.transferLockAllowances(minter, mintee), 50);
+        assertEq(token.allowances(minter, mintee), 50);
         token.decreaseTransferLockAllowance(mintee, 25);
-        assertEq(token.transferLockAllowances(minter, mintee), 25);
+        assertEq(token.allowances(minter, mintee), 25);
     }
 
     function testCannotDecreaseTransferLockAllowanceBelowZero() public {
         vm.startPrank(minter);
         token.increaseTransferLockAllowance(mintee, 50);
-        assertEq(token.transferLockAllowances(minter, mintee), 50);
-        vm.expectRevert("TransferLocks: cannot decrease more than allowance");
+        assertEq(token.allowances(minter, mintee), 50);
+        vm.expectRevert("TransferLocks: insufficient allowance");
         token.decreaseTransferLockAllowance(mintee, 51);
+    }
+
+    function testCannotAddTransferLockIfAllowanceExceeded() public {
+        vm.startPrank(mintee);
+        token.increaseTransferLockAllowance(minter, type(uint8).max);
+        vm.expectRevert("TransferLocks: cannot exceed max account locks and allowances");
+        token.addTransferLock(1, 1000);
+    }
+
+    function testCannotIncreaseTransferLockAllowanceIfAccountNumLocksWouldBeExceeded() public {
+        vm.startPrank(mintee);
+        for (uint8 i = 0; i < 50; i++) {
+            token.addTransferLock(1, 1000);
+        }
+        vm.expectRevert("TransferLocks: cannot exceed max account locks and allowances");
+        token.increaseTransferLockAllowance(minter, 206);
     }
 
     function testGetTransferLockTotalAt() public {

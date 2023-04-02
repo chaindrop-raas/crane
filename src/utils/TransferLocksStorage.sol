@@ -24,38 +24,31 @@ library TransferLocksStorage {
         mapping(address => mapping(uint256 => TransferLock)) locks;
         mapping(address => mapping(address => uint8)) allowances;
         mapping(address => uint8) numLocks;
+        mapping(address => uint8) numAllowances;
         mapping(address => uint8) firstLock;
         mapping(address => uint8) lastLock;
     }
 
-    function transferLockAllowances(address account, address recipient) internal view returns (uint8) {
+    function increaseAllowances(address account, address recipient, uint8 amount) internal {
         TransferLocks storage tls = transferLocksStorage();
-        return tls.allowances[account][recipient];
-    }
-
-    function increaseTransferLockAllowance(address account, address recipient, uint8 amount) internal {
-        TransferLocks storage tls = transferLocksStorage();
-        // we invert our logic somewhat here so that we can provide a friendly
-        // error message instead of the overflow error
         require(
-            MAX_LOCKS_PER_ACCOUNT - amount >= tls.allowances[account][recipient],
-            "TransferLocks: cannot exceed max account locks"
+            MAX_LOCKS_PER_ACCOUNT - amount >= tls.numLocks[account] + tls.numAllowances[account],
+            "TransferLocks: cannot exceed max account locks and allowances"
         );
+        tls.numAllowances[account] += amount;
         tls.allowances[account][recipient] += amount;
     }
 
-    function decreaseTransferLockAllowance(address account, address recipient, uint8 amount) internal {
+    function decreaseAllowances(address account, address recipient, uint8 amount) internal {
         TransferLocks storage tls = transferLocksStorage();
-        // prevent underflow
-        require(tls.allowances[account][recipient] >= amount, "TransferLocks: cannot decrease more than allowance");
+        require(tls.allowances[account][recipient] >= amount, "TransferLocks: insufficient allowance");
+        tls.numAllowances[account] -= amount;
         tls.allowances[account][recipient] -= amount;
     }
 
-    function spendTransferLockAllowance(address account, address recipient, uint8 amount) internal {
+    function allowances(address account, address recipient) internal view returns (uint8) {
         TransferLocks storage tls = transferLocksStorage();
-        // prevent underflow
-        require(tls.allowances[account][recipient] >= amount, "TransferLocks: insufficient allowance");
-        tls.allowances[account][recipient] -= amount;
+        return tls.allowances[account][recipient];
     }
 
     /// @dev returns the storage pointer for transfer locks
@@ -90,7 +83,8 @@ library TransferLocksStorage {
 
         // Make sure we haven't exceeded the maximum number of locks
         require(
-            tls.numLocks[account] < MAX_LOCKS_PER_ACCOUNT, "TransferLocks: maximum number of transfer locks exceeded"
+            MAX_LOCKS_PER_ACCOUNT - 1 >= tls.numLocks[account] + tls.numAllowances[account],
+            "TransferLocks: cannot exceed max account locks and allowances"
         );
 
         // Get the index of the new lock

@@ -15,7 +15,7 @@ interface ITransferLocks {
      * @param account the address that granted the allowance.
      * @param recipient the address that is allowed to add transfer locks.
      */
-    function transferLockAllowances(address account, address recipient) external view returns (uint8);
+    function allowances(address account, address recipient) external view returns (uint8);
 
     /**
      * @notice Used to increase the number of transfer locks that can be added
