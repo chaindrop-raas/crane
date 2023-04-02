@@ -111,19 +111,23 @@ contract GovernorInstance is Script {
         address governorSettingsFacet;
         address governorTimelockControlFacet;
         address membershipToken;
+        address governanceToken;
         address proposalToken;
         address proposalThresholdToken;
         uint256 proposalThreshold;
-        uint256 votingPeriod;
-        uint256 votingDelay;
-        uint256 quorumPercentage;
+        uint64 votingPeriod;
+        uint64 votingDelay;
+        uint128 quorumPercentage;
     }
 
     function parseGovernorConfig(string calldata relativePath) public returns (GovernorConfig memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/", relativePath);
         string memory json = vm.readFile(path);
-        return abi.decode(vm.parseJson(json), (GovernorConfig));
+        GovernorConfig memory config = abi.decode(vm.parseJson(json), (GovernorConfig));
+        // for some reason, this value isn't parsed correctly, so we give it an explicitly coerced value
+        config.proposalThreshold = vm.parseJsonUint(json, ".k_proposalThreshold");
+        return config;
     }
 
     function facetCuts(GovernorConfig memory config) public pure returns (IDiamondCut.FacetCut[] memory) {
