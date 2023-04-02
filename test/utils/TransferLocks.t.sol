@@ -51,6 +51,45 @@ contract TransferLocksTest is TransferLocksTestHelper {
         assertEq(amount, 100);
     }
 
+    function testIncreaseTransferLockAllowance() public {
+        vm.prank(minter);
+        token.increaseTransferLockAllowance(mintee, 50);
+        assertEq(token.transferLockAllowances(minter, mintee), 50);
+    }
+
+    function testCannotIncreaseTransferLockAllowanceAboveMax() public {
+        vm.startPrank(minter);
+        token.increaseTransferLockAllowance(mintee, type(uint8).max);
+        vm.expectRevert("TransferLocks: cannot exceed max account locks");
+        token.increaseTransferLockAllowance(mintee, 1);
+        vm.stopPrank();
+        vm.startPrank(mintee);
+        token.increaseTransferLockAllowance(minter, 155);
+        vm.expectRevert("TransferLocks: cannot exceed max account locks");
+        token.increaseTransferLockAllowance(minter, 101);
+        // does not revert
+        token.increaseTransferLockAllowance(minter, 100);
+        vm.stopPrank();
+        assertEq(token.transferLockAllowances(minter, mintee), 255);
+        assertEq(token.transferLockAllowances(mintee, minter), 255);
+    }
+
+    function testDecreaseTransferLockAllowance() public {
+        vm.startPrank(minter);
+        token.increaseTransferLockAllowance(mintee, 50);
+        assertEq(token.transferLockAllowances(minter, mintee), 50);
+        token.decreaseTransferLockAllowance(mintee, 25);
+        assertEq(token.transferLockAllowances(minter, mintee), 25);
+    }
+
+    function testCannotDecreaseTransferLockAllowanceBelowZero() public {
+        vm.startPrank(minter);
+        token.increaseTransferLockAllowance(mintee, 50);
+        assertEq(token.transferLockAllowances(minter, mintee), 50);
+        vm.expectRevert("TransferLocks: cannot decrease more than allowance");
+        token.decreaseTransferLockAllowance(mintee, 51);
+    }
+
     function testGetTransferLockTotalAt() public {
         vm.startPrank(mintee);
         token.addTransferLock(50, 1000);
@@ -91,6 +130,9 @@ contract TransferLocksTest is TransferLocksTestHelper {
 
     function testTransferWithLock() public {
         address recipient = address(0x42);
+        vm.prank(recipient);
+        token.increaseTransferLockAllowance(mintee, 2);
+
         vm.startPrank(mintee);
         token.transferWithLock(recipient, 10, 68);
         token.transferWithLock(recipient, 10, 419);
@@ -100,6 +142,13 @@ contract TransferLocksTest is TransferLocksTestHelper {
         assertEq(token.getAvailableBalanceAt(recipient, 1), 0);
         assertEq(token.getAvailableBalanceAt(recipient, 69), 10);
         assertEq(token.getAvailableBalanceAt(recipient, 420), 20);
+    }
+
+    function testCannotTransferWithLockWithoutAllowance() public {
+        address recipient = address(0x42);
+        vm.prank(mintee);
+        vm.expectRevert("TransferLocks: insufficient allowance");
+        token.transferWithLock(recipient, 10, 68);
     }
 
     function testBatchTransferWithLocksRevertsWhenInputsAreInvalidLengths() public {
@@ -125,12 +174,17 @@ contract TransferLocksTest is TransferLocksTestHelper {
         vm.prank(owner);
         token.mint(treasury, 1000000);
 
+        vm.prank(address(0x43));
+        token.increaseTransferLockAllowance(treasury, 5);
+        vm.prank(address(0x44));
+        token.increaseTransferLockAllowance(treasury, 5);
+
         address[] memory recipients = new address[](10);
         uint256[] memory amounts = new uint256[](10);
         uint256[] memory timelocks = new uint256[](10);
 
         for (uint256 i = 0; i < 10; i++) {
-            recipients[i] = (i % 2 == 0) ? address(0x42) : address(0x43);
+            recipients[i] = (i % 2 == 0) ? address(0x43) : address(0x44);
         }
 
         for (uint256 i = 0; i < 10; i++) {
@@ -148,15 +202,8 @@ contract TransferLocksTest is TransferLocksTestHelper {
         vm.prank(treasury);
         token.batchTransferWithLocks(recipients, amounts, timelocks);
 
-        assertEq(token.balanceOf(address(0x42)), 500000);
         assertEq(token.balanceOf(address(0x43)), 500000);
-
-        assertEq(token.getAvailableBalanceAt(address(0x42), 1), 0);
-        assertEq(token.getAvailableBalanceAt(address(0x42), 101), 100000);
-        assertEq(token.getAvailableBalanceAt(address(0x42), 201), 200000);
-        assertEq(token.getAvailableBalanceAt(address(0x42), 301), 300000);
-        assertEq(token.getAvailableBalanceAt(address(0x42), 401), 400000);
-        assertEq(token.getAvailableBalanceAt(address(0x42), 501), 500000);
+        assertEq(token.balanceOf(address(0x44)), 500000);
 
         assertEq(token.getAvailableBalanceAt(address(0x43), 1), 0);
         assertEq(token.getAvailableBalanceAt(address(0x43), 101), 100000);
@@ -164,6 +211,42 @@ contract TransferLocksTest is TransferLocksTestHelper {
         assertEq(token.getAvailableBalanceAt(address(0x43), 301), 300000);
         assertEq(token.getAvailableBalanceAt(address(0x43), 401), 400000);
         assertEq(token.getAvailableBalanceAt(address(0x43), 501), 500000);
+
+        assertEq(token.getAvailableBalanceAt(address(0x44), 1), 0);
+        assertEq(token.getAvailableBalanceAt(address(0x44), 101), 100000);
+        assertEq(token.getAvailableBalanceAt(address(0x44), 201), 200000);
+        assertEq(token.getAvailableBalanceAt(address(0x44), 301), 300000);
+        assertEq(token.getAvailableBalanceAt(address(0x44), 401), 400000);
+        assertEq(token.getAvailableBalanceAt(address(0x44), 501), 500000);
+    }
+
+    function testBatchTransferWithLocksCannotExceedAllowance() public {
+        address treasury = address(0x42);
+        vm.prank(owner);
+        token.mint(treasury, 1000000);
+
+        vm.prank(address(0x43));
+        token.increaseTransferLockAllowance(treasury, 5);
+
+        address[] memory recipients = new address[](10);
+        uint256[] memory amounts = new uint256[](10);
+        uint256[] memory timelocks = new uint256[](10);
+
+        for (uint256 i = 0; i < 10; i++) {
+            recipients[i] = address(0x43);
+        }
+
+        for (uint256 i = 0; i < 10; i++) {
+            amounts[i] = 100000;
+        }
+
+        for (uint256 i = 0; i < 10; i++) {
+            timelocks[i] = 100;
+        }
+
+        vm.prank(treasury);
+        vm.expectRevert("TransferLocks: insufficient allowance");
+        token.batchTransferWithLocks(recipients, amounts, timelocks);
     }
 
     function testSupportsInterface() public {
@@ -322,6 +405,9 @@ contract TransferLockUseCaseTests is TransferLocksTestHelper {
     }
 
     function testTransferWithLockCannotExceedYourBalance() public {
+        vm.prank(recipient);
+        token.increaseTransferLockAllowance(mintee, 6);
+
         vm.startPrank(mintee);
 
         // start off with 100 tokens
@@ -352,6 +438,9 @@ contract TransferLockUseCaseTests is TransferLocksTestHelper {
     function testTransferLockIsAppliedAfterBalanceIsUpdated() public {
         // minter has no balance in advance of being transferred to
         assertEq(token.balanceOf(minter), 0);
+
+        vm.prank(minter);
+        token.increaseTransferLockAllowance(mintee, 1);
 
         // mintee transferWithLock's 10 tokens to minter
         vm.prank(mintee);
