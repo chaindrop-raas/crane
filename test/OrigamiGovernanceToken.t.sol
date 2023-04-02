@@ -250,6 +250,8 @@ contract GovernanceTokenVotingPowerTest is OGTHelper {
     }
 
     function testDelegatesReturnsDelegateOf(address delegatee) public {
+        vm.assume(delegatee != mintee);
+        vm.assume(delegatee != address(0));
         vm.prank(mintee);
         token.delegate(delegatee);
         assertEq(token.delegates(mintee), delegatee);
