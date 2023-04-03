@@ -23,6 +23,23 @@ contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
     }
 
     /// @inheritdoc ITransferLocks
+    function allowances(address account, address recipient) public view returns (uint8) {
+        return TransferLocksStorage.allowances(account, recipient);
+    }
+
+    /// @inheritdoc ITransferLocks
+    function increaseTransferLockAllowance(address account, uint8 amount) public {
+        require(account != msg.sender, "TransferLock: accounts do not need to approve themselves");
+        TransferLocksStorage.increaseAllowances(msg.sender, account, amount);
+    }
+
+    /// @inheritdoc ITransferLocks
+    function decreaseTransferLockAllowance(address account, uint8 amount) public {
+        require(account != msg.sender, "TransferLock: accounts do not need to approve themselves");
+        TransferLocksStorage.decreaseAllowances(msg.sender, account, amount);
+    }
+
+    /// @inheritdoc ITransferLocks
     function getTransferLockTotal(address account) public view returns (uint256 amount) {
         return TransferLocksStorage.getTotalLockedAt(account, block.timestamp);
     }
@@ -59,6 +76,8 @@ contract TransferLocks is ERC20Base, IERC165, ITransferLocks {
         public
         whenValidLock(amount, deadline)
     {
+        require(recipient != address(0) && recipient != msg.sender, "TransferLock: invalid recipient");
+        TransferLocksStorage.decreaseAllowances(recipient, msg.sender, 1);
         _transfer(msg.sender, recipient, amount);
         TransferLocksStorage.addTransferLock(recipient, amount, deadline);
     }

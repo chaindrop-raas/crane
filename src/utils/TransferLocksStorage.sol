@@ -9,6 +9,7 @@ pragma solidity 0.8.16;
  */
 library TransferLocksStorage {
     bytes32 public constant TRANSFER_LOCKS_STORAGE_POSITION = keccak256("com.origami.transferlocks");
+    uint8 public constant MAX_LOCKS_PER_ACCOUNT = type(uint8).max;
 
     /// @dev storage data structure for transfer locks
     struct TransferLock {
@@ -21,9 +22,33 @@ library TransferLocksStorage {
     /// @dev address mapping for transfer locks
     struct TransferLocks {
         mapping(address => mapping(uint256 => TransferLock)) locks;
-        mapping(address => uint256) numLocks;
-        mapping(address => uint256) firstLock;
-        mapping(address => uint256) lastLock;
+        mapping(address => mapping(address => uint8)) allowances;
+        mapping(address => uint8) numLocks;
+        mapping(address => uint8) numAllowances;
+        mapping(address => uint8) firstLock;
+        mapping(address => uint8) lastLock;
+    }
+
+    function increaseAllowances(address account, address recipient, uint8 amount) internal {
+        TransferLocks storage tls = transferLocksStorage();
+        require(
+            MAX_LOCKS_PER_ACCOUNT - amount >= tls.numLocks[account] + tls.numAllowances[account],
+            "TransferLocks: cannot exceed max account locks and allowances"
+        );
+        tls.numAllowances[account] += amount;
+        tls.allowances[account][recipient] += amount;
+    }
+
+    function decreaseAllowances(address account, address recipient, uint8 amount) internal {
+        TransferLocks storage tls = transferLocksStorage();
+        require(tls.allowances[account][recipient] >= amount, "TransferLocks: insufficient allowance");
+        tls.numAllowances[account] -= amount;
+        tls.allowances[account][recipient] -= amount;
+    }
+
+    function allowances(address account, address recipient) internal view returns (uint8) {
+        TransferLocks storage tls = transferLocksStorage();
+        return tls.allowances[account][recipient];
     }
 
     /// @dev returns the storage pointer for transfer locks
@@ -57,10 +82,13 @@ library TransferLocksStorage {
         }
 
         // Make sure we haven't exceeded the maximum number of locks
-        require(tls.numLocks[account] < type(uint16).max, "TransferLocks: maximum number of transfer locks exceeded");
+        require(
+            MAX_LOCKS_PER_ACCOUNT - 1 >= tls.numLocks[account] + tls.numAllowances[account],
+            "TransferLocks: cannot exceed max account locks and allowances"
+        );
 
         // Get the index of the new lock
-        uint256 index = tls.numLocks[account];
+        uint8 index = tls.numLocks[account];
 
         // Create the new lock and add it to storage
         tls.locks[account][index] = TransferLock(amount, deadline, 0, 0);
