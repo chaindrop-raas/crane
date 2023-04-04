@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.16;
 
-import "src/interfaces/IAccessControl.sol";
-import "src/OrigamiGovernanceToken.sol";
-import "src/utils/L2StandardERC20.sol";
+import {IAccessControl} from "src/interfaces/IAccessControl.sol";
+import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
+import {L2StandardERC20} from "src/utils/L2StandardERC20.sol";
 
-import "@oz/proxy/transparent/ProxyAdmin.sol";
-import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@std/Script.sol";
+import {ProxyAdmin} from "@oz/proxy/transparent/ProxyAdmin.sol";
+import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {Script} from "@std/Script.sol";
 
 contract GrantPermissions is Script {
     bytes32 internal constant REVOKER_ROLE = 0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30;

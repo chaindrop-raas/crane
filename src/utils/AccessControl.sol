@@ -3,10 +3,10 @@
 
 pragma solidity 0.8.16;
 
-import "src/interfaces/IAccessControl.sol";
-import "src/utils/AccessControlStorage.sol";
+import {IAccessControl} from "src/interfaces/IAccessControl.sol";
+import {AccessControlStorage} from "src/utils/AccessControlStorage.sol";
 
-import "@oz/utils/Strings.sol";
+import {Strings} from "@oz/utils/Strings.sol";
 
 /**
  * @dev Contract module that allows children to implement role-based access

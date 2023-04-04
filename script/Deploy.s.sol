@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.16;
 
-import "@std/Script.sol";
-import "src/OrigamiGovernanceToken.sol";
-import "src/OrigamiMembershipToken.sol";
-import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@oz/proxy/transparent/ProxyAdmin.sol";
+import {Script, console2} from "@std/Script.sol";
+import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
+import {OrigamiMembershipToken} from "src/OrigamiMembershipToken.sol";
+import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "@oz/proxy/transparent/ProxyAdmin.sol";
 
 contract DeployScript is Script {
     /**
@@ -80,6 +80,7 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         ProxyAdmin admin = new ProxyAdmin();
+        // solhint-disable-next-line no-console
         console2.log("ProxyAdmin deployed at", address(admin));
 
         vm.stopBroadcast();
@@ -93,6 +94,7 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         OrigamiGovernanceToken token = new OrigamiGovernanceToken();
+        // solhint-disable-next-line no-console
         console2.log("OrigamiGovernanceToken deployed at", address(token));
 
         vm.stopBroadcast();
@@ -106,6 +108,7 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         OrigamiMembershipToken token = new OrigamiMembershipToken();
+        // solhint-disable-next-line no-console
         console2.log("OrigamiMembershipToken deployed at", address(token));
 
         vm.stopBroadcast();

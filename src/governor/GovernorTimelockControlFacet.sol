@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/governor/lib/GovernorCommon.sol";
-import "src/interfaces/IGovernor.sol";
-import "src/interfaces/IGovernorTimelockControl.sol";
-import "src/interfaces/ITimelockController.sol";
-import "src/utils/AccessControl.sol";
-import "src/utils/GovernorStorage.sol";
+import {GovernorCommon} from "src/governor/lib/GovernorCommon.sol";
+import {IGovernor} from "src/interfaces/IGovernor.sol";
+import {IGovernorTimelockControl} from "src/interfaces/IGovernorTimelockControl.sol";
+import {ITimelockController} from "src/interfaces/ITimelockController.sol";
+import {AccessControl} from "src/utils/AccessControl.sol";
+import {GovernorStorage} from "src/utils/GovernorStorage.sol";
 
 /**
  * @title Origami Governor Timelock Control Facet

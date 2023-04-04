@@ -3,8 +3,8 @@ pragma solidity 0.8.16;
 
 import {GovernorDiamondHelper} from "test/OrigamiDiamondTestHelper.sol";
 
-import "src/governor/lib/TokenWeightStrategy.sol";
-import "@std/Test.sol";
+import {TokenWeightStrategy} from "src/governor/lib/TokenWeightStrategy.sol";
+import {Test} from "@std/Test.sol";
 
 contract TokenWeightStrategyTest is Test {
     bytes4 internal constant simpleWeightSelector = bytes4(keccak256("simpleWeight(uint256)"));

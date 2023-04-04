@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/utils/Votes.sol";
+import {IVotesToken} from "src/interfaces/IVotesToken.sol";
+import {IVotes} from "src/interfaces/IVotes.sol";
+import {Votes} from "src/utils/Votes.sol";
 
-import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
-import "@oz-upgradeable/proxy/utils/Initializable.sol";
-import "@oz-upgradeable/security/PausableUpgradeable.sol";
-import "@oz-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import "@oz-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
-import "@oz-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import "@oz-upgradeable/utils/CountersUpgradeable.sol";
+import {AccessControlUpgradeable} from "@oz-upgradeable/access/AccessControlUpgradeable.sol";
+import {Initializable} from "@oz-upgradeable/proxy/utils/Initializable.sol";
+import {PausableUpgradeable} from "@oz-upgradeable/security/PausableUpgradeable.sol";
+import {IERC721Upgradeable, ERC721Upgradeable} from "@oz-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import {ERC721BurnableUpgradeable} from "@oz-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
+import {ERC721EnumerableUpgradeable} from "@oz-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import {CountersUpgradeable} from "@oz-upgradeable/utils/CountersUpgradeable.sol";
 
 /// @title Origami Membership Token
 /// @author Stephen Caudill

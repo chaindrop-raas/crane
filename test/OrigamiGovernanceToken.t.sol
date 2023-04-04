@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.16;
 
-import "@std/Test.sol";
-import "src/OrigamiGovernanceToken.sol";
-import "test/versions/OrigamiGovernanceTokenTestVersion.sol";
-import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@oz/proxy/transparent/ProxyAdmin.sol";
-import "@oz/utils/Strings.sol";
+import {Test} from "@std/Test.sol";
+import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
+import {OrigamiGovernanceTokenTestVersion} from "test/versions/OrigamiGovernanceTokenTestVersion.sol";
+import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "@oz/proxy/transparent/ProxyAdmin.sol";
+import {Strings} from "@oz/utils/Strings.sol";
 
 abstract contract OGTAddressHelper {
     address public deployer = address(0x6);

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.16;
 
-import "@std/Test.sol";
-import "src/token/governance/ERC20Base.sol";
-import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@oz/proxy/transparent/ProxyAdmin.sol";
-import "@oz/utils/Strings.sol";
+import {Test} from "@std/Test.sol";
+import {ERC20Base} from "src/token/governance/ERC20Base.sol";
+import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "@oz/proxy/transparent/ProxyAdmin.sol";
+import {Strings} from "@oz/utils/Strings.sol";
 
 abstract contract ERC20AddressHelper {
     address public deployer = address(0x6);

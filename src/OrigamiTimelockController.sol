@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/interfaces/utils/IERC721Receiver.sol";
-import "src/interfaces/utils/IERC1155Receiver.sol";
-import "src/interfaces/ITimelockController.sol";
-import "src/utils/AccessControl.sol";
+import {IERC721Receiver} from "src/interfaces/utils/IERC721Receiver.sol";
+import {IERC1155Receiver} from "src/interfaces/utils/IERC1155Receiver.sol";
+import {ITimelockController} from "src/interfaces/ITimelockController.sol";
+import {AccessControl} from "src/utils/AccessControl.sol";
 
-import "@diamond/interfaces/IERC165.sol";
+import {IERC165} from "@diamond/interfaces/IERC165.sol";
 
 /**
  * @dev Contract module which acts as a timelocked controller. When set as the

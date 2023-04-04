@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/utils/GovernorStorage.sol";
+import {GovernorStorage} from "src/utils/GovernorStorage.sol";
 
 /**
  * @title Core voting interface

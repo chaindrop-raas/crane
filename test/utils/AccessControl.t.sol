@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.16;
 
-import "src/utils/AccessControl.sol";
+import {AccessControl} from "src/utils/AccessControl.sol";
 
-import "@std/Test.sol";
-import "@oz/utils/Strings.sol";
+import {Test} from "@std/Test.sol";
+import {Strings} from "@oz/utils/Strings.sol";
 
 abstract contract AccessControlHelper {
     address public deployer = address(0x1);

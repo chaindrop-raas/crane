@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.16;
 
-import "src/OrigamiGovernanceToken.sol";
-import "src/OrigamiMembershipToken.sol";
-import "src/token/governance/ERC20Base.sol";
+import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
+import {OrigamiMembershipToken} from "src/OrigamiMembershipToken.sol";
+import {ERC20Base} from "src/token/governance/ERC20Base.sol";
 
-import "@std/Script.sol";
-import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@create3/CREATE3Factory.sol";
+import {Script, console2} from "@std/Script.sol";
+import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {CREATE3Factory} from "@create3/CREATE3Factory.sol";
 
 contract DeterministicDeployHelper is Script {
     function transparentProxyByteCode(address implementation, address proxyAdmin) public pure returns (bytes memory) {
@@ -39,6 +39,7 @@ contract DeterministicDeploy is DeterministicDeployHelper {
     function deployCreate3Factory() public {
         vm.startBroadcast();
         CREATE3Factory c3 = new CREATE3Factory();
+        // solhint-disable-next-line no-console
         console2.log("CREATE3Factory deployed at", address(c3));
         vm.stopBroadcast();
     }
@@ -50,6 +51,7 @@ contract DeterministicDeploy is DeterministicDeployHelper {
 
         vm.startBroadcast();
         address erc20Base = c3.deploy(bytes32(bytes(salt)), bytecode);
+        // solhint-disable-next-line no-console
         console2.log("ERC20Base deployed at", erc20Base);
         vm.stopBroadcast();
     }
@@ -61,6 +63,7 @@ contract DeterministicDeploy is DeterministicDeployHelper {
 
         vm.startBroadcast();
         address govToken = c3.deploy(bytes32(bytes(salt)), bytecode);
+        // solhint-disable-next-line no-console
         console2.log("OrigamiGovernanceToken deployed at", govToken);
         vm.stopBroadcast();
     }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/interfaces/ITimelockController.sol";
+import {ITimelockController} from "src/interfaces/ITimelockController.sol";
 
 interface IGovernorTimelockControl {
     event TimelockChange(address oldTimelock, address newTimelock);

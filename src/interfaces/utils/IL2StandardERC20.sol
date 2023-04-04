@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "@diamond/interfaces/IERC165.sol";
+import {IERC165} from "@diamond/interfaces/IERC165.sol";
 
 interface ILegacyMintableERC20 is IERC165 {
     /**
