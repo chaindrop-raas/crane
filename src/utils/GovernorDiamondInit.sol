@@ -29,20 +29,24 @@ import {IERC165} from "@diamond/interfaces/IERC165.sol";
  * @custom:security-contact contract-security@joinorigami.com
  */
 contract GovernorDiamondInit {
+
     function init(
         string memory governorName,
         address admin,
         address payable timelock,
         address membershipToken,
-        address proposalToken,
-        address proposalThresholdToken,
+        address governanceToken,
+        address defaultProposalToken,
         uint64 delay,
         uint64 period,
         uint128 quorumPercentage,
-        uint256 threshold
+        uint256 threshold,
+        bool enableGovernanceToken,
+        bool enableMembershipToken
     ) external {
-        // adding ERC165 data
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
+
+        // adding ERC165 data
         ds.supportedInterfaces[type(IERC165).interfaceId] = true;
         ds.supportedInterfaces[type(IDiamondCut).interfaceId] = true;
         ds.supportedInterfaces[type(IDiamondLoupe).interfaceId] = true;
@@ -55,31 +59,32 @@ contract GovernorDiamondInit {
         ds.supportedInterfaces[type(IGovernorSettings).interfaceId] = true;
         ds.supportedInterfaces[type(IAccessControl).interfaceId] = true;
 
-        // Initialize the governor configuration. Any subsequent changes to
-        // these values should go through their interfaces in the
-        // GovernorStorage libary so the proper events are emitted.
-        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
-
-        config.name = governorName;
-        config.admin = admin;
-        config.timelock = timelock;
-        config.membershipToken = membershipToken;
-        config.defaultProposalToken = proposalToken;
-        config.defaultCountingStrategy = 0x6c4b0e9f; // GovernorCoreFacet.simpleWeight.selector
-        config.votingDelay = delay;
-        config.votingPeriod = period;
-        config.quorumNumerator = quorumPercentage;
-        config.proposalThreshold = threshold;
-        config.proposalThresholdToken = proposalThresholdToken;
-        // by default, we only allow the default proposal token to be used for proposals
-        config.proposalTokens[proposalToken] = true;
-        // by default, we only allow the simple counting strategy to be used for proposals
-        config.countingStrategies[0x6c4b0e9f] = true;
-
         // in order to facilitate role administration, we add the admin to the admin role
         // it is advised that the admin renounces this role after the diamond is deployed
         AccessControlStorage.RoleStorage storage rs = AccessControlStorage.roleStorage();
         // 0x0 is the DEFAULT_ADMIN_ROLE
         rs.roles[0x0].members[admin] = true;
+
+        // Initialize the governor configuration. Any subsequent changes to
+        // these values should go through their interfaces in the
+        // GovernorStorage libary so the proper events are emitted.
+        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
+        // by default, we only configure and enable the simple counting strategy
+        config.defaultCountingStrategy = 0x6c4b0e9f;
+        config.countingStrategies[0x6c4b0e9f] = true;
+        // set variable values
+        config.name = governorName;
+        config.admin = admin;
+        config.timelock = timelock;
+        config.membershipToken = membershipToken;
+        config.governanceToken = governanceToken;
+        config.defaultProposalToken = defaultProposalToken;
+        config.votingDelay = delay;
+        config.votingPeriod = period;
+        config.quorumNumerator = quorumPercentage;
+        config.proposalThreshold = threshold;
+        config.proposalThresholdToken = defaultProposalToken;
+        config.proposalTokens[membershipToken] = enableMembershipToken;
+        config.proposalTokens[governanceToken] = enableGovernanceToken;
     }
 }
