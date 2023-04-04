@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/utils/TransferLocks.sol";
-import "src/utils/Votes.sol";
-import "src/token/governance/ERC20Base.sol";
+import {IVotes} from "src/interfaces/IVotes.sol";
+import {IVotesToken} from "src/interfaces/IVotesToken.sol";
+import {TransferLocks} from "src/utils/TransferLocks.sol";
+import {Votes} from "src/utils/Votes.sol";
+import {ERC20Base} from "src/token/governance/ERC20Base.sol";
+import {ERC20Upgradeable} from "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 /**
  * @title Origami Governance Token

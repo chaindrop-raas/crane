@@ -2,8 +2,12 @@
 pragma solidity 0.8.16;
 
 import {GovernorDiamondHelper} from "test/OrigamiDiamondTestHelper.sol";
+import {TokenWeightStrategy} from "src/governor/lib/TokenWeightStrategy.sol";
 
-import "src/governor/lib/GovernorCommon.sol";
+import {IGovernor} from "src/interfaces/IGovernor.sol";
+import {GovernorStorage} from "src/utils/GovernorStorage.sol";
+import {GovernorCommon} from "src/governor/lib/GovernorCommon.sol";
+import {SimpleCounting} from "src/governor/lib/SimpleCounting.sol";
 
 contract CommonContract is GovernorDiamondHelper {
     constructor() {

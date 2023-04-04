@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.16;
 
-import "src/OrigamiTimelockController.sol";
-import "src/interfaces/utils/IERC721Receiver.sol";
-import "src/interfaces/utils/IERC1155Receiver.sol";
-import "src/interfaces/ITimelockController.sol";
+import {OrigamiTimelockController} from "src/OrigamiTimelockController.sol";
+import {IERC721Receiver} from "src/interfaces/utils/IERC721Receiver.sol";
+import {IERC1155Receiver} from "src/interfaces/utils/IERC1155Receiver.sol";
+import {ITimelockController} from "src/interfaces/ITimelockController.sol";
+import {IERC165} from "@oz/utils/introspection/IERC165.sol";
 
-import "@std/Test.sol";
+import {Test} from "@std/Test.sol";
 
 contract OrigamiTimelockControllerTest is Test {
     address public deployer = address(0xbeefea7e2);

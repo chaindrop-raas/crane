@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.16;
 
-import "src/utils/L2StandardERC20.sol";
+import {L2StandardERC20} from "src/utils/L2StandardERC20.sol";
+import {IL2StandardERC20, ILegacyMintableERC20} from "src/interfaces/utils/IL2StandardERC20.sol";
 
-import "src/interfaces/utils/IL2StandardERC20.sol";
-import "@oz/proxy/transparent/ProxyAdmin.sol";
-import "@std/Test.sol";
+import {IERC165} from "@oz/utils/introspection/IERC165.sol";
+import {ProxyAdmin} from "@oz/proxy/transparent/ProxyAdmin.sol";
+import {Test} from "@std/Test.sol";
+import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 abstract contract L2StandardERC20Helper {
     address public deployer = address(0x1);

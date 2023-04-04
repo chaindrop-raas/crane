@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/interfaces/utils/IL2StandardERC20.sol";
-import "src/token/governance/ERC20Base.sol";
-import "@diamond/interfaces/IERC165.sol";
-import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import {IL2StandardERC20, ILegacyMintableERC20} from "src/interfaces/utils/IL2StandardERC20.sol";
+import {ERC20Base} from "src/token/governance/ERC20Base.sol";
+import {IERC165} from "@diamond/interfaces/IERC165.sol";
+import {ERC20Upgradeable} from "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 /**
  * @title L2StandardERC20

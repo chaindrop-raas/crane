@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/governor/lib/GovernorQuorum.sol";
-import "src/governor/lib/TokenWeightStrategy.sol";
-import "src/governor/lib/Voting.sol";
-import "src/utils/GovernorStorage.sol";
+import {GovernorQuorum} from "src/governor/lib/GovernorQuorum.sol";
+import {TokenWeightStrategy} from "src/governor/lib/TokenWeightStrategy.sol";
+import {Voting} from "src/governor/lib/Voting.sol";
+import {GovernorStorage} from "src/utils/GovernorStorage.sol";
 
 /**
  * @title Simple Counting strategy

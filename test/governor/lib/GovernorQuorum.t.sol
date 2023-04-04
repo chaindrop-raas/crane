@@ -3,8 +3,10 @@ pragma solidity 0.8.16;
 
 import {GovernorDiamondHelper} from "test/OrigamiDiamondTestHelper.sol";
 
-import "src/governor/lib/GovernorQuorum.sol";
-import "src/governor/lib/TokenWeightStrategy.sol";
+import {GovernorQuorum} from "src/governor/lib/GovernorQuorum.sol";
+import {TokenWeightStrategy} from "src/governor/lib/TokenWeightStrategy.sol";
+import {GovernorStorage} from "src/utils/GovernorStorage.sol";
+
 
 contract QuorumContract {
     address public governanceToken;

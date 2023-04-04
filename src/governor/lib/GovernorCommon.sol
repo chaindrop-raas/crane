@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "src/governor/lib/SimpleCounting.sol";
-import "src/interfaces/IGovernor.sol";
-import "src/utils/GovernorStorage.sol";
+import {SimpleCounting} from "src/governor/lib/SimpleCounting.sol";
+import {IGovernor} from "src/interfaces/IGovernor.sol";
+import {GovernorStorage} from "src/utils/GovernorStorage.sol";
 
 /**
  * @author Origami

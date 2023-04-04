@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "@oz-upgradeable/access/AccessControlUpgradeable.sol";
-import "@oz-upgradeable/proxy/utils/Initializable.sol";
-import "@oz-upgradeable/security/PausableUpgradeable.sol";
-import "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@oz-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
-import "@oz-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
+import {AccessControlUpgradeable} from "@oz-upgradeable/access/AccessControlUpgradeable.sol";
+import {Initializable} from "@oz-upgradeable/proxy/utils/Initializable.sol";
+import {PausableUpgradeable} from "@oz-upgradeable/security/PausableUpgradeable.sol";
+import {ERC20Upgradeable} from "@oz-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import {ERC20BurnableUpgradeable} from "@oz-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import {ERC20CappedUpgradeable} from "@oz-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
 
 /**
  * @title Base ERC20 token contract for Origami Governance Tokens

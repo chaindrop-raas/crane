@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.16;
 
-import "@std/Script.sol";
-import "src/OrigamiGovernanceToken.sol";
-import "src/OrigamiMembershipToken.sol";
-import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@oz/proxy/transparent/ProxyAdmin.sol";
+import {Script} from "@std/Script.sol";
+import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
+import {OrigamiMembershipToken} from "src/OrigamiMembershipToken.sol";
+import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "@oz/proxy/transparent/ProxyAdmin.sol";
 
 contract UpgradeScript is Script {
     /**

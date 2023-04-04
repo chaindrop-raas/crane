@@ -3,12 +3,12 @@ pragma solidity 0.8.16;
 
 import {GovernorDiamondHelper} from "test/OrigamiDiamondTestHelper.sol";
 
-import "src/interfaces/IAccessControl.sol";
-import "src/interfaces/IGovernor.sol";
-import "src/interfaces/IGovernorQuorum.sol";
-import "src/interfaces/IGovernorSettings.sol";
-import "src/interfaces/IGovernorTimelockControl.sol";
-import "@diamond/interfaces/IERC165.sol";
+import {IAccessControl} from "src/interfaces/IAccessControl.sol";
+import {IGovernor} from "src/interfaces/IGovernor.sol";
+import {IGovernorQuorum} from "src/interfaces/IGovernorQuorum.sol";
+import {IGovernorSettings} from "src/interfaces/IGovernorSettings.sol";
+import {IGovernorTimelockControl} from "src/interfaces/IGovernorTimelockControl.sol";
+import {IERC165} from "@diamond/interfaces/IERC165.sol";
 
 contract OrigamiGovernorCoreTest is GovernorDiamondHelper {
     address[] public targets;

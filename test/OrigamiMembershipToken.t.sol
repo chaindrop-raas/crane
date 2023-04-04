@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: ITSATEST
 pragma solidity 0.8.16;
 
-import "@std/Test.sol";
-import "src/OrigamiMembershipToken.sol";
-import "test/versions/OrigamiMembershipTokenTestVersion.sol";
-import "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@oz/proxy/transparent/ProxyAdmin.sol";
-import "@oz/utils/Strings.sol";
+import {Test} from "@std/Test.sol";
+import {OrigamiMembershipToken} from "src/OrigamiMembershipToken.sol";
+import {OrigamiMembershipTokenTestVersion} from "test/versions/OrigamiMembershipTokenTestVersion.sol";
+import {TransparentUpgradeableProxy} from "@oz/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "@oz/proxy/transparent/ProxyAdmin.sol";
+import {Strings} from "@oz/utils/Strings.sol";
 
 abstract contract OMTAddressHelper {
     address public owner = address(0x1);
