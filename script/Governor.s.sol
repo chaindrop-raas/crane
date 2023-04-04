@@ -112,15 +112,17 @@ contract GovernorInstance is Script {
         address governorTimelockControlFacet;
         address membershipToken;
         address governanceToken;
-        address proposalToken;
+        address defaultProposalToken;
         address proposalThresholdToken;
         uint256 proposalThreshold;
         uint64 votingPeriod;
         uint64 votingDelay;
         uint128 quorumPercentage;
+        bool enableGovernanceToken;
+        bool enableMembershipToken;
     }
 
-    function parseGovernorConfig(string calldata relativePath) public returns (GovernorConfig memory) {
+    function parseGovernorConfig(string calldata relativePath) public view returns (GovernorConfig memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/", relativePath);
         string memory json = vm.readFile(path);
@@ -150,17 +152,19 @@ contract GovernorInstance is Script {
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "init(string,address,address,address,address,address,uint64,uint64,uint128,uint256)",
+            "init(string,address,address,address,address,address,uint64,uint64,uint128,uint256,bool,bool)",
             config.name,
             admin,
             timelock,
             config.membershipToken,
-            config.proposalToken,
-            config.proposalThresholdToken,
+            config.governanceToken,
+            config.defaultProposalToken,
             config.votingDelay,
             config.votingPeriod,
             config.quorumPercentage,
-            config.proposalThreshold
+            config.proposalThreshold,
+            config.enableGovernanceToken,
+            config.enableMembershipToken
         );
     }
 
