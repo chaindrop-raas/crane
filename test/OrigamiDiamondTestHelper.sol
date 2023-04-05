@@ -125,7 +125,7 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
             cuts,
             address(diamondInit),
             abi.encodeWithSignature(
-                "init(string,address,address,address,address,address,uint64,uint64,uint128,uint256)",
+                "init(string,address,address,address,address,address,uint64,uint64,uint128,uint256,bool,bool)",
                 "TestGovernor",
                 admin,
                 address(timelock),
@@ -135,7 +135,9 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
                 7 days,
                 7 days,
                 10,
-                1
+                1,
+                true,
+                true
             )
         );
 
