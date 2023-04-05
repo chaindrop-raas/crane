@@ -29,7 +29,6 @@ import {IERC165} from "@diamond/interfaces/IERC165.sol";
  * @custom:security-contact contract-security@joinorigami.com
  */
 contract GovernorDiamondInit {
-
     function init(
         string memory governorName,
         address admin,
