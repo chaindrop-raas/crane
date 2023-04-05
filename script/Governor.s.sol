@@ -122,7 +122,7 @@ contract GovernorInstance is Script {
         bool enableMembershipToken;
     }
 
-    function parseGovernorConfig(string calldata relativePath) public view returns (GovernorConfig memory) {
+    function parseGovernorConfig(string calldata relativePath) public returns (GovernorConfig memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/", relativePath);
         string memory json = vm.readFile(path);
