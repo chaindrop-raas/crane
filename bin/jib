@@ -355,7 +355,6 @@ deployGovernorTimelockController() {
 # @arg timelock! the address of the timelock controller
 # @arg path! the path to the governor diamond config
 # @option -p --private-key!
-# @option -b --block-explorer-api-key the api key for the block explorer
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 configureGovernor() {
   PRIVATE_KEY=$argc_private_key forge script \
