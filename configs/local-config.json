@@ -1,0 +1,18 @@
+{
+  "a_name": "Gami Governor",
+  "b_diamondLoupeFacetAddress": "0xb09da8a5B236fE0295A345035287e80bb0008290",
+  "c_ownershipFacetAddress": "0x5095d3313C76E8d29163e40a0223A5816a8037D8",
+  "d_governorCoreFacetAddress": "0x391342f5acAcaaC9DE1dC4eC3E03f2678f7c78F1",
+  "e_governorSettingsFacetAddress": "0x6d925938Edb8A16B3035A4cF34FAA090f490202a",
+  "f_governorTimelockControlFacetAddress": "0xED8CAB8a931A4C0489ad3E3FB5BdEA84f74fD23E",
+  "g_membershipToken": "0xA7c8B0D74b68EF10511F27e97c379FB1651e1eD2",
+  "h_governanceToken": "0xE9061F92bA9A3D9ef3f4eb8456ac9E552B3Ff5C8",
+  "i_defaultProposalToken": "0xE9061F92bA9A3D9ef3f4eb8456ac9E552B3Ff5C8",
+  "j_proposalThresholdToken": "0xE9061F92bA9A3D9ef3f4eb8456ac9E552B3Ff5C8",
+  "k_proposalThreshold": "100000000000000000000",
+  "l_votingPeriod": 300,
+  "m_votingDelay": 300,
+  "n_quorumPercentage": 10,
+  "o_enableGovernaceToken": true,
+  "p_enableMembershipToken": true
+}

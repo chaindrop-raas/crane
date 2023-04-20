@@ -354,7 +354,7 @@ deployGovernorTimelockController() {
 # @arg diamond! the address of the governor diamond
 # @arg timelock! the address of the timelock controller
 # @arg path! the path to the governor diamond config
-# @option -p --private-key!
+# @option -p --private-key! (this needs to be the admin's private key not the deployer's)
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 configureGovernor() {
   PRIVATE_KEY=$argc_private_key forge script \
@@ -479,6 +479,20 @@ deployAndRenounceNewProxyAdmin() {
     $argc_proxy_admin $argc_transparent_proxy \
     --private-key $argc_private_key --rpc-url $argc_rpc_url --broadcast \
     --sig "run(address,address)"
+}
+
+# @cmd this will deploy all contracts necessary for local development
+# @alias local-deploy
+# @arg contract-admin! the address of the contract admin (first address from anvil)
+# @option -p --private-key!
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+deployLocal() {
+  forge script \
+    script/LocalDeploy.s.sol \
+    $argc_contract_admin \
+    --rpc-url $argc_rpc_url --broadcast -vvvv \
+    --sig "run(address)" \
+    --private-key $argc_private_key
 }
 
 eval $(argc "$0" "$@")
