@@ -495,4 +495,4 @@ deployLocal() {
     --private-key $argc_private_key
 }
 
-eval $(argc "$0" "$@")
+eval "$(argc --argc-eval "$0" "$@")"
