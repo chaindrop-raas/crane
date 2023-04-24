@@ -5,7 +5,7 @@ import {OrigamiTimelockController} from "src/OrigamiTimelockController.sol";
 import {GovernorCoreFacet} from "src/governor/GovernorCoreFacet.sol";
 import {GovernorSettingsFacet} from "src/governor/GovernorSettingsFacet.sol";
 import {GovernorTimelockControlFacet} from "src/governor/GovernorTimelockControlFacet.sol";
-import {GovernorDiamondInit} from "src/utils/GovernorDiamondInit.sol";
+import {GovernorDiamondInit, GDInitHelper} from "src/utils/GovernorDiamondInit.sol";
 import {DiamondDeployHelper} from "src/utils/DiamondDeployHelper.sol";
 
 import {DiamondLoupeFacet} from "@diamond/facets/DiamondLoupeFacet.sol";
@@ -117,7 +117,8 @@ contract GovernorInstance is Script {
         uint256 proposalThreshold;
         uint64 votingPeriod;
         uint64 votingDelay;
-        uint128 quorumPercentage;
+        uint128 quorumNumerator;
+        uint128 quorumDenominator;
         bool enableGovernanceToken;
         bool enableMembershipToken;
     }
@@ -152,7 +153,7 @@ contract GovernorInstance is Script {
         returns (bytes memory)
     {
         return abi.encodeWithSignature(
-            "init(string,address,address,address,address,address,uint64,uint64,uint128,uint256,bool,bool)",
+            "init(string,address,address,address,address,address,uint64,uint64,uint256,uint256,bool,bool)",
             config.name,
             admin,
             timelock,
@@ -161,7 +162,7 @@ contract GovernorInstance is Script {
             config.defaultProposalToken,
             config.votingDelay,
             config.votingPeriod,
-            config.quorumPercentage,
+            GDInitHelper.packQuorum(config.quorumNumerator, config.quorumDenominator),
             config.proposalThreshold,
             config.enableGovernanceToken,
             config.enableMembershipToken

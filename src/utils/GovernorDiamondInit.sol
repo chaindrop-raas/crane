@@ -3,7 +3,7 @@ pragma solidity 0.8.16;
 
 import {IAccessControl} from "src/interfaces/IAccessControl.sol";
 import {IGovernor} from "src/interfaces/IGovernor.sol";
-import {IGovernorQuorum} from "src/interfaces/IGovernorQuorum.sol";
+import {IGovernorProposalQuorum} from "src/interfaces/IGovernorProposalQuorum.sol";
 import {IGovernorSettings} from "src/interfaces/IGovernorSettings.sol";
 import {IGovernorTimelockControl} from "src/interfaces/IGovernorTimelockControl.sol";
 import {AccessControlStorage} from "src/utils/AccessControlStorage.sol";
@@ -20,6 +20,13 @@ import {IERC165} from "@diamond/interfaces/IERC165.sol";
 // These arguments are used to execute an arbitrary function using delegatecall
 // in order to set state variables in the diamond during deployment or an upgrade
 // More info here: https://eips.ethereum.org/EIPS/eip-2535#diamond-interface
+
+library GDInitHelper {
+    /// @dev utility function to pack quorum numerator and denominator into a single uint256
+    function packQuorum(uint128 numerator, uint128 denominator) external pure returns (uint256) {
+        return uint256(numerator) << 128 | uint256(denominator);
+    }
+}
 
 /**
  * @title Governor Diamond Initializer
@@ -38,7 +45,7 @@ contract GovernorDiamondInit {
         address defaultProposalToken,
         uint64 delay,
         uint64 period,
-        uint128 quorumPercentage,
+        uint256 quorum, // bitwise packed values for quorumNumerator (u128) and quorumDenominator (u128)
         uint256 threshold,
         bool enableGovernanceToken,
         bool enableMembershipToken
@@ -52,11 +59,11 @@ contract GovernorDiamondInit {
         ds.supportedInterfaces[type(IERC173).interfaceId] = true;
 
         // governor diamond specific
-        ds.supportedInterfaces[type(IGovernor).interfaceId] = true;
-        ds.supportedInterfaces[type(IGovernorQuorum).interfaceId] = true;
-        ds.supportedInterfaces[type(IGovernorTimelockControl).interfaceId] = true;
-        ds.supportedInterfaces[type(IGovernorSettings).interfaceId] = true;
         ds.supportedInterfaces[type(IAccessControl).interfaceId] = true;
+        ds.supportedInterfaces[type(IGovernor).interfaceId] = true;
+        ds.supportedInterfaces[type(IGovernorProposalQuorum).interfaceId] = true;
+        ds.supportedInterfaces[type(IGovernorSettings).interfaceId] = true;
+        ds.supportedInterfaces[type(IGovernorTimelockControl).interfaceId] = true;
 
         // in order to facilitate role administration, we add the admin to the admin role
         // it is advised that the admin renounces this role after the diamond is deployed
@@ -80,7 +87,8 @@ contract GovernorDiamondInit {
         config.defaultProposalToken = defaultProposalToken;
         config.votingDelay = delay;
         config.votingPeriod = period;
-        config.quorumNumerator = quorumPercentage;
+        config.quorumNumerator = uint128(quorum >> 128);
+        config.quorumDenominator = uint128(quorum);
         config.proposalThreshold = threshold;
         config.proposalThresholdToken = defaultProposalToken;
         config.proposalTokens[membershipToken] = enableMembershipToken;

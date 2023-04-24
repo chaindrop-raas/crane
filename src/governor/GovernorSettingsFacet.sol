@@ -69,6 +69,14 @@ contract GovernorSettingsFacet is IGovernorSettings {
     }
 
     /**
+     * @notice public interface to retrieve the configured quorum denominator.
+     * @return the quorum denominator for the proposal.
+     */
+    function quorumDenominator() public view returns (uint128) {
+        return config().quorumDenominator;
+    }
+
+    /**
      * @notice Enumerates the delay in blocks between proposal creation and voting start.
      * @return delay the delay between proposal creation and voting start.
      */
@@ -154,6 +162,15 @@ contract GovernorSettingsFacet is IGovernorSettings {
      */
     function setQuorumNumerator(uint128 newQuorumNumerator) public onlyGovernance {
         GovernorStorage.setQuorumNumerator(newQuorumNumerator);
+    }
+
+    /**
+     * @notice Sets the quorum denominator.
+     * @param newQuorumDenominator the new quorum denominator.
+     * emits QuorumDenominatorSet event.
+     */
+    function setQuorumDenominator(uint128 newQuorumDenominator) public onlyGovernance {
+        GovernorStorage.setQuorumDenominator(newQuorumDenominator);
     }
 
     /**

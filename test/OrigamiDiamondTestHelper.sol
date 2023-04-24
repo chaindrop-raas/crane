@@ -10,7 +10,7 @@ import {TokenWeightStrategy} from "src/governor/lib/TokenWeightStrategy.sol";
 import {GovernorCoreFacet} from "src/governor/GovernorCoreFacet.sol";
 import {GovernorSettingsFacet} from "src/governor/GovernorSettingsFacet.sol";
 import {GovernorTimelockControlFacet} from "src/governor/GovernorTimelockControlFacet.sol";
-import {GovernorDiamondInit} from "src/utils/GovernorDiamondInit.sol";
+import {GovernorDiamondInit, GDInitHelper} from "src/utils/GovernorDiamondInit.sol";
 import {DiamondDeployHelper} from "src/utils/DiamondDeployHelper.sol";
 
 import {Test} from "@std/Test.sol";
@@ -125,7 +125,7 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
             cuts,
             address(diamondInit),
             abi.encodeWithSignature(
-                "init(string,address,address,address,address,address,uint64,uint64,uint128,uint256,bool,bool)",
+                "init(string,address,address,address,address,address,uint64,uint64,uint256,uint256,bool,bool)",
                 "TestGovernor",
                 admin,
                 address(timelock),
@@ -134,7 +134,7 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
                 address(memToken),
                 7 days,
                 7 days,
-                10,
+                GDInitHelper.packQuorum(10, 100),
                 1,
                 true,
                 true

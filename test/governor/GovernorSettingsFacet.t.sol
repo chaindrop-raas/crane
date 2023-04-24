@@ -9,7 +9,6 @@ contract SettingsFacetTest is GovernorDiamondHelper {
         assertEq(settingsFacet.votingDelay(), 604_800);
         assertEq(settingsFacet.votingPeriod(), 604_800);
         assertEq(settingsFacet.proposalThreshold(), 1);
-        assertEq(settingsFacet.quorumNumerator(), 10);
     }
 
     function testRetrieveDefaultCountingStrategy() public {
@@ -38,6 +37,10 @@ contract SettingsFacetTest is GovernorDiamondHelper {
 
     function testRetrieveQuorumNumerator() public {
         assertEq(settingsFacet.quorumNumerator(), 10);
+    }
+
+    function testRetrieveQuorumDenominator() public {
+        assertEq(settingsFacet.quorumDenominator(), 100);
     }
 
     function testRetrieveVotingDelay() public {
@@ -83,6 +86,11 @@ contract SettingsFacetTest is GovernorDiamondHelper {
         settingsFacet.setQuorumNumerator(0);
     }
 
+    function testCannotDirectlyUpdateQuorumDenominator() public {
+        vm.expectRevert("Governor: onlyGovernance");
+        settingsFacet.setQuorumDenominator(0);
+    }
+
     function testCannotDirectlyUpdateVotingDelay() public {
         vm.expectRevert("Governor: onlyGovernance");
         settingsFacet.setVotingDelay(0);
@@ -126,6 +134,11 @@ contract SettingsFacetTest is GovernorDiamondHelper {
     function testTimelockCanUpdateQuorumNumerator() public {
         vm.prank(address(timelock));
         settingsFacet.setQuorumNumerator(0);
+    }
+
+    function testTimelockCanUpdateQuorumDenominator() public {
+        vm.prank(address(timelock));
+        settingsFacet.setQuorumDenominator(0);
     }
 
     function testTimelockCanUpdateVotingDelay() public {

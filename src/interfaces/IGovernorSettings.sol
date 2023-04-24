@@ -38,6 +38,11 @@ interface IGovernorSettings {
     function quorumNumerator() external view returns (uint128);
 
     /**
+     * @dev Returns the quorum denominator for the proposal.
+     */
+    function quorumDenominator() external view returns (uint128);
+
+    /**
      * @dev Returns the delay before voting on a proposal may take place, once proposed.
      */
     function votingDelay() external view returns (uint64);
@@ -94,6 +99,13 @@ interface IGovernorSettings {
      * Emits a {QuorumNumeratorSet} event.
      */
     function setQuorumNumerator(uint128 newQuorumNumerator) external;
+
+    /**
+     * @dev Sets the quorum denominator.
+     * @param newQuorumDenominator The new quorum denominator.
+     * Emits a {QuorumDenominatorSet} event.
+     */
+    function setQuorumDenominator(uint128 newQuorumDenominator) external;
 
     /**
      * @dev Sets the voting delay.
