@@ -18,10 +18,10 @@ library GovernorQuorum {
     }
 
     /**
-     * @dev Returns the quorum denominator. Defaults to 100, but may be overridden.
+     * @dev Returns the quorum denominator. Typically set to 100, but is configurable.
      */
-    function quorumDenominator() internal pure returns (uint128) {
-        return 100;
+    function quorumDenominator(uint256 proposalId) internal view returns (uint128) {
+        return GovernorStorage.proposal(proposalId).quorumDenominator;
     }
 
     /**
@@ -31,6 +31,6 @@ library GovernorQuorum {
         address proposalToken = GovernorStorage.proposal(proposalId).proposalToken;
         uint256 snapshot = GovernorStorage.proposal(proposalId).snapshot;
         uint256 supply = IVotes(proposalToken).getPastTotalSupply(snapshot);
-        return (supply * quorumNumerator(proposalId)) / quorumDenominator();
+        return (supply * quorumNumerator(proposalId)) / quorumDenominator(proposalId);
     }
 }

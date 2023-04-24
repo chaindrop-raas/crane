@@ -71,6 +71,13 @@ library GovernorStorage {
     event QuorumNumeratorSet(uint128 oldQuorumNumerator, uint128 newQuorumNumerator);
 
     /**
+     * @dev Emitted when the quorum denominator is set.
+     * @param oldQuorumDenominator The previous quorum denominator.
+     * @param newQuorumDenominator The new quorum denominator.
+     */
+    event QuorumDenominatorSet(uint128 oldQuorumDenominator, uint128 newQuorumDenominator);
+
+    /**
      * @dev Emitted when the membership token is set.
      * @param oldMembershipToken The previous membership token.
      * @param newMembershipToken The new membership token.
@@ -88,6 +95,7 @@ library GovernorStorage {
         address proposalToken;
         bytes4 countingStrategy;
         uint128 quorumNumerator;
+        uint128 quorumDenominator;
         uint256 snapshot;
         uint256 deadline;
         bytes params;
@@ -107,6 +115,7 @@ library GovernorStorage {
         uint64 votingDelay; // 2^64 seconds is 585 years
         uint64 votingPeriod;
         uint128 quorumNumerator;
+        uint128 quorumDenominator;
         uint256 proposalThreshold;
         mapping(address => bool) proposalTokens;
         mapping(bytes4 => bool) countingStrategies;
@@ -284,6 +293,18 @@ library GovernorStorage {
     }
 
     /**
+     * @notice Sets the quorum denominator.
+     * @param newQuorumDenominator the new quorum denominator.
+     * emits QuorumDenominatorSet event.
+     */
+    function setQuorumDenominator(uint128 newQuorumDenominator) internal {
+        uint128 oldQuorumDenominator = configStorage().quorumDenominator;
+        configStorage().quorumDenominator = newQuorumDenominator;
+
+        emit QuorumDenominatorSet(oldQuorumDenominator, newQuorumDenominator);
+    }
+
+    /**
      * @notice Sets the voting delay.
      * @param newVotingDelay the new voting delay.
      * emits VotingDelaySet event.
@@ -338,6 +359,7 @@ library GovernorStorage {
         ps.proposalToken = proposalToken;
         ps.countingStrategy = countingStrategy;
         ps.quorumNumerator = cs.quorumNumerator;
+        ps.quorumDenominator = cs.quorumDenominator;
         // An epoch exceeding max UINT64 is 584,942,417,355 years from now.
         ps.snapshot = uint64(block.timestamp + cs.votingDelay);
         ps.deadline = ps.snapshot + cs.votingPeriod;

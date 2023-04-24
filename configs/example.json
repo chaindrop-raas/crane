@@ -12,7 +12,8 @@
   "k_proposalThreshold": "100000000000000000000",
   "l_votingPeriod": 604800,
   "m_votingDelay": 604800,
-  "n_quorumPercentage": 10,
-  "o_enableGovernaceToken": true,
-  "p_enableMembershipToken": true
+  "n_quorumNumerator": 10,
+  "o_quorumDenominator": 100,
+  "p_enableGovernaceToken": true,
+  "q_enableMembershipToken": true
 }

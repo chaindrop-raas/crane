@@ -5,7 +5,6 @@ import {GovernorDiamondHelper} from "test/OrigamiDiamondTestHelper.sol";
 
 import {IAccessControl} from "src/interfaces/IAccessControl.sol";
 import {IGovernor} from "src/interfaces/IGovernor.sol";
-import {IGovernorQuorum} from "src/interfaces/IGovernorQuorum.sol";
 import {IGovernorSettings} from "src/interfaces/IGovernorSettings.sol";
 import {IGovernorTimelockControl} from "src/interfaces/IGovernorTimelockControl.sol";
 import {IERC165} from "@diamond/interfaces/IERC165.sol";
@@ -62,7 +61,6 @@ contract OrigamiGovernorCoreTest is GovernorDiamondHelper {
         assertTrue(loupeFacet.supportsInterface(type(IAccessControl).interfaceId));
         assertTrue(loupeFacet.supportsInterface(type(IERC165).interfaceId));
         assertTrue(loupeFacet.supportsInterface(type(IGovernor).interfaceId));
-        assertTrue(loupeFacet.supportsInterface(type(IGovernorQuorum).interfaceId));
         assertTrue(loupeFacet.supportsInterface(type(IGovernorSettings).interfaceId));
         assertTrue(loupeFacet.supportsInterface(type(IGovernorTimelockControl).interfaceId));
     }
