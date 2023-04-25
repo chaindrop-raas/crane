@@ -15,12 +15,6 @@ opt-go   = "${ALCHEMY_RPC_URL_OPT_GOERLI}"
 anvil    = "http://localhost:8545"
 
 [etherscan]
-mainnet  = { key = "${ETHERSCAN_API_KEY}" }
-goerli   = { key = "${ETHERSCAN_API_KEY}" }
-optimism = { key = "${OPTIMISMSCAN_API_KEY}" }
-opt-go   = { key = "${OPTIMISMSCAN_API_KEY}" }
-polygon  = { key = "${POLYGONSCAN_API_KEY}" }
-mumbai   = { key = "${POLYGONSCAN_API_KEY}" }
 
 [fmt]
 line_length = 120
