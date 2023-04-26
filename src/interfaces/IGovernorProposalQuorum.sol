@@ -16,5 +16,4 @@ interface IGovernorProposalQuorum {
      * @dev Returns the quorum for a specific proposal's counting token, in terms of number of votes: `supply * numerator / denominator`.
      */
     function quorum(uint256 proposalId) external view returns (uint256);
-
 }

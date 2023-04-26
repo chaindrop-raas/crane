@@ -15,6 +15,7 @@ contract CommonContract is GovernorDiamondHelper {
         cs.votingDelay = 1 days;
         cs.votingPeriod = 2 days;
         cs.quorumNumerator = 1;
+        cs.quorumDenominator = 100;
         cs.proposalThresholdToken = address(govToken);
         cs.proposalThreshold = 100;
     }
