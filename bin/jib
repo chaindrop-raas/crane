@@ -495,4 +495,23 @@ deployLocal() {
     --private-key $argc_private_key
 }
 
+# @cmd this outputs wallets to fund for local deploy scripts
+# @alias rwgf, relay-wallet-grant-permission-and-fund
+# @arg token-addr! the token to grant permission on
+# @arg mnemonic! the mnemonic to for the relay wallets
+# @arg wallet-count! the number of wallets to fund (should match relay wallet pool size)
+# @option -p --private-key!
+# @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
+relayWalletGrantPermissionAndFund() {
+  forge script \
+    script/LocalDeploy.s.sol \
+    $argc_token_addr \
+    "$argc_mnemonic" \
+    $argc_wallet_count \
+    --sig "relayWalletGrantPermissionAndFund(address,string,uint32)" \
+    --rpc-url $argc_rpc_url --broadcast -vvvv \
+    --private-key $argc_private_key
+ 
+}
+
 eval "$(argc --argc-eval "$0" "$@")"

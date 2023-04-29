@@ -3,6 +3,8 @@ pragma solidity 0.8.16;
 
 import {Script} from "@std/Script.sol";
 import {console2} from "@std/console2.sol";
+import {Test} from "@std/Test.sol";
+import {IAccessControl} from "src/interfaces/IAccessControl.sol";
 
 import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
 import {OrigamiMembershipToken} from "src/OrigamiMembershipToken.sol";
@@ -26,6 +28,8 @@ contract LocalDeploy is Script {
     mapping(string => address) public facetAddresses;
     mapping(string => address) public proxyAddresses;
     mapping(string => address) public governorAddresses;
+    bytes32 internal constant REVOKER_ROLE = 0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30;
+    bytes32 internal constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
 
     function run(address contractAdmin) public {
         vm.startBroadcast();
@@ -133,5 +137,23 @@ contract LocalDeploy is Script {
         console2.log("TimelockController: ", address(timelock));
         console2.log("Time delay: 300");
         governorAddresses["TimelockController"] = address(timelock);
+    }
+
+    function relayWalletGrantPermissionAndFund(address tokenAddr, string calldata mnemonic, uint32 walletCount)
+        public
+    {
+        vm.startBroadcast();
+        IAccessControl accessControl = IAccessControl(tokenAddr);
+        for (uint32 i = 0; i < walletCount; i++) {
+            uint256 privateKey = vm.deriveKey(mnemonic, i);
+            address wallet = vm.addr(privateKey);
+            accessControl.grantRole(REVOKER_ROLE, wallet);
+            accessControl.grantRole(MINTER_ROLE, wallet);
+            (bool success,) = wallet.call{value: 10000000000000000000}("");
+            require(success, "ETH transfer did not work");
+            console2.log("Fund wallet:", wallet);
+            console2.log("Wallet balance:", wallet.balance);
+        }
+        vm.stopBroadcast();
     }
 }
