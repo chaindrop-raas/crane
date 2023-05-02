@@ -175,14 +175,13 @@ contract GovernorInstance is Script {
         address timelock,
         string calldata relativeConfigPath
     ) external {
-        uint256 adminPrivateKey = vm.envUint("PRIVATE_KEY");
-        address admin = vm.addr(adminPrivateKey);
-
         GovernorConfig memory config = parseGovernorConfig(relativeConfigPath);
 
-        vm.startBroadcast(adminPrivateKey);
+        vm.startBroadcast();
         IDiamondCut.FacetCut[] memory cuts = facetCuts(config);
-        DiamondCutFacet(governorDiamond).diamondCut(cuts, governorDiamondInit, encodeConfig(admin, timelock, config));
+        DiamondCutFacet(governorDiamond).diamondCut(
+            cuts, governorDiamondInit, encodeConfig(msg.sender, timelock, config)
+        );
         vm.stopBroadcast();
     }
 }
