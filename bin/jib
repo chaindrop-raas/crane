@@ -357,11 +357,13 @@ deployGovernorTimelockController() {
 # @option -p --private-key! (this needs to be the admin's private key not the deployer's)
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 configureGovernor() {
-  PRIVATE_KEY=$argc_private_key forge script \
-    script/Governor.s.sol:GovernorInstance \
+  declare -a options=()
+  options=$(createOptions $argc_rpc_url 1000000)
+  forge script script/Governor.s.sol:GovernorInstance \
     $argc_init $argc_diamond $argc_timelock $argc_path \
-    --sig "configure(address,address,address,string)" \
-    --rpc-url $argc_rpc_url --broadcast
+    --private-key $argc_private_key \
+    ${options[@]} \
+    --sig "configure(address,address,address,string)"
 }
 
 # @cmd deploy a create3 factory contract
