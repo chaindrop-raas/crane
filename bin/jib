@@ -311,9 +311,8 @@ deployFacets() {
 deployGovernorDiamondInit() {
   declare -a options=()
   options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
-  PRIVATE_KEY=$argc_private_key forge script \
-    script/Governor.s.sol:DeployGovernorDiamondInit \
-    ${options[@]}
+  forge script script/Governor.s.sol:DeployGovernorDiamondInit \
+    ${options[@]} --private-key $argc_private_key
 }
 
 # @cmd deploy a governor diamond contract

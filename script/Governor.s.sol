@@ -69,9 +69,7 @@ contract DeployGovernorFacets is Script {
 
 contract DeployGovernorDiamondInit is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         GovernorDiamondInit diamondInit = new GovernorDiamondInit();
         console2.log("GovernorDiamondInit deployed at:", address(diamondInit));
         vm.stopBroadcast();
@@ -102,7 +100,7 @@ contract DeployGovernorTimelockController is Script {
     }
 }
 
-contract GovernorInstance is Script {
+contract GovernorConfigScript is Script {
     struct GovernorConfig {
         string name;
         address diamondLoupeFacet;
@@ -133,20 +131,6 @@ contract GovernorInstance is Script {
         return config;
     }
 
-    function facetCuts(GovernorConfig memory config) public pure returns (IDiamondCut.FacetCut[] memory) {
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](5);
-
-        cuts[0] = DiamondDeployHelper.diamondLoupeFacetCut(config.diamondLoupeFacet);
-        cuts[1] = DiamondDeployHelper.ownershipFacetCut(config.ownershipFacet);
-        cuts[2] = DiamondDeployHelper.governorCoreFacetCut(GovernorCoreFacet(config.governorCoreFacet));
-        cuts[3] = DiamondDeployHelper.governorSettingsFacetCut(GovernorSettingsFacet(config.governorSettingsFacet));
-        cuts[4] = DiamondDeployHelper.governorTimelockControlFacetCut(
-            GovernorTimelockControlFacet(config.governorTimelockControlFacet)
-        );
-
-        return cuts;
-    }
-
     function encodeConfig(address admin, address timelock, GovernorConfig memory config)
         public
         pure
@@ -167,6 +151,22 @@ contract GovernorInstance is Script {
             config.enableGovernanceToken,
             config.enableMembershipToken
         );
+    }
+}
+
+contract GovernorInstance is GovernorConfigScript {
+    function facetCuts(GovernorConfig memory config) public pure returns (IDiamondCut.FacetCut[] memory) {
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](5);
+
+        cuts[0] = DiamondDeployHelper.diamondLoupeFacetCut(config.diamondLoupeFacet);
+        cuts[1] = DiamondDeployHelper.ownershipFacetCut(config.ownershipFacet);
+        cuts[2] = DiamondDeployHelper.governorCoreFacetCut(GovernorCoreFacet(config.governorCoreFacet));
+        cuts[3] = DiamondDeployHelper.governorSettingsFacetCut(GovernorSettingsFacet(config.governorSettingsFacet));
+        cuts[4] = DiamondDeployHelper.governorTimelockControlFacetCut(
+            GovernorTimelockControlFacet(config.governorTimelockControlFacet)
+        );
+
+        return cuts;
     }
 
     function configure(
@@ -243,6 +243,62 @@ contract UpgradeDiamondFromV001ToV002 is Script {
 
         vm.startBroadcast();
         DiamondCutFacet(governorDiamond).diamondCut(cuts, address(0), "");
+        vm.stopBroadcast();
+    }
+}
+
+contract UpgradeDiamondFromV002ToV003 is GovernorConfigScript {
+    function run(
+        address governorDiamondInit,
+        address governorDiamond,
+        address timelock,
+        address newSettingsFacet,
+        string calldata relativeConfigPath
+    ) external {
+        bytes4[] memory replaces = new bytes4[](20);
+        replaces[0] = 0xdf991496;
+        replaces[1] = 0x664d7afa;
+        replaces[2] = 0xdc576c26;
+        replaces[3] = 0xcdbf6ce8;
+        replaces[4] = 0xf96dae0a;
+        replaces[5] = 0x62ad351b;
+        replaces[6] = 0xb58131b0;
+        replaces[7] = 0x8532623f;
+        replaces[8] = 0xa7713a70;
+        replaces[9] = 0x18035c66;
+        replaces[10] = 0xafdfdef9;
+        replaces[11] = 0xf8570170;
+        replaces[12] = 0x034f6436;
+        replaces[13] = 0x30c20f09;
+        replaces[14] = 0x5f9990d1;
+        replaces[15] = 0x72965162;
+        replaces[16] = 0xbe3180dd;
+        replaces[17] = 0x8f80fbca;
+        replaces[18] = 0x3932abb1;
+        replaces[19] = 0x02a251a3;
+
+        bytes4[] memory adds = new bytes4[](2);
+        adds[0] = 0x97c3d334;
+        adds[1] = 0xb867bc80;
+
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](2);
+        cuts[0] = IDiamondCut.FacetCut({
+            facetAddress: newSettingsFacet,
+            action: IDiamondCut.FacetCutAction.Replace,
+            functionSelectors: replaces
+        });
+        cuts[1] = IDiamondCut.FacetCut({
+            facetAddress: newSettingsFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: adds
+        });
+
+        GovernorConfig memory config = parseGovernorConfig(relativeConfigPath);
+
+        vm.startBroadcast();
+        DiamondCutFacet(governorDiamond).diamondCut(
+            cuts, governorDiamondInit, encodeConfig(msg.sender, timelock, config)
+        );
         vm.stopBroadcast();
     }
 }
