@@ -29,7 +29,7 @@ import {IERC165} from "@diamond/interfaces/IERC165.sol";
  * @author Modified from OpenZeppelin Contracts v4.4.1 (governance/TimelockController.sol)
  * @custom:security-contact contract-security@joinorigami.com
  */
-contract OrigamiTimelockController is AccessControl, IERC721Receiver, IERC1155Receiver {
+contract OrigamiTimelockController is ITimelockController, AccessControl, IERC721Receiver, IERC1155Receiver {
     bytes32 public constant TIMELOCK_ADMIN_ROLE = keccak256("TIMELOCK_ADMIN_ROLE");
     bytes32 public constant PROPOSER_ROLE = keccak256("PROPOSER_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
