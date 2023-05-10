@@ -179,9 +179,8 @@ contract GovernorInstance is GovernorConfigScript {
 
         vm.startBroadcast();
         IDiamondCut.FacetCut[] memory cuts = facetCuts(config);
-        DiamondCutFacet(governorDiamond).diamondCut(
-            cuts, governorDiamondInit, encodeConfig(msg.sender, timelock, config)
-        );
+        bytes memory encodedConfig = encodeConfig(msg.sender, timelock, config);
+        DiamondCutFacet(governorDiamond).diamondCut(cuts, governorDiamondInit, encodedConfig);
         vm.stopBroadcast();
     }
 }

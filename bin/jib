@@ -356,13 +356,11 @@ deployGovernorTimelockController() {
 # @option -p --private-key! (this needs to be the admin's private key not the deployer's)
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 configureGovernor() {
-  declare -a options=()
-  options=$(createOptions $argc_rpc_url 1000000)
   forge script script/Governor.s.sol:GovernorInstance \
     $argc_init $argc_diamond $argc_timelock $argc_path \
     --private-key $argc_private_key \
-    ${options[@]} \
-    --sig "configure(address,address,address,string)"
+    --sig "configure(address,address,address,string)" \
+    --rpc-url $argc_rpc_url --broadcast -vvvv
 }
 
 # @cmd deploy a create3 factory contract
@@ -512,7 +510,6 @@ relayWalletGrantPermissionAndFund() {
     --sig "relayWalletGrantPermissionAndFund(address,string,uint32)" \
     --rpc-url $argc_rpc_url --broadcast -vvvv \
     --private-key $argc_private_key
- 
 }
 
 eval "$(argc --argc-eval "$0" "$@")"

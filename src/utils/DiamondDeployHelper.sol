@@ -72,8 +72,8 @@ library DiamondDeployHelper {
         selectors[14] = facet.hasRole.selector;
         selectors[15] = facet.hasVoted.selector;
         selectors[16] = facet.hashProposal.selector;
-        selectors[17] = facet.isProposalTokenEnabled.selector;
-        selectors[18] = facet.isCountingStrategyEnabled.selector;
+        selectors[17] = facet.isCountingStrategyEnabled.selector;
+        selectors[18] = facet.isProposalTokenEnabled.selector;
         selectors[19] = facet.name.selector;
         selectors[20] = facet.proposalDeadline.selector;
         selectors[21] = facet.proposalSnapshot.selector;
@@ -106,8 +106,8 @@ library DiamondDeployHelper {
         bytes4[] memory selectors = new bytes4[](22);
         selectors[0] = facet.defaultCountingStrategy.selector;
         selectors[1] = facet.defaultProposalToken.selector;
-        selectors[2] = facet.enableProposalToken.selector;
-        selectors[3] = facet.enableCountingStrategy.selector;
+        selectors[2] = facet.enableCountingStrategy.selector;
+        selectors[3] = facet.enableProposalToken.selector;
         selectors[4] = facet.governanceToken.selector;
         selectors[5] = facet.membershipToken.selector;
         selectors[6] = facet.proposalThreshold.selector;
