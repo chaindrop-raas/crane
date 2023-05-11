@@ -69,7 +69,7 @@ contract AccessControl is IAccessControl {
      * @dev Returns `true` if `account` has been granted `role`.
      */
     function hasRole(bytes32 role, address account) public view returns (bool) {
-        return AccessControlStorage.roleStorage().roles[role].members[account];
+        return AccessControlStorage.roleData(role).members[account];
     }
 
     /**
@@ -113,7 +113,7 @@ contract AccessControl is IAccessControl {
      * To change a role's admin, use {_setRoleAdmin}.
      */
     function getRoleAdmin(bytes32 role) public view returns (bytes32) {
-        return AccessControlStorage.roleStorage().roles[role].adminRole;
+        return AccessControlStorage.roleData(role).adminRole;
     }
 
     /**
@@ -176,7 +176,7 @@ contract AccessControl is IAccessControl {
      */
     function _setRoleAdmin(bytes32 role, bytes32 adminRole) internal {
         bytes32 previousAdminRole = getRoleAdmin(role);
-        AccessControlStorage.roleStorage().roles[role].adminRole = adminRole;
+        AccessControlStorage.roleData(role).adminRole = adminRole;
         emit RoleAdminChanged(role, previousAdminRole, adminRole);
     }
 
@@ -198,7 +198,7 @@ contract AccessControl is IAccessControl {
      */
     function _grantRole(bytes32 role, address account) internal {
         if (!hasRole(role, account)) {
-            AccessControlStorage.roleStorage().roles[role].members[account] = true;
+            AccessControlStorage.roleData(role).members[account] = true;
             emit RoleGranted(role, account, msg.sender);
         }
     }
@@ -212,7 +212,7 @@ contract AccessControl is IAccessControl {
      */
     function _revokeRole(bytes32 role, address account) internal {
         if (hasRole(role, account)) {
-            AccessControlStorage.roleStorage().roles[role].members[account] = false;
+            AccessControlStorage.roleData(role).members[account] = false;
             emit RoleRevoked(role, account, msg.sender);
         }
     }
