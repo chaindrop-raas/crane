@@ -40,6 +40,7 @@ contract OrigamiMembershipToken is
     mapping(uint256 => uint256) public tokenIdToBlockTimestamp;
 
     /// @notice this sets the base URI of the token's URI and is used to generate the token's URI. This is set during initialization or by calling setBaseURI.
+    // slither-disable-next-line naming-convention (consistent with contract naming convention)
     string public _metadataBaseURI;
     /// @notice this private variable denotes whether or not the contract allows token transfers. By default, this is disabled.
     bool private _transferEnabled;
@@ -63,27 +64,28 @@ contract OrigamiMembershipToken is
 
     /// @dev this function is used to initialize the contract. It is called during contract deployment.
     /// @notice this function is not intended to be called by external users.
-    /// @param _admin the address of the contract admin. This address receives all roles by default and should be used to delegate them to DAO committees and/or permanent members.
+    /// @param admin the address of the contract admin. This address receives all roles by default and should be used to delegate them to DAO committees and/or permanent members.
     /// @param _name the name of the token. Typically this is the name of the DAO.
-    /// @param _symbol the symbol of the token. Typically this is a short abbreviation of the DAO's name.
+    /// @param symbol the symbol of the token. Typically this is a short abbreviation of the DAO's name.
     /// @param baseURI_ the base URI of the token. This is used to generate the token's URI.
-    function initialize(address _admin, string memory _name, string memory _symbol, string memory baseURI_)
+    // slither-disable-next-line naming-convention (name is a shadowed variable)
+    function initialize(address admin, string memory _name, string memory symbol, string memory baseURI_)
         public
         initializer
     {
-        require(_admin != address(0x0), "Admin address cannot be zero");
+        require(admin != address(0x0), "Admin address cannot be zero");
 
-        __ERC721_init(_name, _symbol);
+        __ERC721_init(_name, symbol);
         __ERC721Enumerable_init();
         __Pausable_init();
         __AccessControl_init();
         __ERC721Burnable_init();
 
         // grant all roles to the admin
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(PAUSER_ROLE, _admin);
-        _grantRole(MINTER_ROLE, _admin);
-        _grantRole(REVOKER_ROLE, _admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(PAUSER_ROLE, admin);
+        _grantRole(MINTER_ROLE, admin);
+        _grantRole(REVOKER_ROLE, admin);
 
         _metadataBaseURI = baseURI_;
         _transferEnabled = false;
@@ -213,13 +215,13 @@ contract OrigamiMembershipToken is
 
     /// @dev this is overridden so we can apply the `whenTransferrable` modifier
     /// @notice this allows transfers when the transferrable state is enabled.
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data)
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data)
         public
         virtual
         override(ERC721Upgradeable, IERC721Upgradeable)
         whenTransferrable
     {
-        super.safeTransferFrom(from, to, tokenId, _data);
+        super.safeTransferFrom(from, to, tokenId, data);
     }
 
     /// @dev this is overridden so we can apply the `limitBalance` and `whenNotPaused` modifiers
