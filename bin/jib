@@ -225,15 +225,13 @@ checkStorage() {
 # @arg file! the path to the file containing the addresses to grant permissions to (one per line)
 # @option -p --private-key!
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
-# @option --gas-price Override the gas price to use for the transaction.
 grantPermissions() {
   ADDRESS_ARRAY=$(awk 'BEGIN { printf "[" } { if (NR == 1) printf "%s", $0; else printf ",%s", $0; } END { printf "]" }' $argc_file)
-  PRIVATE_KEY=$argc_private_key forge script \
-    script/Util.s.sol:GrantPermissions \
+  forge script script/Util.s.sol:GrantPermissions \
     $argc_contract $ADDRESS_ARRAY \
     --sig "run(address,address[])" \
     --rpc-url $argc_rpc_url --broadcast -vvvv \
-    --gas-price "${argc_gas_price:-0}"
+    --private-key $argc_private_key
 }
 
 # @cmd check for mint/revoke permissions for wallets
