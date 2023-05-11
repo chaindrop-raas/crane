@@ -14,9 +14,7 @@ contract GrantPermissions is Script {
     bytes32 internal constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
 
     function run(address target, address[] calldata accounts) external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
 
         IAccessControl accessControl = IAccessControl(target);
         for (uint256 i = 0; i < accounts.length; i++) {
