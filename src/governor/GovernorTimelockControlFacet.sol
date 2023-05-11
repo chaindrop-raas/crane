@@ -46,7 +46,10 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl, AccessControl
      * @param calldatas the calldatas of the proposal
      * @param descriptionHash the hash of the description of the proposal
      * @return proposalId the id of the proposal
+     *
+     * Regarding slither disable reentrancy: All calls are with trusted contracts.
      */
+    // slither-disable-start reentrancy-events
     function queue(
         address[] calldata targets,
         uint256[] calldata values,
@@ -68,6 +71,7 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl, AccessControl
 
         return proposalId;
     }
+    // slither-disable-end reentrancy-events
 
     /**
      * @notice execute a queued proposal after the delay has passed
@@ -76,7 +80,10 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl, AccessControl
      * @param calldatas the calldatas of the proposal
      * @param descriptionHash the hash of the description of the proposal
      * @return the id of the proposal
+     *
+     * Regarding slither disable reentrancy: All calls are with trusted contracts.
      */
+    // slither-disable-start reentrancy-events
     function execute(
         address[] calldata targets,
         uint256[] calldata values,
@@ -90,6 +97,7 @@ contract GovernorTimelockControlFacet is IGovernorTimelockControl, AccessControl
         emit ProposalExecuted(proposalId);
         return proposalId;
     }
+    // slither-disable-end reentrancy-events
 
     /**
      * @notice cancel a proposal queued for timelock execution

@@ -342,8 +342,12 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
         );
     }
 
-    /// @dev internal function to cast a vote on a proposal; restricts voting to members
-    /// TODO: the cast vote functions really should be part of the counting strategy, since they couple to the support type
+    /*
+    * @dev internal function to cast a vote on a proposal; restricts voting to members
+    * TODO: the cast vote functions really should be part of the counting strategy, since 
+    * they couple to the support type
+    */
+    //slither-disable-start timestamp (false positive)
     function _castVote(uint256 proposalId, address account, uint8 support, string memory reason)
         internal
         onlyMember(account)
@@ -359,6 +363,7 @@ contract GovernorCoreFacet is AccessControl, IEIP712, IGovernor {
 
         emit VoteCast(account, proposalId, support, weight, reason);
     }
+    //slither-disable-end timestamp
 
     /// @dev recover the proposer address from signed proposal data
     function recoverProposer(

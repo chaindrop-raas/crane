@@ -1,6 +1,6 @@
 {
-  "filter_paths": "lib",
-    "solc_remaps": [
+  "filter_paths": "(lib/|test/|script/)",
+  "solc_remaps": [
       "ds-test/=lib/ds-test/src/",
       "forge-std/=lib/forge-std/src/",
       "@create3/=lib/create3-factory/src/",
@@ -9,5 +9,6 @@
       "@oz-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
       "@std/=lib/forge-std/src/",
       "src/=src/"
-  ]
+  ],
+  "disable_color": false
 }
