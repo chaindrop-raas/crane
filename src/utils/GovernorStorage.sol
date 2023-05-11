@@ -142,7 +142,9 @@ library GovernorStorage {
 
     /**
      * @dev returns the ConfigStorage location.
+     * Regarding: slither uses assembly: This is how DiamondStorage writes to a specific slot
      */
+    // slither-disable-start assembly
     function configStorage() internal pure returns (GovernorConfig storage gs) {
         bytes32 position = CONFIG_STORAGE_POSITION;
         //solhint-disable-next-line no-inline-assembly
@@ -150,6 +152,7 @@ library GovernorStorage {
             gs.slot := position
         }
     }
+    // slither-disable-end assembly
 
     /**
      * @dev determines if the provided token is the membership token or
@@ -330,7 +333,9 @@ library GovernorStorage {
 
     /**
      * @dev returns the ProposalStorage location.
+     * Regarding: slither uses assembly: This is how DiamondStorage writes to a specific slot
      */
+    // slither-disable-start assembly
     function proposalStorage() internal pure returns (ProposalStorage storage ps) {
         bytes32 position = PROPOSAL_STORAGE_POSITION;
         //solhint-disable-next-line no-inline-assembly
@@ -338,6 +343,7 @@ library GovernorStorage {
             ps.slot := position
         }
     }
+    // slither-disable-end assembly
 
     /**
      * @notice creates a new proposal.
@@ -345,7 +351,13 @@ library GovernorStorage {
      * @param proposalToken the proposal token.
      * @param countingStrategy the counting strategy.
      * @return ps the proposal core storage.
+     * Regarding slither disable timestamp: Block manipulation generally occurs over
+     * a very short period of time (seconds/minutes). The snapshot and deadline properties are
+     * only used to set the start and end times of the voting period for the proposal. Any
+     * manipulation of the block-timestamp would only result in a small difference in the
+     * voting period, and does not have a significant impact on the overall governance process.
      */
+    //slither-disable-start timestamp
     function createProposal(uint256 proposalId, address proposalToken, bytes4 countingStrategy)
         internal
         returns (ProposalCore storage ps)
@@ -361,11 +373,13 @@ library GovernorStorage {
         ps.quorumNumerator = cs.quorumNumerator;
         ps.quorumDenominator = cs.quorumDenominator;
         // An epoch exceeding max UINT64 is 584,942,417,355 years from now.
+
         ps.snapshot = uint64(block.timestamp + cs.votingDelay);
         ps.deadline = ps.snapshot + cs.votingPeriod;
 
         return ps;
     }
+    //slither-disable-end timestamp
 
     /**
      * @notice returns the proposal core storage.

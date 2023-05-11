@@ -67,11 +67,18 @@ library TransferLocksStorage {
      * @param account the account to add the transfer lock to
      * @param amount the amount of tokens to lock
      * @param deadline the timestamp after which the lock expires
+     * Regarding slither disable timestamp: Block manipulation generally occurs over
+     * a very short period of time (seconds/minutes). In this case, any manipulation of
+     * block-timestamp would affect the expiration of transfer locks for accounts.
+     * This could cause a transfer lock to expire slightly earlier or later than intended.
+     * However, the impact is limited, and the overall functioning of the contract is not
+     * severely affected.
      */
     function addTransferLock(address account, uint256 amount, uint256 deadline) internal {
         TransferLocks storage tls = transferLocksStorage();
 
         // Remove expired locks from the head of the linked list
+        // slither-disable-next-line timestamp
         while (tls.numLocks[account] > 0 && tls.locks[account][tls.firstLock[account]].deadline < block.timestamp) {
             // Delete the expired lock from storage
             delete tls.locks[account][tls.firstLock[account]];
