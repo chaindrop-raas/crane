@@ -89,50 +89,55 @@ contract LocalDeploy is Script {
         }
     }
 
+    function isUndeployed(string memory contractName) public view returns (bool) {
+        address contractAddr = addresses[contractName];
+        return contractAddr == address(0) || address(contractAddr).codehash == 0x0;
+    }
+
     function deployImplementations() public {
-        if (addresses["OrigamiGovernanceToken"] == address(0)) {
+        if (isUndeployed("OrigamiGovernanceToken")) {
             OrigamiGovernanceToken govToken = new OrigamiGovernanceToken();
             addresses["OrigamiGovernanceToken"] = address(govToken);
         }
 
-        if (addresses["OrigamiMembershipToken"] == address(0)) {
+        if (isUndeployed("OrigamiMembershipToken")) {
             OrigamiMembershipToken memToken = new OrigamiMembershipToken();
             addresses["OrigamiMembershipToken"] = address(memToken);
         }
 
-        if (addresses["GovernorDiamondInit"] == address(0)) {
+        if (isUndeployed("GovernorDiamondInit")) {
             GovernorDiamondInit diamondInit = new GovernorDiamondInit();
             addresses["GovernorDiamondInit"] = address(diamondInit);
         }
     }
 
     function deployGovernorFacets() public {
-        if (addresses["DiamondCutFacet"] == address(0)) {
+        if (isUndeployed("DiamondCutFacet")) {
             DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
             addresses["DiamondCutFacet"] = address(diamondCutFacet);
         }
 
-        if (addresses["DiamondLoupeFacet"] == address(0)) {
+        if (isUndeployed("DiamondLoupeFacet")) {
             DiamondLoupeFacet diamondLoupeFacet = new DiamondLoupeFacet();
             addresses["DiamondLoupeFacet"] = address(diamondLoupeFacet);
         }
 
-        if (addresses["OwnershipFacet"] == address(0)) {
+        if (isUndeployed("OwnershipFacet")) {
             OwnershipFacet ownershipFacet = new OwnershipFacet();
             addresses["OwnershipFacet"] = address(ownershipFacet);
         }
 
-        if (addresses["GovernorCoreFacet"] == address(0)) {
+        if (isUndeployed("GovernorCoreFacet")) {
             GovernorCoreFacet governorCoreFacet = new GovernorCoreFacet();
             addresses["GovernorCoreFacet"] = address(governorCoreFacet);
         }
 
-        if (addresses["GovernorSettingsFacet"] == address(0)) {
+        if (isUndeployed("GovernorSettingsFacet")) {
             GovernorSettingsFacet governorSettingsFacet = new GovernorSettingsFacet();
             addresses["GovernorSettingsFacet"] = address(governorSettingsFacet);
         }
 
-        if (addresses["GovernorTimelockControlFacet"] == address(0)) {
+        if (isUndeployed("GovernorTimelockControlFacet")) {
             GovernorTimelockControlFacet governorTimelockControlFacet = new GovernorTimelockControlFacet();
             addresses["GovernorTimelockControlFacet"] = address(governorTimelockControlFacet);
         }
@@ -141,7 +146,7 @@ contract LocalDeploy is Script {
     function deployProxies() public {
         ProxyAdmin admin;
 
-        if (addresses["ProxyAdmin"] == address(0)) {
+        if (isUndeployed("ProxyAdmin")) {
             admin = new ProxyAdmin();
             addresses["ProxyAdmin"] = address(admin);
         } else {
