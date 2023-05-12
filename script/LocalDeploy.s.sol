@@ -46,10 +46,11 @@ contract LocalDeploy is Script {
     function run(address contractAdmin) public {
         vm.startBroadcast();
         deserializeReusableContractAddresses();
+        deployUtilities();
         deployImplementations();
         deployGovernorFacets();
-        deployProxies();
-        deployTokens(contractAdmin);
+        deployTokens();
+        configureTokens(contractAdmin);
         deployGovernor(contractAdmin);
         serializeReusableContractAddresses();
         vm.stopBroadcast();
@@ -94,6 +95,21 @@ contract LocalDeploy is Script {
         return contractAddr == address(0) || address(contractAddr).codehash == 0x0;
     }
 
+    function deployUtilities() public {
+        ProxyAdmin admin;
+        if (isUndeployed("ProxyAdmin")) {
+            admin = new ProxyAdmin();
+            addresses["ProxyAdmin"] = address(admin);
+        } else {
+            admin = ProxyAdmin(addresses["ProxyAdmin"]);
+        }
+
+        if (isUndeployed("GovernorDiamondInit")) {
+            GovernorDiamondInit diamondInit = new GovernorDiamondInit();
+            addresses["GovernorDiamondInit"] = address(diamondInit);
+        }
+    }
+
     function deployImplementations() public {
         if (isUndeployed("OrigamiGovernanceToken")) {
             OrigamiGovernanceToken govToken = new OrigamiGovernanceToken();
@@ -103,11 +119,6 @@ contract LocalDeploy is Script {
         if (isUndeployed("OrigamiMembershipToken")) {
             OrigamiMembershipToken memToken = new OrigamiMembershipToken();
             addresses["OrigamiMembershipToken"] = address(memToken);
-        }
-
-        if (isUndeployed("GovernorDiamondInit")) {
-            GovernorDiamondInit diamondInit = new GovernorDiamondInit();
-            addresses["GovernorDiamondInit"] = address(diamondInit);
         }
     }
 
@@ -143,19 +154,11 @@ contract LocalDeploy is Script {
         }
     }
 
-    function deployProxies() public {
-        ProxyAdmin admin;
-
-        if (isUndeployed("ProxyAdmin")) {
-            admin = new ProxyAdmin();
-            addresses["ProxyAdmin"] = address(admin);
-        } else {
-            admin = ProxyAdmin(addresses["ProxyAdmin"]);
-        }
-
+    function deployTokens() public {
+        address proxyAdmin = addresses["ProxyAdmin"];
         TransparentUpgradeableProxy govTokenproxy = new TransparentUpgradeableProxy(
                 addresses["OrigamiGovernanceToken"],
-                address(admin),
+                address(proxyAdmin),
                 ""
             );
         console2.log("GovTokenProxy (transparent upgradable): ", address(govTokenproxy));
@@ -163,14 +166,14 @@ contract LocalDeploy is Script {
 
         TransparentUpgradeableProxy memTokenproxy = new TransparentUpgradeableProxy(
                 addresses["OrigamiMembershipToken"],
-                address(admin),
+                address(proxyAdmin),
                 ""
             );
         console2.log("MemTokenProxy (transparent upgradable): ", address(memTokenproxy));
         addresses["MemTokenProxy"] = address(memTokenproxy);
     }
 
-    function deployTokens(address contractAdmin) public {
+    function configureTokens(address contractAdmin) public {
         OrigamiMembershipToken memToken = OrigamiMembershipToken(addresses["MemTokenProxy"]);
         memToken.initialize(contractAdmin, "OrigamiTeamToken", "MGAMI", "localhost");
         console2.log("OrigamiMembershipToken: ", address(memToken));
