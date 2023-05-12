@@ -4,6 +4,7 @@ pragma solidity 0.8.16;
 import {Script} from "@std/Script.sol";
 import {console2} from "@std/console2.sol";
 import {Test} from "@std/Test.sol";
+import {VmSafe} from "@std/Vm.sol";
 import {IAccessControl} from "src/interfaces/IAccessControl.sol";
 
 import {OrigamiGovernanceToken} from "src/OrigamiGovernanceToken.sol";
@@ -24,93 +25,154 @@ import {OrigamiTimelockController} from "src/OrigamiTimelockController.sol";
 
 // solhint-disable no-console
 contract LocalDeploy is Script {
-    mapping(string => address) public implementationAddresses;
-    mapping(string => address) public facetAddresses;
-    mapping(string => address) public proxyAddresses;
-    mapping(string => address) public governorAddresses;
     bytes32 internal constant REVOKER_ROLE = 0xce3f34913921da558f105cefb578d87278debbbd073a8d552b5de0d168deee30;
     bytes32 internal constant MINTER_ROLE = 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6;
 
+    mapping(string => address) public addresses;
+
+    string[10] public reusableContracts = [
+        "OrigamiGovernanceToken",
+        "OrigamiMembershipToken",
+        "GovernorDiamondInit",
+        "DiamondCutFacet",
+        "DiamondLoupeFacet",
+        "OwnershipFacet",
+        "GovernorCoreFacet",
+        "GovernorSettingsFacet",
+        "GovernorTimelockControlFacet",
+        "ProxyAdmin"
+    ];
+
     function run(address contractAdmin) public {
         vm.startBroadcast();
+        deserializeReusableContractAddresses();
         deployImplementations();
         deployGovernorFacets();
         deployProxies();
         deployTokens(contractAdmin);
         deployGovernor(contractAdmin);
+        serializeReusableContractAddresses();
         vm.stopBroadcast();
     }
 
+    // has to be a fn, since project root isn't available at compile time
+    function artifactPath() public view returns (string memory) {
+        return string.concat(vm.projectRoot(), "/artifacts/data.json");
+    }
+
+    function serializeReusableContractAddresses() public {
+        string memory json = "addresses";
+        for (uint256 i = 0; i < reusableContracts.length; i++) {
+            vm.serializeAddress(json, reusableContracts[i], addresses[reusableContracts[i]]);
+        }
+
+        string memory meta = vm.serializeUint("metadata", "timestamp", block.timestamp);
+        string memory finalJson = vm.serializeString(json, "metadata", meta);
+        vm.writeJson(finalJson, artifactPath());
+    }
+
+    function deserializeReusableContractAddresses() public {
+        string memory path = artifactPath();
+        VmSafe.DirEntry[] memory entries = vm.readDir("artifacts");
+        bool fileExists;
+        for (uint256 i = 0; i < entries.length; i++) {
+            if (keccak256(abi.encodePacked(entries[i].path)) == keccak256(abi.encodePacked(path))) {
+                fileExists = true;
+                break;
+            }
+        }
+        if (fileExists) {
+            string memory file = vm.readFile(path);
+            for (uint256 i = 0; i < reusableContracts.length; i++) {
+                addresses[reusableContracts[i]] = vm.parseJsonAddress(file, string.concat(".", reusableContracts[i]));
+            }
+        }
+    }
+
     function deployImplementations() public {
-        OrigamiGovernanceToken govToken = new OrigamiGovernanceToken();
-        console2.log("OrigamiGovernanceToken (impl): ", address(govToken));
-        implementationAddresses["OrigamiGovernanceToken"] = address(govToken);
+        if (addresses["OrigamiGovernanceToken"] == address(0)) {
+            OrigamiGovernanceToken govToken = new OrigamiGovernanceToken();
+            addresses["OrigamiGovernanceToken"] = address(govToken);
+        }
 
-        OrigamiMembershipToken memToken = new OrigamiMembershipToken();
-        console2.log("OrigamiMembershipToken (impl): ", address(memToken));
-        implementationAddresses["OrigamiMembershipToken"] = address(memToken);
+        if (addresses["OrigamiMembershipToken"] == address(0)) {
+            OrigamiMembershipToken memToken = new OrigamiMembershipToken();
+            addresses["OrigamiMembershipToken"] = address(memToken);
+        }
 
-        GovernorDiamondInit diamondInit = new GovernorDiamondInit();
-        console2.log("GovernorDiamondInit: ", address(diamondInit));
-        implementationAddresses["GovernorDiamondInit"] = address(diamondInit);
+        if (addresses["GovernorDiamondInit"] == address(0)) {
+            GovernorDiamondInit diamondInit = new GovernorDiamondInit();
+            addresses["GovernorDiamondInit"] = address(diamondInit);
+        }
     }
 
     function deployGovernorFacets() public {
-        DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
-        console2.log("DiamondCutFacet: ", address(diamondCutFacet));
-        facetAddresses["DiamondCutFacet"] = address(diamondCutFacet);
+        if (addresses["DiamondCutFacet"] == address(0)) {
+            DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
+            addresses["DiamondCutFacet"] = address(diamondCutFacet);
+        }
 
-        DiamondLoupeFacet diamondLoupeFacet = new DiamondLoupeFacet();
-        console2.log("DiamondLoupeFacet: ", address(diamondLoupeFacet));
-        facetAddresses["DiamondLoupeFacet"] = address(diamondLoupeFacet);
+        if (addresses["DiamondLoupeFacet"] == address(0)) {
+            DiamondLoupeFacet diamondLoupeFacet = new DiamondLoupeFacet();
+            addresses["DiamondLoupeFacet"] = address(diamondLoupeFacet);
+        }
 
-        OwnershipFacet ownershipFacet = new OwnershipFacet();
-        console2.log("OwnershipFacet: ", address(ownershipFacet));
-        facetAddresses["OwnershipFacet"] = address(ownershipFacet);
+        if (addresses["OwnershipFacet"] == address(0)) {
+            OwnershipFacet ownershipFacet = new OwnershipFacet();
+            addresses["OwnershipFacet"] = address(ownershipFacet);
+        }
 
-        GovernorCoreFacet governorCoreFacet = new GovernorCoreFacet();
-        console2.log("GovernorCoreFacet: ", address(governorCoreFacet));
-        facetAddresses["GovernorCoreFacet"] = address(governorCoreFacet);
+        if (addresses["GovernorCoreFacet"] == address(0)) {
+            GovernorCoreFacet governorCoreFacet = new GovernorCoreFacet();
+            addresses["GovernorCoreFacet"] = address(governorCoreFacet);
+        }
 
-        GovernorSettingsFacet governorSettingsFacet = new GovernorSettingsFacet();
-        console2.log("GovernorSettingsFacet: ", address(governorSettingsFacet));
-        facetAddresses["GovernorSettingsFacet"] = address(governorSettingsFacet);
+        if (addresses["GovernorSettingsFacet"] == address(0)) {
+            GovernorSettingsFacet governorSettingsFacet = new GovernorSettingsFacet();
+            addresses["GovernorSettingsFacet"] = address(governorSettingsFacet);
+        }
 
-        GovernorTimelockControlFacet governorTimelockControlFacet = new GovernorTimelockControlFacet();
-        console2.log("GovernorTimelockControlFacet: ", address(governorTimelockControlFacet));
-        facetAddresses["GovernorTimelockControlFacet"] = address(governorTimelockControlFacet);
+        if (addresses["GovernorTimelockControlFacet"] == address(0)) {
+            GovernorTimelockControlFacet governorTimelockControlFacet = new GovernorTimelockControlFacet();
+            addresses["GovernorTimelockControlFacet"] = address(governorTimelockControlFacet);
+        }
     }
 
     function deployProxies() public {
-        ProxyAdmin admin = new ProxyAdmin();
-        console2.log("ProxyAdmin: ", address(admin));
-        proxyAddresses["ProxyAdmin"] = address(admin);
+        ProxyAdmin admin;
+
+        if (addresses["ProxyAdmin"] == address(0)) {
+            admin = new ProxyAdmin();
+            addresses["ProxyAdmin"] = address(admin);
+        } else {
+            admin = ProxyAdmin(addresses["ProxyAdmin"]);
+        }
 
         TransparentUpgradeableProxy govTokenproxy = new TransparentUpgradeableProxy(
-                implementationAddresses["OrigamiGovernanceToken"],
+                addresses["OrigamiGovernanceToken"],
                 address(admin),
                 ""
             );
         console2.log("GovTokenProxy (transparent upgradable): ", address(govTokenproxy));
-        proxyAddresses["GovTokenProxy"] = address(govTokenproxy);
+        addresses["GovTokenProxy"] = address(govTokenproxy);
 
         TransparentUpgradeableProxy memTokenproxy = new TransparentUpgradeableProxy(
-                implementationAddresses["OrigamiMembershipToken"],
+                addresses["OrigamiMembershipToken"],
                 address(admin),
                 ""
             );
         console2.log("MemTokenProxy (transparent upgradable): ", address(memTokenproxy));
-        proxyAddresses["MemTokenProxy"] = address(memTokenproxy);
+        addresses["MemTokenProxy"] = address(memTokenproxy);
     }
 
     function deployTokens(address contractAdmin) public {
-        OrigamiMembershipToken memToken = OrigamiMembershipToken(proxyAddresses["MemTokenProxy"]);
+        OrigamiMembershipToken memToken = OrigamiMembershipToken(addresses["MemTokenProxy"]);
         memToken.initialize(contractAdmin, "OrigamiTeamToken", "MGAMI", "localhost");
         console2.log("OrigamiMembershipToken: ", address(memToken));
         console2.log("Name: ", memToken.name());
         console2.log("Symbol: ", memToken.symbol());
 
-        OrigamiGovernanceToken govToken = OrigamiGovernanceToken(proxyAddresses["GovTokenProxy"]);
+        OrigamiGovernanceToken govToken = OrigamiGovernanceToken(addresses["GovTokenProxy"]);
         govToken.initialize(contractAdmin, "OrigamiGovToken", "GAMI", 1000000000000000000000000000);
         console2.log("OrigamiGovernanceToken: ", address(govToken));
         console2.log("Name: ", govToken.name());
@@ -121,10 +183,10 @@ contract LocalDeploy is Script {
     function deployGovernor(address contractAdmin) public {
         Diamond governor = new Diamond(
             contractAdmin,
-            facetAddresses["DiamondCutFacet"]
+            addresses["DiamondCutFacet"]
         );
         console2.log("GovernorDiamond: ", address(governor));
-        governorAddresses["GovernorDiamond"] = address(governor);
+        addresses["GovernorDiamond"] = address(governor);
 
         address[] memory operators = new address[](1);
         operators[0] = address(governor);
@@ -136,7 +198,7 @@ contract LocalDeploy is Script {
         );
         console2.log("TimelockController: ", address(timelock));
         console2.log("Time delay: 300");
-        governorAddresses["TimelockController"] = address(timelock);
+        addresses["TimelockController"] = address(timelock);
     }
 
     function relayWalletGrantPermissionAndFund(address tokenAddr, string calldata mnemonic, uint32 walletCount)
