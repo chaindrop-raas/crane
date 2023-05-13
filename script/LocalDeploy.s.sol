@@ -43,22 +43,37 @@ contract LocalDeploy is Script {
         "ProxyAdmin"
     ];
 
-    function run(address contractAdmin) public {
+    string[4] public daoSpecificContracts = ["GovTokenProxy", "MemTokenProxy", "GovernorDiamond", "TimelockController"];
+
+    function run(address contractAdmin, string calldata daoName, uint256 govTokenCap, uint256 timelockDelay) public {
+        string memory firstChar = string(abi.encodePacked(bytes(daoName)[0]));
+        string memory memTokenName = string.concat(daoName, " DAO Membership Token");
+        string memory memTokenSymbol = string.concat(firstChar, "DMT");
+        string memory memTokenURI = string.concat("https://", daoName, ".xyz?tokenId=");
+        string memory govTokenName = string.concat(daoName, " DAO Governance Token");
+        string memory govTokenSymbol = string.concat(firstChar, "DGT");
+
         vm.startBroadcast();
+        console2.log("Deploying DAO:", daoName);
         deserializeReusableContractAddresses();
         deployUtilities();
         deployImplementations();
         deployGovernorFacets();
-        deployTokens();
-        configureTokens(contractAdmin);
-        deployGovernor(contractAdmin);
         serializeReusableContractAddresses();
+
+        deployTokens();
+        configureTokens(
+            contractAdmin, memTokenName, memTokenSymbol, memTokenURI, govTokenName, govTokenSymbol, govTokenCap
+        );
+        deployGovernor(contractAdmin, timelockDelay);
+        emitRunFile();
+
         vm.stopBroadcast();
     }
 
     // has to be a fn, since project root isn't available at compile time
-    function artifactPath() public view returns (string memory) {
-        return string.concat(vm.projectRoot(), "/artifacts/data.json");
+    function artifactPath(string memory identifier) public view returns (string memory) {
+        return string.concat(vm.projectRoot(), "/artifacts/", identifier, ".json");
     }
 
     function serializeReusableContractAddresses() public {
@@ -69,11 +84,11 @@ contract LocalDeploy is Script {
 
         string memory meta = vm.serializeUint("metadata", "timestamp", block.timestamp);
         string memory finalJson = vm.serializeString(json, "metadata", meta);
-        vm.writeJson(finalJson, artifactPath());
+        vm.writeJson(finalJson, artifactPath("reusable-contracts"));
     }
 
     function deserializeReusableContractAddresses() public {
-        string memory path = artifactPath();
+        string memory path = artifactPath("reusable-contracts");
         VmSafe.DirEntry[] memory entries = vm.readDir("artifacts");
         bool fileExists;
         for (uint256 i = 0; i < entries.length; i++) {
@@ -154,6 +169,19 @@ contract LocalDeploy is Script {
         }
     }
 
+    function emitRunFile() public {
+        // iterate daoSpecificContracts and serialize them to the run file
+        string memory json = "daoSpecificAddresses";
+        for (uint256 i = 0; i < daoSpecificContracts.length; i++) {
+            vm.serializeAddress(json, daoSpecificContracts[i], addresses[daoSpecificContracts[i]]);
+        }
+        // output the run file
+        string memory meta = vm.serializeUint("metadata", "timestamp", block.timestamp);
+        string memory finalJson = vm.serializeString(json, "metadata", meta);
+        vm.writeJson(finalJson, artifactPath(string.concat("local-deploy-", vm.toString(block.timestamp))));
+        vm.writeJson(finalJson, artifactPath("local-deploy-latest"));
+    }
+
     function deployTokens() public {
         address proxyAdmin = addresses["ProxyAdmin"];
         TransparentUpgradeableProxy govTokenproxy = new TransparentUpgradeableProxy(
@@ -161,7 +189,6 @@ contract LocalDeploy is Script {
                 address(proxyAdmin),
                 ""
             );
-        console2.log("GovTokenProxy (transparent upgradable): ", address(govTokenproxy));
         addresses["GovTokenProxy"] = address(govTokenproxy);
 
         TransparentUpgradeableProxy memTokenproxy = new TransparentUpgradeableProxy(
@@ -169,43 +196,40 @@ contract LocalDeploy is Script {
                 address(proxyAdmin),
                 ""
             );
-        console2.log("MemTokenProxy (transparent upgradable): ", address(memTokenproxy));
         addresses["MemTokenProxy"] = address(memTokenproxy);
     }
 
-    function configureTokens(address contractAdmin) public {
+    function configureTokens(
+        address contractAdmin,
+        string memory memTokenName,
+        string memory memTokenSymbol,
+        string memory memTokenURI,
+        string memory govTokenName,
+        string memory govTokenSymbol,
+        uint256 govTokenCap
+    ) public {
         OrigamiMembershipToken memToken = OrigamiMembershipToken(addresses["MemTokenProxy"]);
-        memToken.initialize(contractAdmin, "OrigamiTeamToken", "MGAMI", "localhost");
-        console2.log("OrigamiMembershipToken: ", address(memToken));
-        console2.log("Name: ", memToken.name());
-        console2.log("Symbol: ", memToken.symbol());
+        memToken.initialize(contractAdmin, memTokenName, memTokenSymbol, memTokenURI);
 
         OrigamiGovernanceToken govToken = OrigamiGovernanceToken(addresses["GovTokenProxy"]);
-        govToken.initialize(contractAdmin, "OrigamiGovToken", "GAMI", 1000000000000000000000000000);
-        console2.log("OrigamiGovernanceToken: ", address(govToken));
-        console2.log("Name: ", govToken.name());
-        console2.log("Symbol: ", govToken.symbol());
-        console2.log("Supply Cap: ", govToken.cap());
+        govToken.initialize(contractAdmin, govTokenName, govTokenSymbol, govTokenCap);
     }
 
-    function deployGovernor(address contractAdmin) public {
+    function deployGovernor(address contractAdmin, uint256 timelockDelay) public {
         Diamond governor = new Diamond(
             contractAdmin,
             addresses["DiamondCutFacet"]
         );
-        console2.log("GovernorDiamond: ", address(governor));
         addresses["GovernorDiamond"] = address(governor);
 
         address[] memory operators = new address[](1);
         operators[0] = address(governor);
 
         OrigamiTimelockController timelock = new OrigamiTimelockController(
-            300,
+            timelockDelay,
             operators,
             operators
         );
-        console2.log("TimelockController: ", address(timelock));
-        console2.log("Time delay: 300");
         addresses["TimelockController"] = address(timelock);
     }
 

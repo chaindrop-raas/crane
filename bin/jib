@@ -483,14 +483,18 @@ deployAndRenounceNewProxyAdmin() {
 # @cmd this will deploy all contracts necessary for local development
 # @alias local-deploy
 # @arg contract-admin! the address of the contract admin (first address from anvil)
+# @arg dao-name! the name of the dao
+# @arg timelock-delay the delay for the timelock in seconds
 # @option -p --private-key!
+# @option -c --gov-token-cap=1000000000000000000000000000 the supply cap of the governance token, defaults to 1 billion
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 deployLocal() {
   forge script \
     script/LocalDeploy.s.sol \
-    $argc_contract_admin \
+    $argc_contract_admin $argc_dao_name \
+    $argc_gov_token_cap $argc_timelock_delay \
     --rpc-url $argc_rpc_url --broadcast -vvvv \
-    --sig "run(address)" \
+    --sig "run(address,string,uint256,uint256)" \
     --private-key $argc_private_key
 }
 
