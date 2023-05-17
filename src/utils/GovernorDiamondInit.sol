@@ -15,8 +15,6 @@ import {IDiamondCut} from "@diamond/interfaces/IDiamondCut.sol";
 import {IERC173} from "@diamond/interfaces/IERC173.sol";
 import {IERC165} from "@diamond/interfaces/IERC165.sol";
 
-import {console2} from "@std/console2.sol";
-
 // EIP-2535 specifies that the `diamondCut` function takes two optional
 // arguments: address _init and bytes calldata _calldata
 // These arguments are used to execute an arbitrary function using delegatecall
