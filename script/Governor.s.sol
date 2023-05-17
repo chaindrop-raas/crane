@@ -145,9 +145,7 @@ contract GovernorInstance is GovernorScriptHelper {
 
         vm.startBroadcast();
         DiamondCutFacet(governorDiamond).diamondCut(
-            facetCuts(settings),
-            governorDiamondInit,
-            encodeSettings(msg.sender, timelock, settings)
+            facetCuts(settings), governorDiamondInit, encodeSettings(msg.sender, timelock, settings)
         );
         vm.stopBroadcast();
     }
