@@ -10,7 +10,7 @@ import {TokenWeightStrategy} from "src/governor/lib/TokenWeightStrategy.sol";
 import {GovernorCoreFacet} from "src/governor/GovernorCoreFacet.sol";
 import {GovernorSettingsFacet} from "src/governor/GovernorSettingsFacet.sol";
 import {GovernorTimelockControlFacet} from "src/governor/GovernorTimelockControlFacet.sol";
-import {GovernorDiamondInit, GDInitHelper} from "src/utils/GovernorDiamondInit.sol";
+import {GovernorDiamondInit, GovernorSettings} from "src/utils/GovernorDiamondInit.sol";
 import {DiamondDeployHelper} from "src/utils/DiamondDeployHelper.sol";
 
 import {Test} from "@std/Test.sol";
@@ -120,25 +120,30 @@ contract GovernorDiamondHelper is GovDiamondAddressHelper, Test {
 
         vm.stopPrank();
 
+        GovernorSettings memory settings;
+        settings.name = "TestGovernor";
+        settings.diamondLoupeFacet = address(diamondLoupeFacet);
+        settings.ownershipFacet = address(ownershipFacet);
+        settings.governorCoreFacet = address(governorCoreFacet);
+        settings.governorSettingsFacet = address(governorSettingsFacet);
+        settings.governorTimelockControlFacet = address(governorTimelockControlFacet);
+        settings.membershipToken = address(memToken);
+        settings.governanceToken = address(govToken);
+        settings.defaultProposalToken = address(memToken);
+        settings.proposalThresholdToken = address(memToken);
+        settings.proposalThreshold = 1;
+        settings.votingPeriod = 7 days;
+        settings.votingDelay = 7 days;
+        settings.quorumNumerator = 10;
+        settings.quorumDenominator = 100;
+        settings.enableGovernanceToken = true;
+        settings.enableMembershipToken = true;
+
         vm.startPrank(owner);
         DiamondCutFacet(address(origamiGovernorDiamond)).diamondCut(
             cuts,
             address(diamondInit),
-            abi.encodeWithSignature(
-                "init(string,address,address,address,address,address,uint64,uint64,uint256,uint256,bool,bool)",
-                "TestGovernor",
-                admin,
-                address(timelock),
-                address(memToken),
-                address(memToken),
-                address(memToken),
-                7 days,
-                7 days,
-                GDInitHelper.packQuorum(10, 100),
-                1,
-                true,
-                true
-            )
+            abi.encodeWithSignature("init(address,address,bytes)", admin, timelock, abi.encode(settings))
         );
 
         // issue the voters membership tokens

@@ -5,7 +5,7 @@ import {OrigamiTimelockController} from "src/OrigamiTimelockController.sol";
 import {GovernorCoreFacet} from "src/governor/GovernorCoreFacet.sol";
 import {GovernorSettingsFacet} from "src/governor/GovernorSettingsFacet.sol";
 import {GovernorTimelockControlFacet} from "src/governor/GovernorTimelockControlFacet.sol";
-import {GovernorDiamondInit, GDInitHelper} from "src/utils/GovernorDiamondInit.sol";
+import {GovernorDiamondInit, GovernorSettings} from "src/utils/GovernorDiamondInit.sol";
 import {DiamondDeployHelper} from "src/utils/DiamondDeployHelper.sol";
 
 import {DiamondLoupeFacet} from "@diamond/facets/DiamondLoupeFacet.sol";
@@ -100,70 +100,36 @@ contract DeployGovernorTimelockController is Script {
     }
 }
 
-contract GovernorConfigScript is Script {
-    struct GovernorConfig {
-        string name;
-        address diamondLoupeFacet;
-        address ownershipFacet;
-        address governorCoreFacet;
-        address governorSettingsFacet;
-        address governorTimelockControlFacet;
-        address membershipToken;
-        address governanceToken;
-        address defaultProposalToken;
-        address proposalThresholdToken;
-        uint256 proposalThreshold;
-        uint64 votingPeriod;
-        uint64 votingDelay;
-        uint128 quorumNumerator;
-        uint128 quorumDenominator;
-        bool enableGovernanceToken;
-        bool enableMembershipToken;
-    }
-
-    function parseGovernorConfig(string calldata relativePath) public returns (GovernorConfig memory) {
+contract GovernorScriptHelper is Script {
+    function parseGovernorSettings(string calldata relativePath) public returns (GovernorSettings memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/", relativePath);
         string memory json = vm.readFile(path);
-        GovernorConfig memory config = abi.decode(vm.parseJson(json), (GovernorConfig));
+        GovernorSettings memory settings = abi.decode(vm.parseJson(json), (GovernorSettings));
         // for some reason, this value isn't parsed correctly, so we give it an explicitly coerced value
-        config.proposalThreshold = vm.parseJsonUint(json, ".k_proposalThreshold");
-        return config;
+        settings.proposalThreshold = vm.parseJsonUint(json, ".k_proposalThreshold");
+        return settings;
     }
 
-    function encodeConfig(address admin, address timelock, GovernorConfig memory config)
+    function encodeSettings(address admin, address timelock, GovernorSettings memory settings)
         public
         pure
         returns (bytes memory)
     {
-        return abi.encodeWithSignature(
-            "init(string,address,address,address,address,address,uint64,uint64,uint256,uint256,bool,bool)",
-            config.name,
-            admin,
-            timelock,
-            config.membershipToken,
-            config.governanceToken,
-            config.defaultProposalToken,
-            config.votingDelay,
-            config.votingPeriod,
-            GDInitHelper.packQuorum(config.quorumNumerator, config.quorumDenominator),
-            config.proposalThreshold,
-            config.enableGovernanceToken,
-            config.enableMembershipToken
-        );
+        return abi.encodeWithSignature("init(address,address,bytes)", admin, timelock, abi.encode(settings));
     }
 }
 
-contract GovernorInstance is GovernorConfigScript {
-    function facetCuts(GovernorConfig memory config) public pure returns (IDiamondCut.FacetCut[] memory) {
+contract GovernorInstance is GovernorScriptHelper {
+    function facetCuts(GovernorSettings memory settings) public pure returns (IDiamondCut.FacetCut[] memory) {
         IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](5);
 
-        cuts[0] = DiamondDeployHelper.diamondLoupeFacetCut(config.diamondLoupeFacet);
-        cuts[1] = DiamondDeployHelper.ownershipFacetCut(config.ownershipFacet);
-        cuts[2] = DiamondDeployHelper.governorCoreFacetCut(GovernorCoreFacet(config.governorCoreFacet));
-        cuts[3] = DiamondDeployHelper.governorSettingsFacetCut(GovernorSettingsFacet(config.governorSettingsFacet));
+        cuts[0] = DiamondDeployHelper.diamondLoupeFacetCut(settings.diamondLoupeFacet);
+        cuts[1] = DiamondDeployHelper.ownershipFacetCut(settings.ownershipFacet);
+        cuts[2] = DiamondDeployHelper.governorCoreFacetCut(GovernorCoreFacet(settings.governorCoreFacet));
+        cuts[3] = DiamondDeployHelper.governorSettingsFacetCut(GovernorSettingsFacet(settings.governorSettingsFacet));
         cuts[4] = DiamondDeployHelper.governorTimelockControlFacetCut(
-            GovernorTimelockControlFacet(config.governorTimelockControlFacet)
+            GovernorTimelockControlFacet(settings.governorTimelockControlFacet)
         );
 
         return cuts;
@@ -175,12 +141,14 @@ contract GovernorInstance is GovernorConfigScript {
         address timelock,
         string calldata relativeConfigPath
     ) external {
-        GovernorConfig memory config = parseGovernorConfig(relativeConfigPath);
+        GovernorSettings memory settings = parseGovernorSettings(relativeConfigPath);
 
         vm.startBroadcast();
-        IDiamondCut.FacetCut[] memory cuts = facetCuts(config);
-        bytes memory encodedConfig = encodeConfig(msg.sender, timelock, config);
-        DiamondCutFacet(governorDiamond).diamondCut(cuts, governorDiamondInit, encodedConfig);
+        DiamondCutFacet(governorDiamond).diamondCut(
+            facetCuts(settings),
+            governorDiamondInit,
+            encodeSettings(msg.sender, timelock, settings)
+        );
         vm.stopBroadcast();
     }
 }
@@ -246,7 +214,7 @@ contract UpgradeDiamondFromV001ToV002 is Script {
     }
 }
 
-contract UpgradeDiamondFromV002ToV003 is GovernorConfigScript {
+contract UpgradeDiamondFromV002ToV003 is GovernorScriptHelper {
     function run(
         address governorDiamondInit,
         address governorDiamond,
@@ -292,11 +260,11 @@ contract UpgradeDiamondFromV002ToV003 is GovernorConfigScript {
             functionSelectors: adds
         });
 
-        GovernorConfig memory config = parseGovernorConfig(relativeConfigPath);
+        GovernorSettings memory settings = parseGovernorSettings(relativeConfigPath);
 
         vm.startBroadcast();
         DiamondCutFacet(governorDiamond).diamondCut(
-            cuts, governorDiamondInit, encodeConfig(msg.sender, timelock, config)
+            cuts, governorDiamondInit, encodeSettings(msg.sender, timelock, settings)
         );
         vm.stopBroadcast();
     }

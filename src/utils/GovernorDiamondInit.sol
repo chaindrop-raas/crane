@@ -21,11 +21,24 @@ import {IERC165} from "@diamond/interfaces/IERC165.sol";
 // in order to set state variables in the diamond during deployment or an upgrade
 // More info here: https://eips.ethereum.org/EIPS/eip-2535#diamond-interface
 
-library GDInitHelper {
-    /// @dev utility function to pack quorum numerator and denominator into a single uint256
-    function packQuorum(uint128 numerator, uint128 denominator) external pure returns (uint256) {
-        return uint256(numerator) << 128 | uint256(denominator);
-    }
+struct GovernorSettings {
+    string name;
+    address diamondLoupeFacet;
+    address ownershipFacet;
+    address governorCoreFacet;
+    address governorSettingsFacet;
+    address governorTimelockControlFacet;
+    address membershipToken;
+    address governanceToken;
+    address defaultProposalToken;
+    address proposalThresholdToken;
+    uint256 proposalThreshold;
+    uint64 votingPeriod;
+    uint64 votingDelay;
+    uint128 quorumNumerator;
+    uint128 quorumDenominator;
+    bool enableGovernanceToken;
+    bool enableMembershipToken;
 }
 
 /**
@@ -36,20 +49,7 @@ library GDInitHelper {
  * @custom:security-contact contract-security@joinorigami.com
  */
 contract GovernorDiamondInit {
-    function init(
-        string memory governorName,
-        address admin,
-        address payable timelock,
-        address membershipToken,
-        address governanceToken,
-        address defaultProposalToken,
-        uint64 delay,
-        uint64 period,
-        uint256 quorum, // bitwise packed values for quorumNumerator (u128) and quorumDenominator (u128)
-        uint256 threshold,
-        bool enableGovernanceToken,
-        bool enableMembershipToken
-    ) external {
+    function specifySupportedInterfaces() internal {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
 
         // adding ERC165 data
@@ -64,34 +64,51 @@ contract GovernorDiamondInit {
         ds.supportedInterfaces[type(IGovernorProposalQuorum).interfaceId] = true;
         ds.supportedInterfaces[type(IGovernorSettings).interfaceId] = true;
         ds.supportedInterfaces[type(IGovernorTimelockControl).interfaceId] = true;
+    }
 
-        // in order to facilitate role administration, we add the admin to the admin role
-        // it is advised that the admin renounces this role after the diamond is deployed
+    function initializeRoles(address admin) internal {
         AccessControlStorage.RoleStorage storage rs = AccessControlStorage.roleStorage();
         // 0x0 is the DEFAULT_ADMIN_ROLE
         rs.roles[0x0].members[admin] = true;
+    }
 
-        // Initialize the governor configuration. Any subsequent changes to
-        // these values should go through their interfaces in the
-        // GovernorStorage libary so the proper events are emitted.
+    function setProposalTokens(GovernorSettings memory settings) internal {
         GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
-        // by default, we only configure and enable the simple counting strategy
+        config.membershipToken = settings.membershipToken;
+        config.governanceToken = settings.governanceToken;
+        config.defaultProposalToken = settings.defaultProposalToken;
+        config.proposalTokens[settings.membershipToken] = settings.enableMembershipToken;
+        config.proposalTokens[settings.governanceToken] = settings.enableGovernanceToken;
+    }
+
+    function setDefaultCountingStrategy() internal {
+        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
+        // // by default, we only configure and enable the simple counting strategy
         config.defaultCountingStrategy = 0x6c4b0e9f;
         config.countingStrategies[0x6c4b0e9f] = true;
-        // set variable values
-        config.name = governorName;
+    }
+
+    function setConfigurationValues(address admin, address payable timelock, GovernorSettings memory settings)
+        internal
+    {
+        GovernorStorage.GovernorConfig storage config = GovernorStorage.configStorage();
+        config.name = settings.name;
         config.admin = admin;
         config.timelock = timelock;
-        config.membershipToken = membershipToken;
-        config.governanceToken = governanceToken;
-        config.defaultProposalToken = defaultProposalToken;
-        config.votingDelay = delay;
-        config.votingPeriod = period;
-        config.quorumNumerator = uint128(quorum >> 128);
-        config.quorumDenominator = uint128(quorum);
-        config.proposalThreshold = threshold;
-        config.proposalThresholdToken = defaultProposalToken;
-        config.proposalTokens[membershipToken] = enableMembershipToken;
-        config.proposalTokens[governanceToken] = enableGovernanceToken;
+        config.votingDelay = settings.votingDelay;
+        config.votingPeriod = settings.votingPeriod;
+        config.proposalThreshold = settings.proposalThreshold;
+        config.proposalThresholdToken = settings.proposalThresholdToken;
+        config.quorumNumerator = settings.quorumNumerator;
+        config.quorumDenominator = settings.quorumDenominator;
+    }
+
+    function init(address admin, address payable timelock, bytes memory configuration) external {
+        GovernorSettings memory settings = abi.decode(configuration, (GovernorSettings));
+        specifySupportedInterfaces();
+        initializeRoles(admin);
+        setDefaultCountingStrategy();
+        setProposalTokens(settings);
+        setConfigurationValues(admin, timelock, settings);
     }
 }

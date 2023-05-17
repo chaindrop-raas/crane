@@ -17,6 +17,9 @@ coverage/
 # governor configuration files
 configs/
 
+# deploy artifacts
+/artifacts/*.json
+
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*
