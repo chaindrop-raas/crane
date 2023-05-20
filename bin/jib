@@ -417,7 +417,7 @@ deployGovernanceTokenProxy() {
 # @option -p --private-key!
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 configureGovernanceTokenProxyL2() {
-  forge script script/Utils.s.sol:ConfigureContractsForBridge \
+  forge script script/Util.s.sol:ConfigureContractsForBridge \
     $argc_governance_token_proxy $argc_l2_bridge $argc_contract_admin \
     --private-key $argc_private_key --rpc-url $argc_rpc_url --broadcast \
     --sig "configureGovernanceTokenProxyForL2(address,address,address)"
@@ -429,7 +429,7 @@ configureGovernanceTokenProxyL2() {
 # @option -p --private-key!
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 configureGovernanceTokenProxyL1() {
-  forge script script/Utils.s.sol:ConfigureContractsForBridge \
+  forge script script/Util.s.sol:ConfigureContractsForBridge \
     $argc_governance_token_proxy \
     --private-key $argc_private_key --rpc-url $argc_rpc_url --broadcast \
     --sig "configureGovernanceTokenProxyForL1(address)"

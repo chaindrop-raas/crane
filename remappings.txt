@@ -1,6 +1,13 @@
 @create3/=lib/create3-factory/src/
 @diamond/=lib/diamond-2-hardhat/contracts/
-@oz/=lib/openzeppelin-contracts/contracts/
 @oz-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
+@oz/=lib/openzeppelin-contracts/contracts/
 @std/=lib/forge-std/src/
+create3-factory/=lib/create3-factory/
+diamond-2-hardhat/=lib/diamond-2-hardhat/contracts/
+ds-test/=lib/forge-std/lib/ds-test/src/
+forge-std/=lib/forge-std/src/
+openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/
+openzeppelin-contracts/=lib/openzeppelin-contracts/
+solmate/=lib/create3-factory/lib/solmate/src/
 src/=src/
