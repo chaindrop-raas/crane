@@ -150,6 +150,22 @@ contract SettingsFacetTest is GovernorDiamondHelper {
         vm.prank(address(timelock));
         settingsFacet.setVotingPeriod(0);
     }
+
+    function testMembershipTokenEnabled() public {
+        assertEq(coreFacet.isProposalTokenEnabled(address(memToken)), true);
+    }
+
+    function testGovernanceTokenEnabled() public {
+        assertEq(coreFacet.isProposalTokenEnabled(address(govToken)), true);
+    }
+
+    function testSimpleCountingStrategyEnabled() public {
+        assertEq(coreFacet.isCountingStrategyEnabled(bytes4(keccak256("simpleWeight(uint256)"))), true);
+    }
+
+    function testQuadraticCountingStrategyEnabled() public {
+        assertEq(coreFacet.isCountingStrategyEnabled(bytes4(keccak256("quadraticWeight(uint256)"))), true);
+    }
 }
 
 contract OrigamiGovernorUpdateSettingsViaProposal is GovernorDiamondHelper {
