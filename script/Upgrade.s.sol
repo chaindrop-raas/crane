@@ -35,14 +35,11 @@ contract UpgradeScript is Script {
     function upgradeGovernanceToken(address proxyAdmin, address payable transparentProxy, address implementation)
         public
     {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast();
 
-        vm.startBroadcast(deployerPrivateKey);
-
-        OrigamiGovernanceToken impl = OrigamiGovernanceToken(implementation);
         ProxyAdmin admin = ProxyAdmin(proxyAdmin);
         TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(transparentProxy);
-        admin.upgrade(proxy, address(impl));
+        admin.upgrade(proxy, implementation);
 
         vm.stopBroadcast();
     }

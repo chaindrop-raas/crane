@@ -140,10 +140,10 @@ deployMemToken() {
 # @option -p --private-key!
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 upgradeGovToken() {
-  PRIVATE_KEY=$argc_private_key forge script \
-    script/Upgrade.s.sol:UpgradeScript $argc_proxy_admin \
-    $argc_transparent_proxy $argc_implementation \
+  forge script script/Upgrade.s.sol:UpgradeScript \
+    $argc_proxy_admin $argc_transparent_proxy $argc_implementation \
     --sig "upgradeGovernanceToken(address,address,address)" \
+    --private-key $argc_private_key \
     --rpc-url $argc_rpc_url --broadcast --verify -vvvv
 }
 
