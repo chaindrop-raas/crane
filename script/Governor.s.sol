@@ -78,9 +78,7 @@ contract DeployGovernorDiamondInit is Script {
 
 contract DeployGovernorDiamond is Script {
     function run(address admin, address diamondCutFacet) external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
         Diamond governor = new Diamond(admin, diamondCutFacet);
         console2.log("GovernorDiamond deployed at:", address(governor));
         vm.stopBroadcast();

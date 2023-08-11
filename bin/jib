@@ -323,10 +323,10 @@ deployGovernorDiamondInit() {
 deployGovernorDiamond() {
   declare -a options=()
   options=$(createOptions $argc_rpc_url 1000000 $argc_block_explorer_api_key)
-  PRIVATE_KEY=$argc_private_key forge script \
-    script/Governor.s.sol:DeployGovernorDiamond \
+  forge script script/Governor.s.sol:DeployGovernorDiamond \
     $argc_admin $argc_diamond_cut_facet \
-    ${options[@]} --sig "run(address,address)"
+    ${options[@]} --sig "run(address,address)" \
+    --private-key $argc_private_key
 }
 
 # @cmd deploy a governor timelock controller
