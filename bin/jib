@@ -268,7 +268,7 @@ checkPermissions() {
 # @option -f --rpc-url=http://localhost:8545 The url of the RPC endpoint.
 checkBalances() {
   while read -r address; do
-    local BALANCE="$(cast balance --rpc-url $argc_rpc_url $address)"
+    local BALANCE="$(cast balance -e --rpc-url $argc_rpc_url $address)"
     echo "$address has a balance of $BALANCE"
   done <$argc_file
 }
